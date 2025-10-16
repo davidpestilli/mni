@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - MNI Web App</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="login-container">
+        <h1>MNI Web App</h1>
+        <p class="subtitle">Sistema de Teste de Integração MNI</p>
+
+        <div id="alert-container"></div>
+
+        <form id="login-form">
+            <div class="form-group">
+                <label for="idConsultante">CPF / Sigla</label>
+                <input
+                    type="text"
+                    id="idConsultante"
+                    name="idConsultante"
+                    placeholder="Digite seu CPF (11 dígitos) ou sigla"
+                    required
+                    autocomplete="username"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="senhaConsultante">Senha</label>
+                <input
+                    type="password"
+                    id="senhaConsultante"
+                    name="senhaConsultante"
+                    placeholder="Digite sua senha"
+                    required
+                    autocomplete="current-password"
+                >
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="btn-login">
+                Entrar
+            </button>
+        </form>
+
+        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-size: 12px; color: #999;">
+            <p>⚠️ Use apenas em ambiente de testes/homologação</p>
+            <p>Desenvolvido para fins de aprendizagem e suporte técnico</p>
+        </div>
+    </div>
+
+    <script src="js/login.js"></script>
+</body>
+</html>

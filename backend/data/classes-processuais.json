@@ -1,0 +1,170 @@
+[
+  {
+    "codigo": "11",
+    "descricao": "Procedimento Comum Cível",
+    "descricaoCurta": "PROC_COMUM",
+    "ativo": true,
+    "tipo": "Cível"
+  },
+  {
+    "codigo": "155",
+    "descricao": "Execução Fiscal",
+    "descricaoCurta": "EXEC_FISCAL",
+    "ativo": true,
+    "tipo": "Cível"
+  },
+  {
+    "codigo": "156",
+    "descricao": "Execução de Título Extrajudicial",
+    "descricaoCurta": "EXEC_TITULO",
+    "ativo": true,
+    "tipo": "Cível"
+  },
+  {
+    "codigo": "131",
+    "descricao": "Procedimento Ordinário",
+    "descricaoCurta": "PROC_ORD",
+    "ativo": true,
+    "tipo": "Cível"
+  },
+  {
+    "codigo": "275",
+    "descricao": "Procedimento Sumário",
+    "descricaoCurta": "PROC_SUM",
+    "ativo": true,
+    "tipo": "Cível"
+  },
+  {
+    "codigo": "319",
+    "descricao": "Procedimento do Juizado Especial Cível",
+    "descricaoCurta": "JEC",
+    "ativo": true,
+    "tipo": "Juizado Especial"
+  },
+  {
+    "codigo": "436",
+    "descricao": "Execução de Título Extrajudicial",
+    "descricaoCurta": "EXEC_TITULO",
+    "ativo": true,
+    "tipo": "Cível"
+  },
+  {
+    "codigo": "1102",
+    "descricao": "Mandado de Segurança Cível",
+    "descricaoCurta": "MS",
+    "ativo": true,
+    "tipo": "Mandado de Segurança"
+  },
+  {
+    "codigo": "241",
+    "descricao": "Procedimento de Conhecimento",
+    "descricaoCurta": "PROC_CONHEC",
+    "ativo": true,
+    "tipo": "Cível"
+  },
+  {
+    "codigo": "7",
+    "descricao": "Ação Civil Pública",
+    "descricaoCurta": "ACP",
+    "ativo": true,
+    "tipo": "Cível"
+  },
+  {
+    "codigo": "9",
+    "descricao": "Ação Popular",
+    "descricaoCurta": "ACAO_POPULAR",
+    "ativo": true,
+    "tipo": "Cível"
+  },
+  {
+    "codigo": "114",
+    "descricao": "Despejo por Falta de Pagamento Cumulado com Cobrança",
+    "descricaoCurta": "DESPEJO",
+    "ativo": true,
+    "tipo": "Cível"
+  },
+  {
+    "codigo": "248",
+    "descricao": "Monitória",
+    "descricaoCurta": "MONITORIA",
+    "ativo": true,
+    "tipo": "Cível"
+  },
+  {
+    "codigo": "1",
+    "descricao": "Ação Cautelar",
+    "descricaoCurta": "CAUTELAR",
+    "ativo": true,
+    "tipo": "Cautelar"
+  },
+  {
+    "codigo": "195",
+    "descricao": "Interdito Proibitório",
+    "descricaoCurta": "INTERDITO",
+    "ativo": true,
+    "tipo": "Possessória"
+  },
+  {
+    "codigo": "245",
+    "descricao": "Manutenção de Posse",
+    "descricaoCurta": "MANUT_POSSE",
+    "ativo": true,
+    "tipo": "Possessória"
+  },
+  {
+    "codigo": "246",
+    "descricao": "Reintegração / Manutenção de Posse",
+    "descricaoCurta": "REINT_POSSE",
+    "ativo": true,
+    "tipo": "Possessória"
+  },
+  {
+    "codigo": "39",
+    "descricao": "Busca e Apreensão",
+    "descricaoCurta": "BUSCA_APREEN",
+    "ativo": true,
+    "tipo": "Cível"
+  },
+  {
+    "codigo": "118",
+    "descricao": "Divórcio Litigioso",
+    "descricaoCurta": "DIVORCIO",
+    "ativo": true,
+    "tipo": "Família"
+  },
+  {
+    "codigo": "1199",
+    "descricao": "Inventário",
+    "descricaoCurta": "INVENTARIO",
+    "ativo": true,
+    "tipo": "Família"
+  },
+  {
+    "codigo": "10160",
+    "descricao": "Alimentos - Lei Especial Nº 5.478/68",
+    "descricaoCurta": "ALIMENTOS",
+    "ativo": true,
+    "tipo": "Família"
+  },
+  {
+    "codigo": "283",
+    "descricao": "Procedimento Comum",
+    "descricaoCurta": "PROC_COMUM",
+    "ativo": true,
+    "tipo": "Cível"
+  },
+  {
+    "codigo": "1108",
+    "descricao": "Embargos à Execução",
+    "descricaoCurta": "EMB_EXEC",
+    "ativo": true,
+    "tipo": "Execução"
+  },
+  {
+    "codigo": "159",
+    "descricao": "Embargos de Terceiro",
+    "descricaoCurta": "EMB_TERC",
+    "ativo": true,
+    "tipo": "Execução"
+  }
+]

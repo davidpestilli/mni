@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - MNI Web App</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="dashboard-container">
+            <div class="dashboard-header">
+                <h1>MNI Web App</h1>
+                <div class="user-info">
+                    <span id="user-name">Usuário</span>
+                    <button class="btn-logout" id="btn-logout">Sair</button>
+                </div>
+            </div>
+
+            <div class="dashboard-content">
+                <div class="tabs">
+                    <button class="tab active" data-tab="avisos">Avisos Pendentes</button>
+                    <button class="tab" data-tab="processos">Consultar Processo</button>
+                    <button class="tab" data-tab="peticionamento">Peticionamento</button>
+                    <button class="tab" data-tab="debug">🐛 Debug SOAP</button>
+                </div>
+
+                <!-- Tab: Avisos Pendentes -->
+                <div id="tab-avisos" class="tab-content active">
+                    <div style="margin-bottom: 20px;">
+                        <button class="btn btn-primary" id="btn-refresh-avisos" style="width: auto; padding: 10px 20px;">
+                            🔄 Atualizar Avisos
+                        </button>
+                    </div>
+
+                    <div id="avisos-loading" class="loading" style="display: none;">
+                        <div class="spinner"></div>
+                    </div>
+
+                    <div id="avisos-container"></div>
+                </div>
+
+                <!-- Tab: Consultar Processo -->
+                <div id="tab-processos" class="tab-content">
+                    <div class="form-group" style="max-width: 600px;">
+                        <label for="numero-processo">Número do Processo (20 dígitos)</label>
+                        <input
+                            type="text"
+                            id="numero-processo"
+                            placeholder="Ex: 12345678901234567890"
+                            maxlength="20"
+                        >
+
+                        <label for="chave-consulta" style="margin-top: 15px;">Chave de Consulta (opcional)</label>
+                        <input
+                            type="text"
+                            id="chave-consulta"
+                            placeholder="Ex: 559783082125"
+                        >
+                        <small style="color: #666; font-size: 12px; margin-top: 5px; display: block;">
+                            Use a chave para consultar processos nos quais você não está vinculado
+                        </small>
+
+                        <button class="btn btn-primary" id="btn-consultar-processo" style="margin-top: 10px;">
+                            Consultar
+                        </button>
+                    </div>
+
+                    <div id="processo-loading" class="loading" style="display: none;">
+                        <div class="spinner"></div>
+                    </div>
+
+                    <div id="processo-container"></div>
+                </div>
+
+                <!-- Tab: Peticionamento -->
+                <div id="tab-peticionamento" class="tab-content">
+                    <div style="margin-bottom: 30px; padding: 20px; background: #f0f8ff; border-radius: 8px;">
+                        <h3 style="margin-top: 0;">📋 Tipos de Peticionamento</h3>
+                        <div style="display: flex; gap: 15px; margin-top: 15px;">
+                            <a href="peticionamento-inicial.html" class="btn btn-primary" style="text-decoration: none; display: inline-block;">
+                                📝 Peticionamento Inicial (Novo Processo)
+                            </a>
+                            <span style="color: #666; align-self: center;">ou</span>
+                            <button class="btn btn-secondary" onclick="document.querySelector('[data-tab=\\'peticionamento\\']').scrollIntoView({behavior: 'smooth'})">
+                                📄 Peticionamento Intermediário (Processo Existente)
+                            </button>
+                        </div>
+                    </div>
+
+                    <h3>Peticionamento Intermediário</h3>
+                    <p style="color: #666; margin-bottom: 20px;">Enviar manifestação em processo já existente</p>
+
+                    <div class="form-upload">
+                        <div class="form-group">
+                            <label for="peticao-processo">Número do Processo (20 dígitos)</label>
+                            <input
+                                type="text"
+                                id="peticao-processo"
+                                placeholder="Ex: 12345678901234567890"
+                                maxlength="20"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="tipo-documento">Tipo de Documento</label>
+                            <div style="display: flex; gap: 10px;">
+                                <select id="tipo-documento-select" style="flex: 1;">
+                                    <option value="">Selecione o tipo de documento</option>
+                                </select>
+                                <button type="button" class="btn btn-primary" id="btn-carregar-tipos" style="width: auto; padding: 10px 20px;">
+                                    🔄 Carregar
+                                </button>
+                            </div>
+                            <small style="color: #666;">
+                                <span id="tipos-info">Clique em "Carregar" para buscar tipos de documento do tribunal</span>
+                            </small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Documento PDF</label>
+                            <div class="file-upload-area" id="file-upload-area">
+                                <div>📄</div>
+                                <p>Clique ou arraste um arquivo PDF aqui</p>
+                                <p style="font-size: 12px; color: #999;">Tamanho máximo: 11MB</p>
+                            </div>
+                            <input type="file" id="file-input" class="file-input" accept=".pdf">
+                            <div id="file-name" class="file-name"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="descricao-documento">Descrição (opcional)</label>
+                            <input
+                                type="text"
+                                id="descricao-documento"
+                                placeholder="Ex: Contestação"
+                            >
+                        </div>
+
+                        <button class="btn btn-primary" id="btn-enviar-peticao">
+                            Enviar Petição
+                        </button>
+                    </div>
+
+                    <div id="peticao-resultado" style="margin-top: 30px;"></div>
+                </div>
+
+                <!-- Tab: Debug SOAP -->
+                <div id="tab-debug" class="tab-content">
+                    <div style="margin-bottom: 20px; display: flex; gap: 10px;">
+                        <button class="btn btn-primary" id="btn-refresh-logs" style="width: auto; padding: 10px 20px;">
+                            🔄 Atualizar Logs
+                        </button>
+                        <button class="btn btn-secondary" id="btn-clear-logs" style="width: auto; padding: 10px 20px;">
+                            🗑️ Limpar Logs
+                        </button>
+                    </div>
+
+                    <div id="debug-loading" class="loading" style="display: none;">
+                        <div class="spinner"></div>
+                    </div>
+
+                    <div id="debug-container">
+                        <p style="color: #666;">Logs SOAP aparecerão aqui após realizar operações (consultas, peticionamentos, etc.)</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/utils.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/avisos.js"></script>
+    <script src="js/processos.js"></script>
+    <script src="js/peticionamento.js"></script>
+    <script src="js/debug.js"></script>
+</body>
+</html>

@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peticionamento Inicial - MNI Web App</title>
+    <link rel="stylesheet" href="css/peticionamento-inicial.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📝 Peticionamento Inicial</h1>
+            <p class="subtitle">Criar novo processo judicial via MNI 3.0 (Modelo Nacional de Interoperabilidade)</p>
+            <a href="index.html" class="btn btn-secondary">← Voltar ao Dashboard</a>
+        </header>
+
+        <div class="info-box" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+            <p style="margin: 0 0 10px 0;"><strong>🆕 ATUALIZAÇÃO: Agora usando MNI 3.0!</strong></p>
+            <p style="margin: 0; font-size: 14px; opacity: 0.95;">
+                Este formulário foi migrado para o <strong>MNI 3.0</strong>, que oferece seleção em cascata (localidade → competência → classe → assunto).
+                Isso garante que apenas opções <strong>válidas</strong> sejam exibidas, eliminando erros de "classe complementar" ou "assunto inválido".
+                O sistema MNI 2.2 continua disponível para peticionamento intermediário.
+            </p>
+        </div>
+
+        <div class="info-box">
+            <p><strong>ℹ️ Importante:</strong> Preencha todos os campos obrigatórios marcados com asterisco (*). O peticionamento inicial cria um novo processo no sistema judicial.</p>
+        </div>
+
+        <main>
+            <form id="formPeticionamentoInicial" class="form-card">
+
+                <!-- Autenticação -->
+                <fieldset>
+                    <legend>🔐 Autenticação</legend>
+
+                    <div class="info-box">
+                        <p>ℹ️ <strong>Credenciais de Acesso:</strong> Utilize o CPF/Sigla e senha cadastrados no sistema e-Proc/MNI do advogado que representa a parte. A senha será convertida para hash SHA256 antes do envio.</p>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="cpfSigla" class="required">CPF/Sigla do Procurador</label>
+                            <input type="text" id="cpfSigla" required placeholder="Ex: 12345678901" autocomplete="username">
+                            <small>📌 CPF do advogado cadastrado no MNI/e-Proc</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="senha" class="required">Senha</label>
+                            <input type="password" id="senha" required placeholder="Digite sua senha" autocomplete="current-password">
+                            <small>🔒 Senha de acesso ao e-Proc</small>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!-- Dados do Processo -->
+                <fieldset>
+                    <legend>⚖️ Dados do Processo (MNI 3.0 - Seleção em Cascata)</legend>
+
+                    <div class="info-box" style="background: #f0f8ff; border-left: 4px solid #667eea; padding: 12px; margin-bottom: 20px;">
+                        <p style="margin: 0; font-size: 13px;">
+                            <strong>💡 Como funciona:</strong> Selecione os campos em ordem. Cada seleção filtra as opções seguintes,
+                            garantindo que apenas opções <strong>válidas</strong> sejam exibidas.
+                        </p>
+                    </div>
+
+                    <!-- PASSO 1: Localidade -->
+                    <div class="form-group">
+                        <label for="localidade" class="required">
+                            <span style="background: #667eea; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-right: 5px;">PASSO 1</span>
+                            Comarca/Localidade Judicial
+                        </label>
+                        <select id="localidade" required>
+                            <option value="">🔄 Carregando localidades...</option>
+                        </select>
+                        <small>Selecione a comarca onde o processo será distribuído</small>
+                    </div>
+
+                    <!-- PASSO 2: Competência -->
+                    <div class="form-group">
+                        <label for="competencia">
+                            <span style="background: #764ba2; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-right: 5px;">PASSO 2</span>
+                            Competência Judicial
+                        </label>
+                        <select id="competencia" disabled>
+                            <option value="">📍 Selecione uma localidade primeiro</option>
+                        </select>
+                        <small>Competências disponíveis para a localidade selecionada (opcional)</small>
+                    </div>
+
+                    <!-- PASSO 3: Classe -->
+                    <div class="form-group">
+                        <label for="classe" class="required">
+                            <span style="background: #667eea; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-right: 5px;">PASSO 3</span>
+                            Classe Processual
+                        </label>
+                        <select id="classe" required disabled>
+                            <option value="">📍 Selecione uma localidade primeiro</option>
+                        </select>
+                        <small>Classes válidas para o contexto selecionado (Ex: Execução Fiscal, Procedimento Comum)</small>
+                    </div>
+
+                    <!-- PASSO 4: Assunto -->
+                    <div class="form-group">
+                        <label for="assunto">
+                            <span style="background: #764ba2; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-right: 5px;">PASSO 4</span>
+                            Assunto Principal
+                        </label>
+                        <select id="assunto" disabled>
+                            <option value="">📍 Selecione uma classe primeiro</option>
+                        </select>
+                        <small>Assuntos válidos para a classe selecionada (opcional)</small>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="valorCausa">Valor da Causa (R$)</label>
+                            <input type="number" id="valorCausa" step="0.01" min="0" placeholder="0.00">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="nivelSigilo">Nível de Sigilo</label>
+                            <select id="nivelSigilo">
+                                <option value="0" selected>🌐 Público (Padrão)</option>
+                                <option value="1">🔒 Segredo de Justiça</option>
+                                <option value="2">🔐 Sigilo</option>
+                            </select>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!-- Info sobre assuntos complementares -->
+                <div class="info-box" style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; margin-bottom: 20px;">
+                    <p style="margin: 0; font-size: 13px;">
+                        <strong>📌 Assuntos Principal e Complementares:</strong>
+                        O assunto selecionado acima será o <strong>principal</strong>.
+                        Se precisar adicionar assuntos complementares, isso poderá ser feito após a criação do processo.
+                    </p>
+                </div>
+
+                <!-- Remover o campo de sigilo duplicado abaixo -->
+                <fieldset style="display: none;">
+                    <legend>Deprecated - Campo movido acima</legend>
+
+                    <div class="form-group">
+                        <label for="nivelSigilo">Nível de Sigilo</label>
+                        <select id="nivelSigilo">
+                            <option value="0" selected>🌐 Público (Padrão)</option>
+                            <option value="1">🔒 Segredo de Justiça</option>
+                            <option value="2">🔐 Sigilo</option>
+                        </select>
+                    </div>
+                </fieldset>
+
+                <!-- Polo Ativo (Autores) -->
+                <fieldset>
+                    <legend>👤 Polo Ativo (Autor/Autores)</legend>
+
+                    <div id="poloAtivoContainer">
+                        <div class="parte-item" data-polo="ativo">
+                            <h4>Parte 1</h4>
+
+                            <div class="form-group">
+                                <label>Tipo de Pessoa:</label>
+                                <select class="tipoPessoa" onchange="toggleTipoPessoa(this)">
+                                    <option value="fisica">Pessoa Física</option>
+                                    <option value="juridica">Pessoa Jurídica</option>
+                                </select>
+                            </div>
+
+                            <div class="campos-pf">
+                                <div class="form-group">
+                                    <label>Nome Completo:</label>
+                                    <input type="text" class="nomeCompleto" placeholder="Ex: João da Silva">
+                                </div>
+
+                                <div class="form-group">
+                                    <label>CPF:</label>
+                                    <input type="text" class="cpf" placeholder="Ex: 12345678901">
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Data de Nascimento:</label>
+                                    <input type="text" class="dataNascimento" placeholder="DD/MM/AAAA">
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Sexo:</label>
+                                    <select class="sexo">
+                                        <option value="Masculino">Masculino</option>
+                                        <option value="Feminino">Feminino</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="campos-pj" style="display: none;">
+                                <div class="form-group">
+                                    <label>Razão Social:</label>
+                                    <input type="text" class="razaoSocial" placeholder="Ex: Empresa LTDA">
+                                </div>
+
+                                <div class="form-group">
+                                    <label>CNPJ:</label>
+                                    <input type="text" class="cnpj" placeholder="Ex: 12345678000199">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn btn-secondary" onclick="adicionarParte('ativo')">+ Adicionar Autor</button>
+                </fieldset>
+
+                <!-- Polo Passivo (Réus) -->
+                <fieldset>
+                    <legend>👥 Polo Passivo (Réu/Réus)</legend>
+
+                    <div id="poloPassivoContainer">
+                        <div class="parte-item" data-polo="passivo">
+                            <h4>Parte 1</h4>
+
+                            <div class="form-group">
+                                <label>Tipo de Pessoa:</label>
+                                <select class="tipoPessoa" onchange="toggleTipoPessoa(this)">
+                                    <option value="fisica">Pessoa Física</option>
+                                    <option value="juridica">Pessoa Jurídica</option>
+                                </select>
+                            </div>
+
+                            <div class="campos-pf">
+                                <div class="form-group">
+                                    <label>Nome Completo:</label>
+                                    <input type="text" class="nomeCompleto" placeholder="Ex: Maria Santos">
+                                </div>
+
+                                <div class="form-group">
+                                    <label>CPF:</label>
+                                    <input type="text" class="cpf" placeholder="Ex: 98765432100">
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Data de Nascimento:</label>
+                                    <input type="text" class="dataNascimento" placeholder="DD/MM/AAAA">
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Sexo:</label>
+                                    <select class="sexo">
+                                        <option value="Masculino">Masculino</option>
+                                        <option value="Feminino">Feminino</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="campos-pj" style="display: none;">
+                                <div class="form-group">
+                                    <label>Razão Social:</label>
+                                    <input type="text" class="razaoSocial" placeholder="Ex: Empresa XYZ LTDA">
+                                </div>
+
+                                <div class="form-group">
+                                    <label>CNPJ:</label>
+                                    <input type="text" class="cnpj" placeholder="Ex: 98765432000188">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn btn-secondary" onclick="adicionarParte('passivo')">+ Adicionar Réu</button>
+                </fieldset>
+
+                <!-- Documentos -->
+                <fieldset>
+                    <legend>📎 Documentos</legend>
+
+                    <div class="warning-box">
+                        <p>⚠️ <strong>Atenção:</strong> Anexe apenas arquivos em formato PDF. Tamanho máximo recomendado: 11MB por arquivo.</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="peticaoInicial" class="required">Petição Inicial (PDF)</label>
+                        <input type="file" id="peticaoInicial" accept=".pdf" required>
+                        <small>📄 Selecione o arquivo PDF contendo a petição inicial</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="signatario">CPF do Signatário</label>
+                        <input type="text" id="signatario" placeholder="12345678901">
+                        <small>✍️ CPF de quem assina a petição (opcional para assinatura digital)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="documentosAdicionais">Documentos Adicionais</label>
+                        <input type="file" id="documentosAdicionais" accept=".pdf" multiple>
+                        <small>📎 Procuração, documentos pessoais, etc. (Você pode selecionar múltiplos arquivos)</small>
+                    </div>
+                </fieldset>
+
+                <!-- Botões -->
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <span>📨</span>
+                        <span>Enviar Petição Inicial</span>
+                    </button>
+                    <button type="reset" class="btn btn-secondary">
+                        <span>🔄</span>
+                        <span>Limpar Formulário</span>
+                    </button>
+                </div>
+            </form>
+
+            <!-- Resultado -->
+            <div id="resultado" class="result-container" style="display: none;">
+                <h3>Resultado</h3>
+                <div id="resultadoConteudo"></div>
+            </div>
+
+            <!-- Debug SOAP XML -->
+            <div id="soapDebug" class="soap-debug-container" style="display: none;">
+                <div class="soap-debug-header">
+                    <h3>🔍 Debug SOAP - XML Completo</h3>
+                    <button type="button" class="btn btn-secondary" onclick="toggleSoapDebug()">
+                        <span id="toggleIcon">▼</span> Expandir/Recolher
+                    </button>
+                </div>
+
+                <div id="soapDebugContent" class="soap-debug-content" style="display: none;">
+                    <div class="soap-section">
+                        <h4>📤 Requisição SOAP Enviada</h4>
+                        <div class="soap-actions">
+                            <button type="button" class="btn-copy" onclick="copiarXML('request')">📋 Copiar</button>
+                            <button type="button" class="btn-download" onclick="baixarXML('request')">💾 Baixar</button>
+                        </div>
+                        <pre id="soapRequest" class="xml-content"></pre>
+                    </div>
+
+                    <div class="soap-section">
+                        <h4>📥 Resposta SOAP Recebida</h4>
+                        <div class="soap-actions">
+                            <button type="button" class="btn-copy" onclick="copiarXML('response')">📋 Copiar</button>
+                            <button type="button" class="btn-download" onclick="baixarXML('response')">💾 Baixar</button>
+                        </div>
+                        <pre id="soapResponse" class="xml-content"></pre>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/utils.js"></script>
+    <script src="js/peticionamento-inicial.js"></script>
+</body>
+</html>

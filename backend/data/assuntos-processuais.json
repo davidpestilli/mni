@@ -1,0 +1,212 @@
+[
+  {
+    "codigo": "4907",
+    "descricao": "IPTU / Imposto Predial e Territorial Urbano",
+    "descricaoCurta": "IPTU",
+    "ativo": true,
+    "categoria": "Direito Tributário"
+  },
+  {
+    "codigo": "11238",
+    "descricao": "ISS / Imposto sobre Serviços",
+    "descricaoCurta": "ISS",
+    "ativo": true,
+    "categoria": "Direito Tributário"
+  },
+  {
+    "codigo": "7734",
+    "descricao": "Fornecimento de Energia Elétrica",
+    "descricaoCurta": "ENERGIA",
+    "ativo": true,
+    "categoria": "Direito do Consumidor"
+  },
+  {
+    "codigo": "7730",
+    "descricao": "Fornecimento de Água",
+    "descricaoCurta": "AGUA",
+    "ativo": true,
+    "categoria": "Direito do Consumidor"
+  },
+  {
+    "codigo": "8349",
+    "descricao": "Dano Material",
+    "descricaoCurta": "DANO_MAT",
+    "ativo": true,
+    "categoria": "Responsabilidade Civil"
+  },
+  {
+    "codigo": "8350",
+    "descricao": "Dano Moral",
+    "descricaoCurta": "DANO_MORAL",
+    "ativo": true,
+    "categoria": "Responsabilidade Civil"
+  },
+  {
+    "codigo": "1243",
+    "descricao": "Acidentes de Trânsito",
+    "descricaoCurta": "ACID_TRANS",
+    "ativo": true,
+    "categoria": "Responsabilidade Civil"
+  },
+  {
+    "codigo": "7951",
+    "descricao": "Honorários Advocatícios",
+    "descricaoCurta": "HONORARIOS",
+    "ativo": true,
+    "categoria": "Direito Civil"
+  },
+  {
+    "codigo": "10375",
+    "descricao": "Cartão de Crédito",
+    "descricaoCurta": "CARTAO",
+    "ativo": true,
+    "categoria": "Direito do Consumidor"
+  },
+  {
+    "codigo": "10422",
+    "descricao": "Empréstimo consignado",
+    "descricaoCurta": "EMP_CONSIG",
+    "ativo": true,
+    "categoria": "Direito Bancário"
+  },
+  {
+    "codigo": "9842",
+    "descricao": "Contratos Bancários",
+    "descricaoCurta": "CONTR_BANC",
+    "ativo": true,
+    "categoria": "Direito Bancário"
+  },
+  {
+    "codigo": "11803",
+    "descricao": "Aposentadoria por Invalidez",
+    "descricaoCurta": "APOS_INVAL",
+    "ativo": true,
+    "categoria": "Direito Previdenciário"
+  },
+  {
+    "codigo": "11807",
+    "descricao": "Aposentadoria por Tempo de Contribuição",
+    "descricaoCurta": "APOS_TEMPO",
+    "ativo": true,
+    "categoria": "Direito Previdenciário"
+  },
+  {
+    "codigo": "11811",
+    "descricao": "Auxílio-Doença Previdenciário",
+    "descricaoCurta": "AUX_DOENCA",
+    "ativo": true,
+    "categoria": "Direito Previdenciário"
+  },
+  {
+    "codigo": "1249",
+    "descricao": "Acidente de Trabalho",
+    "descricaoCurta": "ACID_TRAB",
+    "ativo": true,
+    "categoria": "Direito do Trabalho"
+  },
+  {
+    "codigo": "10424",
+    "descricao": "Rescisão de Contrato de Trabalho",
+    "descricaoCurta": "RESCISAO",
+    "ativo": true,
+    "categoria": "Direito do Trabalho"
+  },
+  {
+    "codigo": "1289",
+    "descricao": "Alimentos",
+    "descricaoCurta": "ALIMENTOS",
+    "ativo": true,
+    "categoria": "Direito de Família"
+  },
+  {
+    "codigo": "1132",
+    "descricao": "Divórcio",
+    "descricaoCurta": "DIVORCIO",
+    "ativo": true,
+    "categoria": "Direito de Família"
+  },
+  {
+    "codigo": "1133",
+    "descricao": "Dissolução de União Estável",
+    "descricaoCurta": "UNIAO_EST",
+    "ativo": true,
+    "categoria": "Direito de Família"
+  },
+  {
+    "codigo": "1136",
+    "descricao": "Guarda",
+    "descricaoCurta": "GUARDA",
+    "ativo": true,
+    "categoria": "Direito de Família"
+  },
+  {
+    "codigo": "5795",
+    "descricao": "Inventário e Partilha",
+    "descricaoCurta": "INVENTARIO",
+    "ativo": true,
+    "categoria": "Direito de Família"
+  },
+  {
+    "codigo": "1788",
+    "descricao": "Cobrança de Condomínio",
+    "descricaoCurta": "CONDOMINIO",
+    "ativo": true,
+    "categoria": "Direito Imobiliário"
+  },
+  {
+    "codigo": "1116",
+    "descricao": "Contratos de Locação",
+    "descricaoCurta": "LOCACAO",
+    "ativo": true,
+    "categoria": "Direito Imobiliário"
+  },
+  {
+    "codigo": "1118",
+    "descricao": "Despejo",
+    "descricaoCurta": "DESPEJO",
+    "ativo": true,
+    "categoria": "Direito Imobiliário"
+  },
+  {
+    "codigo": "1176",
+    "descricao": "Posse",
+    "descricaoCurta": "POSSE",
+    "ativo": true,
+    "categoria": "Direito Imobiliário"
+  },
+  {
+    "codigo": "1119",
+    "descricao": "Dissolução e Liquidação de Sociedade",
+    "descricaoCurta": "DISSOLUCAO",
+    "ativo": true,
+    "categoria": "Direito Empresarial"
+  },
+  {
+    "codigo": "1062",
+    "descricao": "Compra e Venda",
+    "descricaoCurta": "COMPRA_VENDA",
+    "ativo": true,
+    "categoria": "Direito Civil"
+  },
+  {
+    "codigo": "1095",
+    "descricao": "Contratos em Espécie",
+    "descricaoCurta": "CONTRATOS",
+    "ativo": true,
+    "categoria": "Direito Civil"
+  },
+  {
+    "codigo": "9148",
+    "descricao": "Duplicata",
+    "descricaoCurta": "DUPLICATA",
+    "ativo": true,
+    "categoria": "Títulos de Crédito"
+  },
+  {
+    "codigo": "9149",
+    "descricao": "Cheque",
+    "descricaoCurta": "CHEQUE",
+    "ativo": true,
+    "categoria": "Títulos de Crédito"
+  }
+]
