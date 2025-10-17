@@ -1,0 +1,796 @@
+(self["webpackChunkeproc"] = self["webpackChunkeproc"] || []).push([["main-pos"],{
+
+/***/ "./web/js/src/datatables.js":
+/*!**********************************!*\
+  !*** ./web/js/src/datatables.js ***!
+  \**********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var pdfmake_build_pdfmake__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! pdfmake/build/pdfmake */ "./node_modules/pdfmake/build/pdfmake.js");
+/* harmony import */ var pdfmake_build_pdfmake__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(pdfmake_build_pdfmake__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var pdfmake_build_vfs_fonts__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! pdfmake/build/vfs_fonts */ "./node_modules/pdfmake/build/vfs_fonts.js");
+/* harmony import */ var jszip__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! jszip */ "./node_modules/jszip/dist/jszip.min.js");
+/* harmony import */ var jszip__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(jszip__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var datatables_net_bs4__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! datatables.net-bs4 */ "./node_modules/datatables.net-bs4/js/dataTables.bootstrap4.mjs");
+/* harmony import */ var datatables_net_responsive_bs4__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! datatables.net-responsive-bs4 */ "./node_modules/datatables.net-responsive-bs4/js/responsive.bootstrap4.mjs");
+/* harmony import */ var datatables_net_select_bs4__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! datatables.net-select-bs4 */ "./node_modules/datatables.net-select-bs4/js/select.bootstrap4.mjs");
+/* harmony import */ var datatables_net_rowgroup_bs4__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! datatables.net-rowgroup-bs4 */ "./node_modules/datatables.net-rowgroup-bs4/js/rowGroup.bootstrap4.mjs");
+/* harmony import */ var datatables_net_buttons_bs4__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! datatables.net-buttons-bs4 */ "./node_modules/datatables.net-buttons-bs4/js/buttons.bootstrap4.mjs");
+/* harmony import */ var _dataTableHelper__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./dataTableHelper */ "./web/js/src/dataTableHelper.js");
+/* harmony import */ var _datatables_actions_mjs__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./datatables/actions.mjs */ "./web/js/src/datatables/actions.mjs");
+/* harmony import */ var _eproc_toast_js__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! #eproc/toast.js */ "./web/js/src/esmodules/toast.js");
+/* harmony import */ var _datatables_eprocButtons_Exportar__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./datatables/eprocButtons/Exportar */ "./web/js/src/datatables/eprocButtons/Exportar.js");
+/* harmony import */ var _datatables_eprocButtons_Colvis__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./datatables/eprocButtons/Colvis */ "./web/js/src/datatables/eprocButtons/Colvis.js");
+/*** IMPORTS FROM imports-loader ***/
+
+var define = false;
+
+
+
+
+
+
+
+
+
+
+
+
+
+(pdfmake_build_pdfmake__WEBPACK_IMPORTED_MODULE_0___default().vfs) = pdfmake_build_vfs_fonts__WEBPACK_IMPORTED_MODULE_1__.pdfMake.vfs;
+window.JSZip = jszip__WEBPACK_IMPORTED_MODULE_2__;
+__webpack_require__(/*! datatables.net-buttons/js/buttons.html5 */ "./node_modules/datatables.net-buttons/js/buttons.html5.js")(window, $);
+__webpack_require__(/*! datatables.net-buttons/js/buttons.print */ "./node_modules/datatables.net-buttons/js/buttons.print.js")(window, $);
+__webpack_require__(/*! datatables.net-buttons/js/buttons.colVis.js */ "./node_modules/datatables.net-buttons/js/buttons.colVis.js")(window, $);
+window.DataTableHelper = _dataTableHelper__WEBPACK_IMPORTED_MODULE_8__["default"];
+(function ($) {
+  var language = {
+    'sNotInitializedInfoEmpty': '',
+    'sNotInitializedEmptyTable': 'Realize uma consulta para que os dados sejam apresentados',
+    'sEmptyTable': 'Nenhum registro encontrado',
+    'sInfo': 'Mostrando de _START_ até _END_ de _TOTAL_ registros',
+    'sInfoEmpty': 'Nenhum registro encontrado.',
+    'sInfoFiltered': '(Filtrados de _MAX_ registros)',
+    'sInfoPostFix': '',
+    'sInfoThousands': '.',
+    'thousands': '.',
+    'decimal': ',',
+    'sLengthMenu': '_MENU_ resultados por página',
+    'sLoadingRecords': 'Carregando...',
+    'sProcessing': 'Processando...',
+    'sZeroRecords': 'Nenhum registro encontrado',
+    'sSearch': 'Pesquisar',
+    'oPaginate': {
+      'sNext': 'Próximo',
+      'sPrevious': 'Anterior',
+      'sFirst': 'Primeiro',
+      'sLast': 'Último'
+    },
+    'oAria': {
+      'sSortAscending': ': Ordenar colunas de forma ascendente',
+      'sSortDescending': ': Ordenar colunas de forma descendente'
+    },
+    'select': {
+      'rows': {
+        _: 'Selecionado %d linhas',
+        0: 'Clique no checkbox para selecionar',
+        1: 'Selecionado 1 linha'
+      }
+    },
+    buttons: {
+      print: 'Imprimir',
+      copy: 'Copiar',
+      colvis: 'Colunas',
+      selectAll: 'Marcar Todos',
+      selectNone: 'Desmarcar Todos',
+      copyTitle: "Cópia para área de transferência",
+      copySuccess: {
+        _: "%d linhas copiadas para a área de transferência",
+        1: "1 linha copiada para a área de transferência"
+      },
+      copyKeys: "Pressione <i>Ctrl</i> ou <i>⌘</i> + <i>C</i> para copiar os dados da tabela para a área de transferência."
+    }
+  };
+  $.fn.dataTable.getDataByButton = function (btn) {
+    var tr = btn.closest('tr');
+    var id = tr.closest('table').attr('id');
+    var data = {};
+    if ($.fn.dataTable.isDataTable('#' + id)) {
+      data = $('#' + id).DataTable().row(tr).data();
+    }
+    return data;
+  };
+  $.fn.dataTable.checkAll = function (checkAll) {
+    var id = checkAll.parents('table').prop('id');
+    var rows = $('#' + id).DataTable().rows();
+    var deselect = [];
+    var variavelGlobal = $.fn.dataTable.variavelGlobalIdsSelecionados(id);
+    if (checkAll.is(':checked')) {
+      rows.select();
+      $.each(rows.ids().toArray(), function (key, id) {
+        variavelGlobal.push(id);
+      });
+    } else {
+      rows.deselect();
+      deselect = rows.ids().toArray();
+    }
+    for (var key = variavelGlobal.length - 1; key >= 0; key--) {
+      var value = variavelGlobal[key];
+      if (value.trim() === '' || variavelGlobal.indexOf(value) !== key || deselect.indexOf(value) !== -1) {
+        variavelGlobal.splice(key, 1);
+      }
+    }
+  };
+  $.fn.dataTable.variavelGlobalIdsSelecionados = function (id) {
+    var nome = 'idsSelecionados' + id;
+    if (window[nome] === undefined) {
+      window[nome] = [];
+    }
+    return window[nome];
+  };
+  $.fn.dataTable.renderCustomColumnLinkProcesso = function (linkField, row, numProcessoField) {
+    return '<a href="' + linkField + '">' + infraFormatarProcessoTrf4(row[numProcessoField]) + '</a>';
+  };
+  $.fn.dataTable.renderCustomColumnNumProcessoFormatado = (data, type, row, meta) => {
+    var columnName = meta.settings.aoColumns[meta.col].data;
+    return infraFormatarProcessoTrf4(row[columnName]);
+  };
+  $.fn.dataTable.renderCustomColumnSequencial = (data, type, row, meta) => {
+    return meta.settings._iDisplayStart + 1 + meta.row;
+  };
+  $.fn.dataTable.montarData = function (d, form) {
+    form.find('input, select').each(function () {
+      var name = $(this).attr('name');
+      if (name !== undefined && $(this).val() !== undefined) {
+        if ($(this).attr('type') == 'checkbox' || $(this).attr('type') == 'radio') {
+          if ($(this).is(':checked')) {
+            d[name] = $(this).val();
+          }
+        } else {
+          d[name] = $(this).val();
+        }
+      }
+    });
+  };
+  $.fn.dataTable.render.linksAcoes = function () {
+    return _datatables_actions_mjs__WEBPACK_IMPORTED_MODULE_9__["default"];
+  };
+  $.extend(true, $.fn.dataTable.defaults, {
+    'processing': true,
+    //Habilita e desabilita mensagem de processando na paginação e filtros
+    'searching': false,
+    //Habilita e desabilita os campos de filtro
+    'stateSave': true,
+    //Mantém a página da paginação
+    //https://datatables.net/reference/option/dom
+    'dom': 'r' + '<\'row\'<\'col-sm-12 col-md-12\'B>>' + '<\'row\'<\'col-sm-12 col-md-6\'l><\'col-sm-12 col-md-6\'p>>' + '<\'row\'<\'col-sm-12\'t>>' + '<\'row\'<\'col-sm-12 col-md-5\'i><\'col-sm-12 col-md-7\'p>>',
+    'language': language,
+    'buttons': {
+      dom: {
+        container: {
+          className: 'text-right container-acoes-bloco mt-1'
+        },
+        button: {
+          tag: 'a',
+          className: 'd-flex ml-2 align-items-center btn-acoes-bloco'
+        },
+        buttonLiner: {
+          tag: null
+        }
+      }
+    }
+  });
+
+  /**
+   *
+   * @param opts
+   * @returns {*|Window.jQuery}
+   */
+  $.fn.dataTablePadrao = function (opts) {
+    var defaultOrderableColumn = opts.hideColDetalhes === true ? 1 : 2;
+    opts.order = typeof opts.order !== 'undefined' ? opts.order : [[defaultOrderableColumn, 'asc']];
+    opts.serverSide = typeof opts.serverSide !== 'undefined' ? opts.serverSide : true;
+    opts.paging = typeof opts.paging !== 'undefined' ? opts.paging : true;
+    opts.dom = typeof opts.dom !== 'undefined' ? opts.dom : $.fn.dataTable.defaults.dom;
+    opts.pageLength = typeof opts.pageLength !== 'undefined' ? opts.pageLength : $.fn.dataTable.defaults.pageLength;
+    if (opts.hideColDetalhes) {
+      opts.responsive = {
+        details: {
+          display: $.fn.dataTable.Responsive.display.childRowImmediate,
+          type: 'none',
+          target: ''
+        }
+      };
+    }
+    opts.columnDefs = opts.columnDefs || [];
+    if (opts.hideColDetalhes !== true) {
+      opts.columnDefs.push({
+        targets: 0,
+        className: 'control not-export-col',
+        orderable: false
+      });
+      if (opts.columns[0]['data'] !== 'col_detalhes' && opts.columns[1]['data'] !== 'col_detalhes') {
+        opts.columns.unshift({
+          'data': 'col_detalhes'
+        });
+      }
+    }
+    opts.buttons = {
+      dom: $.fn.dataTable.defaults.buttons.dom,
+      buttons: typeof opts.buttons !== 'undefined' ? opts.buttons : ['excel', 'csv', 'pdfHtml5', 'print', 'copy', 'colvis']
+    };
+    if (opts.select) {
+      opts.select = {
+        style: 'multi',
+        selector: 'td:nth-child(2)'
+      };
+      if (opts.columns[0]['data'] !== 'col_checkbox') {
+        opts.columns.unshift({
+          'data': 'col_checkbox'
+        });
+      }
+      opts.columnDefs.push({
+        title: '<input type="checkbox" id="checkAll" name="checkAll">',
+        targets: 1,
+        className: 'dtr-control select-checkbox text-center not-export-col',
+        orderable: false
+      });
+    }
+    if (opts.hideColDetalhes !== true) {
+      if (opts.actions && opts.columns[opts.columns.length - 1]['data'] !== 'col_acoes') {
+        opts.columns.push({
+          'data': 'col_acoes',
+          'title': 'Ações',
+          'orderable': false,
+          'className': 'dtr-control acoes-table not-export-col',
+          'responsivePriority': 1000,
+          'render': $.fn.dataTable.render.linksAcoes()
+        });
+      }
+    }
+    if (!opts.ajax.hasOwnProperty('error')) {
+      opts.ajax.error = function (jqXHR, textStatus, errorThrown) {
+        var erros = $($.parseXML(jqXHR.responseText)).find('erros');
+        var arrErros = [];
+        erros.each(function (index) {
+          arrErros.push($(this).find('erro').attr('descricao').infraReplaceAll('\\n', '<br>'));
+        });
+        infraOcultarAviso();
+        eproc.toast.error(arrErros.join('<br>'));
+      };
+    }
+    return $(this).DataTable(opts);
+  };
+  $.fn.dataTable.exportarTodasPaginas = function (e, dt, button, config) {
+    var that = this,
+      oldStart = dt.settings()[0]._iDisplayStart;
+    var isServerSide = !!dt.settings()[0].ajax;
+    if (isServerSide) {
+      exportarTodasPaginasAjax(oldStart, e, that, dt, button, config);
+    } else {
+      callButtonAction(e, that, dt, button, config);
+    }
+  };
+  function callButtonAction(e, that, dt, button, config) {
+    var btnClass = button[0].className,
+      actionMap = {
+        'copy': 'copyHtml5',
+        'excel': 'excelHtml5',
+        'csv': 'csvHtml5',
+        'pdf': 'pdfHtml5'
+      },
+      match = Object.keys(actionMap).find(key => btnClass.indexOf("buttons-".concat(key)) >= 0);
+    if (match) {
+      var action = actionMap[match];
+      $.fn.dataTable.ext.buttons[action].action.call(that, e, dt, button, config);
+    }
+  }
+  function exportarTodasPaginasAjax(oldStart, e, that, dt, button, config) {
+    dt.one('preXhr', function (e, s, data) {
+      data.start = 0;
+      data.length = 2147483647;
+      dt.one('preDraw', function (e, settings) {
+        callButtonAction(e, that, dt, button, config);
+        dt.one('preXhr', function (e, s, data) {
+          settings._iDisplayStart = oldStart;
+          data.start = oldStart;
+        });
+        setTimeout(dt.ajax.reload, 0);
+        return false;
+      });
+    });
+    dt.ajax.reload();
+  }
+  $('body').on('shown.bs.tab', 'a[data-toggle="pill"]', function () {
+    $.fn.dataTable.tables({
+      visible: true,
+      api: true
+    }).columns.adjust();
+  });
+
+  /**
+   * @deprecated  - Utilizar a função dataTablePadrao (https://git.trf4.jus.br/tj_rs/eproc2/-/wikis/Data-Table)
+   */
+  $.fn.dataTableInit = function (ajax, columns) {
+    var boColCheck = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+    var stColAcao = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
+    var stCriterioExibicao = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : '';
+    $.extend(true, $.fn.dataTable.defaults, {
+      responsive: {
+        details: {
+          type: 'column',
+          target: -1
+        }
+      },
+      columnDefs: [{
+        targets: -1,
+        className: 'control',
+        orderable: false
+      }],
+      'serverSide': true,
+      //Habilita e desabilita a busca de dados no servidor
+      'drawCallback': function drawCallback(settings) {
+        $('.btnDesativar').on('click', function () {
+          dataTablesConfirmarDesativar($(this));
+        });
+        $('.btnReativar').on('click', function () {
+          dataTablesConfirmarReativar($(this));
+        });
+      }
+    });
+    var columnCheckbox = {
+      'data': 'col_checkbox',
+      'orderable': false,
+      'className': 'select-checkbox'
+    };
+    var buttons = [];
+    var columnAcoes = {
+      'data': 'col_acoes',
+      'title': stColAcao,
+      'orderable': false,
+      'className': 'acoes-table',
+      'responsivePriority': 1000,
+      'render': $.fn.dataTable.render.linksAcoes()
+    };
+    var select = false;
+    if (boColCheck) {
+      columns.unshift(columnCheckbox);
+      select = {
+        style: 'multi',
+        selector: 'td:first-child'
+      };
+      buttons = {
+        dom: {
+          container: {
+            className: 'dt-buttons btn-group btn-group-sm'
+          },
+          button: {
+            className: 'btn btn-primary'
+          }
+        },
+        buttons: [{
+          extend: 'selectAll',
+          text: 'Marcar Todos'
+        }, {
+          extend: 'selectNone',
+          text: 'Desmarcar Todos'
+        }]
+      };
+    }
+    if (stColAcao.trim() !== '') {
+      columns.push(columnAcoes);
+    }
+    var infraDataTable = $(this).DataTable({
+      'ajax': ajax,
+      'order': [[1, 'asc']],
+      'select': select,
+      'columns': columns,
+      'buttons': buttons,
+      responsive: {
+        details: {
+          type: 'column',
+          target: -1
+        }
+      },
+      columnDefs: [{
+        targets: -1,
+        className: 'control',
+        orderable: false
+      }],
+      'processing': true,
+      //Habilita e desabilita mensagem de processando na paginação e filtros
+      'serverSide': true,
+      //Habilita e desabilita a busca de dados no servidor
+      'searching': false,
+      //Habilita e desabilita os campos de filtro
+      'stateSave': true,
+      //Mantêm a página da paginação
+      //https://datatables.net/reference/option/dom
+      'dom': '<\'row\'<\'col-sm-12\'r>>' + '<\'row\'<\'col-sm-12 col-md-6\'l><\'col-sm-12 col-md-6\'p>>' + '<\'row\'<\'col-sm-12 col-md-12\'B>>' + '<\'row\'<\'col-sm-12\'t>>' + '<\'row\'<\'col-sm-12 col-md-5\'i><\'col-sm-12 col-md-7\'p>>',
+      'language': language,
+      'drawCallback': function drawCallback(settings) {
+        $('.btnDesativar').on('click', function () {
+          dataTablesConfirmarDesativar($(this));
+        });
+        $('.btnReativar').on('click', function () {
+          dataTablesConfirmarReativar($(this));
+        });
+      }
+    });
+    if (stCriterioExibicao.trim() !== '') {
+      var divCriterio = '';
+      divCriterio += '<div class="card" id="criteriosDeExibicao" style="margin: 10px 0;">';
+      divCriterio += '<h5 class="card-header">' + stCriterioExibicao.trim() + '</h5>';
+      divCriterio += '<div class="card-body">';
+      divCriterio += '<div class="form-group">';
+      $.each(columns, function (key, column) {
+        if (column.title != undefined) {
+          if (column.id != undefined) {
+            var id = column.id;
+          } else {
+            var id = column.data;
+          }
+          divCriterio += '<div class="form-check form-check-inline">';
+          divCriterio += '<label id="lbl' + key + '" class="form-check-label">';
+          divCriterio += '<input type="checkbox" name="ckb' + id + '" id="ckb' + id + '" value="' + key + '" class="form-check-input">' + column.title;
+          divCriterio += '</label>';
+          divCriterio += '</div>';
+        }
+      });
+      divCriterio += '</div>';
+      divCriterio += '</div>';
+      divCriterio += '</div>';
+      $(divCriterio).insertAfter($(this));
+    }
+    return infraDataTable;
+  };
+
+  // permite que colunas de data sejam formatadas com tipo correto no excel, para que seja possível ordenar corretamente
+  // baseado em: https://datatables.net/forums/discussion/50616/what-is-the-correct-format-to-export-dates-with-html5-to-excel
+  $.fn.dataTable.customizeExcel = function (xlsx, config, api) {
+    var sheet = xlsx.xl.worksheets['sheet1.xml'];
+    var styles = xlsx.xl['styles.xml'];
+    var values = $('numFmts numFmt', styles).map(function () {
+      return this.getAttribute('numFmtId') || -Infinity;
+    }).toArray();
+    var numFmtId = Math.max.apply(Math, values) + 1;
+    var nFmtDateTime = '<numFmt numFmtId="' + numFmtId + '" formatCode="dd/mm/yyyy hh:mm:ss"/>';
+    var nFmtDate = '<numFmt numFmtId="' + (numFmtId + 1) + '" formatCode="dd/mm/yyyy"/>';
+    var el = $('numFmts', styles);
+    el.append(nFmtDateTime).append(nFmtDate).attr('count', parseInt(el.attr('count')) + 2);
+    var styleDateTime = '<xf numFmtId="' + numFmtId + '" fontId="0" fillId="0" borderId="0" applyFont="1" applyFill="1" applyBorder="1" xfId="0" applyNumberFormat="1"/>';
+    var styleDate = '<xf numFmtId="' + (numFmtId + 1) + '" fontId="0" fillId="0" borderId="0" applyFont="1" applyFill="1" applyBorder="1" xfId="0" applyNumberFormat="1"/>';
+    el = $('cellXfs', styles);
+    el.append(styleDateTime).append(styleDate).attr('count', parseInt(el.attr('count')) + 2);
+    var styleDateTimeIdx = $('xf', el).length - 2;
+    var styleDateIdx = styleDateTimeIdx + 1;
+    var arrColunas = [];
+    var indexColuna = 0;
+    var indexLinhaTitulos = 0;
+    // obter indice das colunas realmente exibidas no relatorio
+    // se o titulo da planilha for configurado ele estara na primeira linha,
+    // e o titulo das colunas fica na segunda linha, caso contrario o titulo das colunas fica na primeira linha
+    if ($('row:eq(0) c', sheet).length <= 1) {
+      indexLinhaTitulos = 1;
+    }
+    $('row:eq(' + indexLinhaTitulos + ') c', sheet).each(function () {
+      arrColunas[$('is t', this).text()] = indexColuna++;
+    });
+
+    // obtem colunas onde a data deve ser formatada, e converte o indice para excel para aplicar estilo
+    var arrColunasData = [];
+    api.columns('.colFormatarEstiloDateTime').every(function () {
+      var excelIndex = '';
+      var colHeader = this.header().innerHTML;
+      var indexCharMax = 'Z'.charCodeAt(0);
+      var indexChar = arrColunas[colHeader] + 'A'.charCodeAt(0);
+      if (indexChar > indexCharMax) {
+        var indexPrimeiroChar = -1;
+        while (indexChar > indexCharMax) {
+          indexChar -= 26;
+          indexPrimeiroChar++;
+        }
+        excelIndex += String.fromCharCode(indexPrimeiroChar + 'A'.charCodeAt(0));
+      }
+      excelIndex += String.fromCharCode(indexChar);
+      arrColunasData.push(excelIndex);
+    });
+
+    // percorre todas células das colunas definidas com classe de data e adiciona estilo caso realmente contenha uma data
+    for (var i = 0; i < arrColunasData.length; i++) {
+      $('row:gt(0) c[r^="' + arrColunasData[i] + '"]', sheet).each(function () {
+        var text = $('is t', this).text();
+        var matchesDateTime = text.match(/^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2}):(\d{2})$/);
+        var matchesDate = text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+        if (matchesDateTime || matchesDate) {
+          var p = text.split(' ');
+          var date = p[0];
+          var pDate = date.split('/');
+          var timestamp = Math.round(25569 + Date.parse(pDate[2] + '-' + pDate[1] + '-' + pDate[0]) / (86400 * 1000)); // parte da data
+          if (matchesDateTime) {
+            var time = p[1];
+            var pTime = time.split(':');
+            timestamp += pTime[0] / 24 + pTime[1] / 1440 + pTime[2] / 86400; //parte da hora
+          }
+
+          // altera o elemento na planilha para que tenha a mesma estrutura de um número e não de uma string
+          // (conforme gerado pelo método de exportação do datatables)
+          $(this).attr('t', 'n');
+          var tempNode = sheet.createElement('v');
+          tempNode.appendChild(sheet.createTextNode(timestamp));
+          $('is', this).remove();
+          $(this).append(tempNode);
+          $(this).attr('s', matchesDateTime ? styleDateTimeIdx : styleDateIdx);
+        }
+      });
+    }
+  };
+  $.fn.dataTable.eprocButtons = {};
+  $.fn.dataTable.eprocButtons.exportar = (tableId, title, filename, topMessage) => {
+    return new _datatables_eprocButtons_Exportar__WEBPACK_IMPORTED_MODULE_11__["default"](tableId, title, filename, topMessage).getCallback();
+  };
+  $.fn.dataTable.eprocButtons.colvis = tableId => {
+    return new _datatables_eprocButtons_Colvis__WEBPACK_IMPORTED_MODULE_12__["default"](tableId).getCallback();
+  };
+  $.fn.DataTable.Api.register('buttons.info()', function (title, text, delay) {
+    if (title !== false) {
+      _eproc_toast_js__WEBPACK_IMPORTED_MODULE_10__["default"].success({
+        title: title,
+        text: text,
+        data: {
+          delay: delay
+        }
+      });
+    } else {
+      //todo deveria fechar os demais toasts
+    }
+  });
+})(jQuery);
+
+/***/ }),
+
+/***/ "./web/js/src/datatables/eprocButtons/AbstractBotaoTabela.js":
+/*!*******************************************************************!*\
+  !*** ./web/js/src/datatables/eprocButtons/AbstractBotaoTabela.js ***!
+  \*******************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ AbstractBotaoTabela)
+/* harmony export */ });
+function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
+function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == typeof i ? i : i + ""; }
+function _toPrimitive(t, r) { if ("object" != typeof t || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != typeof i) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+/*** IMPORTS FROM imports-loader ***/
+
+var define = false;
+class AbstractBotaoTabela {
+  constructor(tableId) {
+    _defineProperty(this, "tableId", void 0);
+    this.tableId = tableId;
+  }
+  getCallback() {
+    throw new Error('getCallback n�o implementado');
+  }
+  getLabel() {
+    throw new Error('getLabel n�o implementado');
+  }
+  getIcone() {
+    throw new Error('getIcone n�o implementado');
+  }
+  getText() {
+    var icon = "<i class='material-icons' style='font-weight: 600;'>".concat(this.getIcone(), "</i>");
+    var label = "<span class='d-none d-xxl-block'>".concat(this.getLabel(), "</span>");
+    return icon + label;
+  }
+}
+
+/***/ }),
+
+/***/ "./web/js/src/datatables/eprocButtons/Colvis.js":
+/*!******************************************************!*\
+  !*** ./web/js/src/datatables/eprocButtons/Colvis.js ***!
+  \******************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ Colvis)
+/* harmony export */ });
+/* harmony import */ var _AbstractBotaoTabela__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./AbstractBotaoTabela */ "./web/js/src/datatables/eprocButtons/AbstractBotaoTabela.js");
+/*** IMPORTS FROM imports-loader ***/
+
+var define = false;
+
+class Colvis extends _AbstractBotaoTabela__WEBPACK_IMPORTED_MODULE_0__["default"] {
+  getCallback() {
+    return {
+      extend: 'colvis',
+      align: 'container',
+      text: this.getText()
+    };
+  }
+  getIcone() {
+    return 'visibility';
+  }
+  getLabel() {
+    return 'Colunas';
+  }
+}
+
+/***/ }),
+
+/***/ "./web/js/src/datatables/eprocButtons/Exportar.js":
+/*!********************************************************!*\
+  !*** ./web/js/src/datatables/eprocButtons/Exportar.js ***!
+  \********************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ Exportar)
+/* harmony export */ });
+/* harmony import */ var _AbstractBotaoTabela__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./AbstractBotaoTabela */ "./web/js/src/datatables/eprocButtons/AbstractBotaoTabela.js");
+function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
+function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
+function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == typeof i ? i : i + ""; }
+function _toPrimitive(t, r) { if ("object" != typeof t || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != typeof i) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+/*** IMPORTS FROM imports-loader ***/
+
+var define = false;
+
+class Exportar extends _AbstractBotaoTabela__WEBPACK_IMPORTED_MODULE_0__["default"] {
+  constructor(tableId) {
+    var title = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'Relatório';
+    var filename = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
+    var topMessage = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
+    super(tableId);
+    this.title = title;
+    this.filename = filename || title;
+    this.topMessage = topMessage;
+  }
+  getCallback() {
+    var tableId = this.tableId;
+    var buttonDefault = {
+      title: this.title,
+      messageTop: this.topMessage,
+      filename: this.filename,
+      action: $.fn.dataTable.exportarTodasPaginas,
+      exportOptions: {
+        orthogonal: 'export',
+        columns: function columns(idx, data, node) {
+          var table = $('#' + tableId).DataTable();
+          var col = table.column(idx);
+          return node.classList.contains('not-export-col') ? false : col.visible();
+        }
+      }
+    };
+    return {
+      extend: 'collection',
+      align: 'container',
+      text: this.getText(),
+      buttons: [_objectSpread(_objectSpread({}, buttonDefault), {}, {
+        extend: 'copyHtml5'
+      }), _objectSpread(_objectSpread({}, buttonDefault), {}, {
+        extend: 'excelHtml5',
+        customize: $.fn.dataTable.customizeExcel
+      }), _objectSpread(_objectSpread({}, buttonDefault), {}, {
+        extend: 'csvHtml5',
+        charset: 'Windows-1252',
+        bom: true
+      }), _objectSpread(_objectSpread({}, buttonDefault), {}, {
+        extend: 'pdfHtml5',
+        orientation: 'landscape'
+      })]
+    };
+  }
+  getIcone() {
+    return 'file_download';
+  }
+  getLabel() {
+    return 'Exportar';
+  }
+}
+
+/***/ }),
+
+/***/ "./web/js/src/crudModal.js":
+/*!*********************************!*\
+  !*** ./web/js/src/crudModal.js ***!
+  \*********************************/
+/***/ ((module) => {
+
+var crudModal = {
+  limparForm: function limparForm(form) {
+    form.find('.is-invalid').removeClass('is-invalid').end().find('.invalid-feedback').remove().end().find('input:not(:checkbox):not(:radio), select, textarea').val('').end().find(':checkbox').attr('checked', false).end().find(':radio:first').attr('checked', true).end().find('select').selectpicker('refresh');
+  },
+  preencherForm: function preencherForm(form, data) {
+    $.each(data, function (k, v) {
+      var elemento = form.find('#' + k);
+      if (elemento.length) {
+        if (elemento.is(':checkbox, :radio')) {
+          elemento.attr('checked', v === 'S');
+        } else {
+          elemento.val(v);
+        }
+      }
+    });
+  },
+  init: function init(modal) {
+    var container = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : $('#divInfraAreaTelaD');
+    var form = modal.find('form');
+    var table = container.find('.dataTable');
+    container.on("click", '.btnNovo, .btnAlterar, .btnConsultar', function () {
+      crudModal.limparForm(form);
+      crudModal.preencherForm(form, $.fn.dataTable.getDataByButton($(this)));
+      modal.find('input, select, textarea, .btnSalvar').attr('disabled', $(this).hasClass('btnConsultar')).end().find('select').selectpicker('refresh').end().modal();
+    }).on("click", '.btnDesativar', function () {
+      submitAjax({
+        url: form.data('action-desativar'),
+        data: $.fn.dataTable.getDataByButton($(this)),
+        success: function success(msg) {
+          eproc.toast.success(msg);
+          table.DataTable().ajax.reload();
+        }
+      });
+    }).on("click", '.btnSalvar', function () {
+      if (form[0].checkValidity()) {
+        submitAjax({
+          url: form.attr('action'),
+          data: form.serialize(),
+          container: form,
+          success: function success(msg) {
+            eproc.toast.success(msg);
+            modal.modal('hide');
+            table.DataTable().ajax.reload();
+            form[0].classList.remove('was-validated');
+          }
+        });
+      }
+      form[0].classList.add('was-validated');
+    });
+  }
+};
+module.exports = crudModal;
+
+/***/ }),
+
+/***/ "./web/js/src/index-pos.js":
+/*!*********************************!*\
+  !*** ./web/js/src/index-pos.js ***!
+  \*********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var focus_within_polyfill__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! focus-within-polyfill */ "./node_modules/focus-within-polyfill/dist/focus-within-polyfill.js");
+/* harmony import */ var focus_within_polyfill__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(focus_within_polyfill__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _eproc__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./eproc */ "./web/js/src/eproc.js");
+
+
+__webpack_require__(/*! ./datatables */ "./web/js/src/datatables.js");
+window.plupload = __webpack_require__(/*! plupload */ "./node_modules/plupload/js/plupload.full.min.js");
+window.crudModal = __webpack_require__(/*! ./crudModal.js */ "./web/js/src/crudModal.js");
+(function ($, eproc) {
+  $(function () {
+    eproc.init();
+  });
+})(jQuery || $, _eproc__WEBPACK_IMPORTED_MODULE_1__["default"]);
+
+/***/ })
+
+},
+/******/ __webpack_require__ => { // webpackRuntimeModules
+/******/ var __webpack_exec__ = (moduleId) => (__webpack_require__(__webpack_require__.s = moduleId))
+/******/ __webpack_require__.O(0, ["npm.lodash","npm.unorm","npm.lodash.debounce","npm.datatables.net-buttons","npm.pdfmake","npm.datatables.net","npm.datatables.net-select","npm.datatables.net-select-bs4","npm.datatables.net-rowgroup","npm.datatables.net-rowgroup-bs4","npm.datatables.net-responsive","npm.datatables.net-responsive-bs4","npm.datatables.net-buttons-bs4","npm.datatables.net-bs4","npm.plupload","npm.jszip","npm.focus-within-polyfill","web_js_src_esmodules_modal_js","web_js_src_esmodules_toast_js","web_js_src_eproc_js","web_js_src_dataTableHelper_js","npm.jquery-ui","npm.jquery","npm.js-cookie","npm.jquery-contextmenu","npm.expose-loader","shared"], () => (__webpack_exec__("./web/js/src/index-pos.js")));
+/******/ var __webpack_exports__ = __webpack_require__.O();
+/******/ }
+]);
+//# sourceMappingURL=main-pos.c04f28c71d79ccacaf9e.js.map

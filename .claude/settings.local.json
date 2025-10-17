@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mv:*)",
+      "WebFetch(domain:www.cnj.jus.br)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

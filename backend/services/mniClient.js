@@ -149,14 +149,18 @@ class MNIClient {
             };
 
             // Adicionar chave de consulta se fornecida
-            // Formato correto para MNI: <parametros nome="chave" valor="..."/>
+            // Formato correto esperado: <tip:outroParametro nome="chave" valor="..."/>
+            // Usamos 'outroParametro' como array para que o node-soap gere um elemento
+            // <outroParametro nome="chave" valor="..."/> no corpo da requisição.
             if (chave) {
-                args.parametros = {
-                    attributes: {
-                        nome: 'chave',
-                        valor: chave
+                args.outroParametro = [
+                    {
+                        attributes: {
+                            nome: 'chave',
+                            valor: chave
+                        }
                     }
-                };
+                ];
             }
 
             if (this.config.debugMode) {

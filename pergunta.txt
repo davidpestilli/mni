@@ -1,0 +1,11 @@
+Neste endereço obtenho acesso a api que contém as tabelas processuais do cnj
+
+https://gateway.cloud.pje.jus.br/tpu/swagger-ui.html#/Download/dowloadTabelaClasseUsingGET
+
+Nesta API específica é dito que obtenho acesso às classes
+
+https://gateway.cloud.pje.jus.br/tpu/api/v1/publico/download/classes
+
+Considerando que na aba Peticionamento, no Peticionamento Inicial, as classes são apenas códigos, pois o endpoint do MNI oferece apenas códigos para classes, seria possível utilizar a descrição das classes que há na API para que o usuário veja o nome das classes em vez do código?
+
+Como faríamos isso? Não faça nada por enquanto, apenas me informe o resultado de sua análise.

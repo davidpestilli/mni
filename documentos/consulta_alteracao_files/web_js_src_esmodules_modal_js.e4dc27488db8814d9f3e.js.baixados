@@ -1,0 +1,154 @@
+"use strict";
+(self["webpackChunkeproc"] = self["webpackChunkeproc"] || []).push([["web_js_src_esmodules_modal_js"],{
+
+/***/ "./web/js/src/esmodules/modal.js":
+/*!***************************************!*\
+  !*** ./web/js/src/esmodules/modal.js ***!
+  \***************************************/
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
+function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == typeof i ? i : i + ""; }
+function _toPrimitive(t, r) { if ("object" != typeof t || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != typeof i) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+var OPEN_MODALS_ATTR = 'fv_open_modals';
+var body = $('body');
+var OpenModals = {
+  get: function get() {
+    if (typeof body.data(OPEN_MODALS_ATTR) == 'undefined') {
+      body.data(OPEN_MODALS_ATTR, []);
+    }
+    return body.data(OPEN_MODALS_ATTR);
+  },
+  push: function push(modalId) {
+    var currentShownModals = this.get();
+    currentShownModals.push(modalId);
+    body.data(OPEN_MODALS_ATTR, currentShownModals);
+  },
+  remove: function remove(id) {
+    var currentOpenModals = this.get();
+    var targetIndex = currentOpenModals.indexOf(id);
+    if (targetIndex !== undefined) {
+      currentOpenModals.splice(targetIndex, 1);
+    }
+    body.data(OPEN_MODALS_ATTR, currentOpenModals);
+  },
+  getLast: function getLast() {
+    return this.get().lastItem;
+  }
+};
+
+/**
+ * Baseado em https://stackoverflow.com/a/21816777/4013296
+ * @param selector
+ */
+function addCustomModalHandlersTo(selector) {
+  var modal = $(selector);
+  if (modal.data('was-initialized') !== true) {
+    modal.data('was-initialized', true);
+    var BASE_INDEX = 1040;
+    modal.on('hidden.bs.modal', function (event) {
+      var $this = $(this);
+      var currentModalId = $(this).attr('id');
+      $this.removeClass('fv-modal-stack');
+      OpenModals.remove(currentModalId);
+      var last = OpenModals.getLast();
+      if (last) {
+        $("#".concat(last)).trigger('focus');
+      }
+    });
+    modal.on('shown.bs.modal', function (event) {
+      // if the z-index of this modal has been set, ignore.
+      if ($(this).hasClass('fv-modal-stack')) {
+        return;
+      }
+      var currentModalId = $(this).attr('id'),
+        currentShownModals = OpenModals.get(),
+        currentShownModalsCount = currentShownModals.length,
+        newIndex = BASE_INDEX + 10 * currentShownModalsCount;
+      $(this).addClass('fv-modal-stack').css('z-index', newIndex);
+      OpenModals.push(currentModalId);
+      $('.modal-backdrop').not('.fv-modal-stack').css('z-index', newIndex - 1).addClass('fv-modal-stack');
+    });
+  }
+}
+class ModalObject {
+  constructor(id) {
+    _defineProperty(this, "id", void 0);
+    _defineProperty(this, "el", void 0);
+    this.id = id;
+    this.el = document.getElementById(id);
+  }
+  disableClose() {
+    this.reconfigureInstance({
+      'backdrop': 'static',
+      'keyboard': false
+    });
+    this.getCloseButton().prop('disabled', true);
+  }
+  enableClose() {
+    this.reconfigureInstance({
+      'backdrop': true,
+      'keyboard': true
+    });
+    this.getCloseButton().removeAttr('disabled');
+  }
+  show() {
+    $(this.el).modal({
+      show: true,
+      focus: true
+    });
+  }
+  hide() {
+    setTimeout(() => {
+      $(this.el).modal('hide');
+    }, 500);
+  }
+  getModalInstance() {
+    return $(this.el).data('bs.modal');
+  }
+  reconfigureInstance(config) {
+    var instance = this.getModalInstance();
+    instance._config = instance._getConfig(config);
+  }
+  getCloseButton() {
+    return $(this.el).find('.modal-content .modal-header button.close');
+  }
+}
+var modal = {
+  /**
+   *
+   * @param id
+   * @returns {ModalObject}
+   */
+  get: id => {
+    if (document.getElementById(id)) {
+      addCustomModalHandlersTo('#' + id);
+      return new ModalObject(id);
+    } else {
+      throw 'Erro ao chamar modal.get(): elemento com id ' + id + ' não encontrado';
+    }
+  },
+  /**
+   *
+   * @param id
+   * @returns {ModalObject}
+   */
+  create: id => {
+    var object = new ModalObject(id);
+    addCustomModalHandlersTo('#' + id);
+    return object;
+  },
+  init: function init(selector) {
+    addCustomModalHandlersTo(selector);
+  }
+};
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (modal);
+
+/***/ })
+
+}]);
+//# sourceMappingURL=web_js_src_esmodules_modal_js.e4dc27488db8814d9f3e.js.map

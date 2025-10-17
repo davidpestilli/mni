@@ -1,0 +1,87 @@
+"use strict";
+(self["webpackChunkeproc"] = self["webpackChunkeproc"] || []).push([["npm.datatables.net-buttons-bs4"],{
+
+/***/ "./node_modules/datatables.net-buttons-bs4/js/buttons.bootstrap4.mjs":
+/*!***************************************************************************!*\
+  !*** ./node_modules/datatables.net-buttons-bs4/js/buttons.bootstrap4.mjs ***!
+  \***************************************************************************/
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! jquery */ "./node_modules/jquery/dist/jquery-exposed.js");
+/* harmony import */ var datatables_net_bs4__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! datatables.net-bs4 */ "./node_modules/datatables.net-bs4/js/dataTables.bootstrap4.mjs");
+/* harmony import */ var datatables_net_buttons__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! datatables.net-buttons */ "./node_modules/datatables.net-buttons/js/dataTables.buttons.mjs");
+/*** IMPORTS FROM imports-loader ***/
+
+var define = false;
+
+/*! Bootstrap integration for DataTables' Buttons
+ * ©2016 SpryMedia Ltd - datatables.net/license
+ */
+
+
+
+
+
+
+
+jquery__WEBPACK_IMPORTED_MODULE_0__.extend( true, datatables_net_bs4__WEBPACK_IMPORTED_MODULE_1__["default"].Buttons.defaults, {
+	dom: {
+		container: {
+			className: 'dt-buttons btn-group flex-wrap'
+		},
+		button: {
+			className: 'btn btn-secondary'
+		},
+		collection: {
+			tag: 'div',
+			className: 'dropdown-menu',
+			closeButton: false,
+			button: {
+				tag: 'a',
+				className: 'dt-button dropdown-item',
+				active: 'active',
+				disabled: 'disabled'
+			}
+		},
+		splitWrapper: {
+			tag: 'div',
+			className: 'dt-btn-split-wrapper btn-group',
+			closeButton: false,
+		},
+		splitDropdown: {
+			tag: 'button',
+			text: '',
+			className: 'btn btn-secondary dt-btn-split-drop dropdown-toggle dropdown-toggle-split',
+			closeButton: false,
+			align: 'split-left',
+			splitAlignClass: 'dt-button-split-left'
+		},
+		splitDropdownButton: {
+			tag: 'button',
+			className: 'dt-btn-split-drop-button btn btn-secondary',
+			closeButton: false
+		} 
+	},
+	buttonCreated: function ( config, button ) {
+		return config.buttons ?
+			jquery__WEBPACK_IMPORTED_MODULE_0__('<div class="btn-group"/>').append(button) :
+			button;
+	}
+} );
+
+datatables_net_bs4__WEBPACK_IMPORTED_MODULE_1__["default"].ext.buttons.collection.className += ' dropdown-toggle';
+datatables_net_bs4__WEBPACK_IMPORTED_MODULE_1__["default"].ext.buttons.collection.rightAlignClassName = 'dropdown-menu-right';
+
+
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (datatables_net_bs4__WEBPACK_IMPORTED_MODULE_1__["default"]);
+
+
+
+/***/ })
+
+}]);
+//# sourceMappingURL=npm.datatables.net-buttons-bs4.14dbad6ac77008a49737.js.map

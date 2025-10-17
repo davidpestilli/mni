@@ -512,13 +512,26 @@ class MNI3Client {
                 ? result.assuntos
                 : [result.assuntos];
 
-            return assuntos.map(assunto => ({
-                codigo: assunto.codigo || assunto.codigoNacional,
-                descricao: assunto.descricao,
-                principal: assunto.principal === true || assunto.principal === 'true',
-                ativo: assunto.ativo !== 'N',
-                ...assunto
-            }));
+            // Log para debug
+            if (assuntos.length > 0) {
+                console.log('[MNI 3.0] Assuntos recebidos para parse:', assuntos.map(a => ({codigo: a.codigo, codigoNacional: a.codigoNacional, cod_item: a.cod_item, nome: a.nome})));
+            }
+
+            return assuntos.map(assunto => {
+                // Tenta pegar o código do assunto de vários campos possíveis
+                const codigo =
+                    (assunto.codigo !== undefined && assunto.codigo !== null) ? assunto.codigo :
+                    (assunto.codigoNacional !== undefined && assunto.codigoNacional !== null) ? assunto.codigoNacional :
+                    (assunto.cod_item !== undefined && assunto.cod_item !== null) ? assunto.cod_item :
+                    '';
+                return {
+                    codigo: String(codigo),
+                    descricao: assunto.descricao,
+                    principal: assunto.principal === true || assunto.principal === 'true',
+                    ativo: assunto.ativo !== 'N',
+                    ...assunto
+                };
+            });
 
         } catch (error) {
             console.error('[MNI 3.0] Erro ao parsear assuntos:', error);

@@ -1,0 +1,727 @@
+"use strict";
+(self["webpackChunkeproc"] = self["webpackChunkeproc"] || []).push([["web_js_src_dataTableHelper_js"],{
+
+/***/ "./web/js/src/dataTableHelper.js":
+/*!***************************************!*\
+  !*** ./web/js/src/dataTableHelper.js ***!
+  \***************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _datatables_action_types_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./datatables/action_types.mjs */ "./web/js/src/datatables/action_types.mjs");
+/* harmony import */ var _datatables_actions_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./datatables/actions.mjs */ "./web/js/src/datatables/actions.mjs");
+var _excluded = ["initComplete"],
+  _excluded2 = ["initComplete"];
+function _objectWithoutProperties(e, t) { if (null == e) return {}; var o, r, i = _objectWithoutPropertiesLoose(e, t); if (Object.getOwnPropertySymbols) { var n = Object.getOwnPropertySymbols(e); for (r = 0; r < n.length; r++) o = n[r], -1 === t.indexOf(o) && {}.propertyIsEnumerable.call(e, o) && (i[o] = e[o]); } return i; }
+function _objectWithoutPropertiesLoose(r, e) { if (null == r) return {}; var t = {}; for (var n in r) if ({}.hasOwnProperty.call(r, n)) { if (-1 !== e.indexOf(n)) continue; t[n] = r[n]; } return t; }
+var _ = __webpack_require__(/*! lodash */ "./node_modules/lodash/lodash.js");
+var noop = () => undefined;
+
+
+function createAcaoConsultar(acao, url, tipo) {
+  return createAcao(acao, url, 'btnConsultar', 'Consultar', 'Consultar', tipo, 'find_in_page', true);
+}
+function createAcaoAlterar(acao, url, tipo) {
+  return createAcao(acao, url, 'btnAlterar', 'Alterar', 'Alterar', tipo, 'edit', true);
+}
+function createAcaoDesativar(acao, url, tipo) {
+  return createAcao(acao, url, 'btnDesativar', 'Desativar', 'Desativar', tipo, 'delete', true);
+}
+function createAcao(acao, url, strClass, strLabel, strTitle, strTipo, strIcon, isMD) {
+  strTipo = strTipo === undefined ? _datatables_action_types_mjs__WEBPACK_IMPORTED_MODULE_0__["default"].NORMAL : strTipo;
+  strIcon = strIcon === undefined ? 'error' : strIcon;
+  isMD = isMD === undefined ? true : isMD;
+  return {
+    url: url,
+    acao: acao,
+    data: [],
+    class: strClass,
+    label: strLabel,
+    tipo: strTipo,
+    title: strTitle,
+    name: strClass,
+    id: strClass,
+    icon: strIcon,
+    MD: isMD,
+    width: 1200,
+    height: 700
+  };
+}
+
+/**
+ * Hoje o DataTables tem dois modos de operação bem distintos: server ou client.
+ * Esta função foi criada provisoriamente para prover um comportamento híbrido: permitir controles do cliente usando dados do server.
+ * Ainda em desenvolvimento.
+ * @param opts
+ * @returns {Api<any>}
+ */
+function buildClientSideWithServerData(opts) {
+  var _dtAttributes$deferLo;
+  var tableId = opts.tableId;
+  var tableEl = $('#' + tableId);
+  var _ref = opts.otherDTAttributes || {},
+    {
+      initComplete: initComplete
+    } = _ref,
+    dtAttributes = _objectWithoutProperties(_ref, _excluded);
+  var userOnInitComplete = initComplete || noop;
+  var columns = opts.columns ? opts.columns : [];
+  var searched = true;
+  var deferLoading = (_dtAttributes$deferLo = dtAttributes.deferLoading) !== null && _dtAttributes$deferLo !== void 0 ? _dtAttributes$deferLo : false;
+  var dt = tableEl.DataTable({
+    columns: columns,
+    processing: true,
+    serverSide: false,
+    // responsive: getResponsive(opts.isResponsivoComDetalhe),
+    buttons: {
+      buttons: opts.buttons,
+      dom: $.fn.dataTable.defaults.buttons.dom
+    },
+    paging: false,
+    drawCallback: settings => {
+      updateTitleCountBadge(tableId, searched, dtAttributes.deferLoading, settings);
+      return opts.drawCallbacks.forEach(fn => fn(settings));
+    },
+    initComplete: function initComplete(settings, json) {
+      onInitCompleteAddRowCount(tableId, opts, settings, json);
+      updateTitleCountBadge(tableId, searched, dtAttributes.deferLoading, settings);
+      userOnInitComplete(settings, json);
+    }
+  });
+  return dt;
+}
+function build(opts) {
+  var _dtAttributes$deferLo2, _opts$keepInCookie, _opts$keepInCookieNam;
+  var initOpts = opts;
+  var idFormParams = opts.ajaxData.idFormParams;
+  var tableId = opts.tableId;
+  var tableEl = $('#' + tableId);
+  var onSelectCallback = opts.onSelectCallback || noop;
+  var _ref2 = opts.otherDTAttributes || {},
+    {
+      initComplete: initComplete
+    } = _ref2,
+    dtAttributes = _objectWithoutProperties(_ref2, _excluded2);
+  var userOnInitComplete = initComplete || noop;
+  var allColumns = opts.allColumns || [];
+  var isResponsivoComDetalhe = opts.isResponsivoComDetalhe;
+  var buttons = opts.buttons;
+  var drawCallbacks = opts.drawCallbacks;
+  var url = tableEl.data('url');
+  var deferLoading = (_dtAttributes$deferLo2 = dtAttributes.deferLoading) !== null && _dtAttributes$deferLo2 !== void 0 ? _dtAttributes$deferLo2 : false;
+  var keepInCookie = (_opts$keepInCookie = opts.keepInCookie) !== null && _opts$keepInCookie !== void 0 ? _opts$keepInCookie : false;
+  var keepInCookieName = (_opts$keepInCookieNam = opts.keepInCookieName) !== null && _opts$keepInCookieNam !== void 0 ? _opts$keepInCookieNam : '';
+  var searched = !deferLoading;
+  var ajax = {
+    "url": url,
+    "type": "POST",
+    "data": function data(_data) {
+      if (opts.ajaxData.acoes) {
+        _data['dt_acoes'] = opts.ajaxData.acoes;
+      }
+      if (opts.ajaxData.paramsComuns) {
+        _data['dt_paramsComunsAcoes'] = opts.ajaxData.paramsComuns;
+      }
+      if (opts.ajaxData.customColumns) {
+        _data['dt_customColumns'] = opts.ajaxData.customColumns;
+      }
+      $.fn.dataTable.montarData(_data, $("#".concat(idFormParams)));
+    },
+    "error": function error(jqXHR, textStatus, errorThrown) {
+      function extrairMensagens(xhr, plural, singular) {
+        var xmlMesagens = $($.parseXML(xhr)).find(plural);
+        var arrMensagens = [];
+        xmlMesagens.each(function () {
+          arrMensagens.push($(this).find(singular).attr('descricao').infraReplaceAll('\\n', '<br>'));
+        });
+        return arrMensagens;
+      }
+      var arrErros = extrairMensagens(jqXHR.responseText, 'erros', 'erro');
+      var arrWarnings = extrairMensagens(jqXHR.responseText, 'warnings', 'warning');
+      $("#".concat(tableId, "_processing")).hide();
+      if (arrErros.length > 0) {
+        eproc.toast.error({
+          text: arrErros.join('<br>'),
+          data: {
+            delay: 5000
+          }
+        });
+      }
+      if (arrWarnings.length > 0) {
+        eproc.toast.warning({
+          text: arrWarnings.join('<br>'),
+          data: {
+            delay: 5000
+          }
+        });
+      }
+    }
+  };
+  var columns = opts.columns ? opts.columns : [];
+  var defaultOrderableColumn = 0;
+  if (opts.isSelecionavel) {
+    defaultOrderableColumn++;
+    columns = configColunaSelecionavel(columns, opts.nameSelecionavel);
+  }
+  if (opts.isResponsivoComDetalhe) {
+    defaultOrderableColumn++;
+    columns = configColunaExpandirDetalhes(columns);
+  }
+  if (opts.colunaAcoes) {
+    columns = configColunaAcoes(columns, opts.isResponsivoComDetalhe);
+  }
+  var dt = tableEl.DataTable(_.merge({
+    ajax: ajax,
+    columns: columns,
+    processing: true,
+    serverSide: true,
+    order: [[defaultOrderableColumn, 'asc']],
+    responsive: getResponsive(isResponsivoComDetalhe),
+    buttons: {
+      buttons: buttons,
+      dom: $.fn.dataTable.defaults.buttons.dom
+    },
+    paging: false,
+    drawCallback: settings => {
+      updateTitleCountBadge(tableId, searched, deferLoading, settings);
+      return drawCallbacks.forEach(fn => fn(settings));
+    },
+    initComplete: function initComplete(settings, json) {
+      if (allColumns.length > 0) {
+        inicializarColunasVisiveis();
+      }
+      addListeners(tableId, settings);
+      onInitCompleteAddRowCount(tableId, opts, settings, json);
+      updateTitleCountBadge(tableId, searched, deferLoading, settings);
+      userOnInitComplete(settings, json);
+    }
+  }, dtAttributes));
+  function addListeners(tableId, settings) {
+    var el = $("#".concat(tableId));
+    var dt = el.DataTable();
+    dt.on('draw', () => {
+      var chkData = getCheckedData(opts.tableId);
+      toggleAcoes(chkData);
+    });
+    if (deferLoading) {
+      $('#' + tableId + ' .dataTables_empty').html(settings['oLanguage']['sNotInitializedEmptyTable']);
+      $('#' + tableId + '_wrapper .dataTables_info').html(settings['oLanguage']['sNotInitializedInfoEmpty']);
+      $('#' + tableId + '_length').hide();
+      $('#' + tableId + '_wrapper .dataTables_paginate').hide();
+      dt.on('preXhr', (e, settings, data) => {
+        searched = true;
+        initOpts.deferLoading = false; // caso a config seja reutilizada para recriar o dataTable, seu deferLoading já será false
+        $('#' + tableId + '_length').show();
+        $('#' + tableId + '_wrapper .dataTables_paginate').show();
+      });
+    }
+    $('body').on('click', "#".concat(opts.tableId, " input[name=\"chkTodos\"]"), function () {
+      var table = $(this).closest('table');
+      table.find('input[name^="chkRow"]').prop('checked', this.checked);
+      var chkData = getCheckedData(opts.tableId);
+      onSelectCallback(chkData);
+      toggleAcoes(chkData);
+    });
+    tableEl.on('change', '[class="chkRowDataTable"]', function () {
+      var chkData = getCheckedData(opts.tableId);
+      onSelectCallback(chkData);
+      toggleAcoes(chkData);
+    });
+  }
+  function inicializarColunasVisiveis() {
+    $('#selColunasVisiveis .dropdown-menu').on('click', event => {
+      event.stopImmediatePropagation();
+      var target = event.target;
+      if (searched) {
+        toggleColunaVisiveis(target);
+      }
+      if (keepInCookie) {
+        var columnName = $(target).data('value');
+        var span = $(target).find('span');
+        if (span) {
+          var isMarked = span.html().trim() === 'done';
+          keepCollumnInCookie(columnName, isMarked);
+        }
+      }
+    });
+    if (keepInCookie) {
+      initKeepInCookie();
+    }
+    addListenerOnChangeColunasVisiveis();
+  }
+  function toggleColunaVisiveis(coluna) {
+    var hdnSelColunasVisiveis = $('#hdnSelColunasVisiveis');
+    var value = hdnSelColunasVisiveis.val().split(',');
+    var [newValue, pattern, replacement] = ['', '', ''];
+    if (coluna.innerHTML.includes('done')) {
+      // Desmarca
+      newValue = value.filter(v => v !== coluna.getAttribute('data-value')).join(',');
+      [pattern, replacement] = ['done', '&nbsp;'];
+    } else {
+      // Marca
+      newValue = value + ',' + coluna.getAttribute('data-value');
+      [pattern, replacement] = ['&nbsp;', 'done'];
+    }
+    hdnSelColunasVisiveis.val(newValue);
+    coluna.innerHTML = coluna.innerHTML.replace(pattern, replacement);
+  }
+  function addListenerOnChangeColunasVisiveis() {
+    var dropdown = document.querySelector('#selColunasVisiveis');
+    var valoresIniciais = $('#hdnSelColunasVisiveis').val();
+    var observer = new MutationObserver(function (mutations) {
+      mutations.forEach(function (mutation) {
+        var valoresAtuais = $('#hdnSelColunasVisiveis').val();
+        if (mutation.type === "attributes" && !dropdown.classList.contains('show') && valoresIniciais !== valoresAtuais) {
+          valoresIniciais = valoresAtuais;
+          updateColumns(valoresIniciais.split(','));
+        }
+      });
+    });
+    observer.observe(dropdown, {
+      attributes: true
+    });
+  }
+  function keepCollumnInCookie(columnName, isMarked) {
+    if (infraCookiesHabilitados()) {
+      var cookieName = tableId + keepInCookieName;
+      var cookie = infraLerCookie(cookieName);
+      if (cookie) {
+        var _columns = JSON.parse(unescape(cookie));
+        _columns[columnName] = isMarked;
+        infraCriarCookie(cookieName, JSON.stringify(_columns));
+      }
+    }
+  }
+  function initKeepInCookie() {
+    if (infraCookiesHabilitados()) {
+      var cookieName = tableId + keepInCookieName;
+      var cookie = infraLerCookie(cookieName);
+      if (!cookie) {
+        var propertyShowOfColumns = Object.fromEntries(allColumns.map(column => {
+          var _column$show;
+          return [column.data, (_column$show = column.show) !== null && _column$show !== void 0 ? _column$show : true];
+        }));
+        infraCriarCookie(cookieName, JSON.stringify(propertyShowOfColumns));
+      }
+    }
+  }
+  function updateColumns(columns) {
+    var newColumns = allColumns.filter(column => column['data'] && columns.filter(value => value === column['data']).length > 0);
+    initOpts.columns = newColumns;
+    dt.table().destroy(false);
+    tableEl.html('');
+    DataTableHelper.build(initOpts);
+  }
+  function getResponsive(isResponsivoComDetalhe) {
+    var responsive = {
+      details: {
+        display: $.fn.dataTable.Responsive.display.childRowImmediate,
+        type: 'none',
+        target: ''
+      }
+    };
+    if (isResponsivoComDetalhe) {
+      responsive = {
+        details: {
+          type: 'column'
+        }
+      };
+    }
+    return responsive;
+  }
+  function configColunaAcoes(columns) {
+    var isResponsivoComDetalhe = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+    var colAcoes = {
+      "data": "col_acoes",
+      "title": 'Ações',
+      "orderable": false,
+      "width": "41px",
+      "className": 'acoes-table not-export-col',
+      "render": function render(data, type, row) {
+        var acoes = opts.colunaAcoes(data, type, row);
+        return (0,_datatables_actions_mjs__WEBPACK_IMPORTED_MODULE_1__["default"])(acoes);
+      }
+    };
+    if (isResponsivoComDetalhe) {
+      colAcoes.responsivePriority = 1000;
+    }
+    columns.push(colAcoes);
+    return columns;
+  }
+  function configColunaSelecionavel(columns) {
+    var name = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
+    columns.unshift({
+      'data': 'col_checkbox',
+      'title': '<input type="checkbox" name="chkTodos">',
+      'orderable': false,
+      'className': 'text-center not-export-col',
+      'width': '15px',
+      'render': function render(data, type, row, meta) {
+        if (name !== '') {
+          return '<input type=checkbox class="chkRowDataTable" id="' + name + '_' + row.DT_RowId + '" name="' + name + '[]" value="' + row.DT_RowId + '">';
+        } else {
+          return '<input type=checkbox class="chkRowDataTable" name="chkRow_' + row.DT_RowId + '">';
+        }
+      }
+    });
+    return columns;
+  }
+  function configColunaExpandirDetalhes(columns) {
+    columns.unshift({
+      'data': 'col_detalhes',
+      'title': '',
+      'orderable': false,
+      'className': 'dtr-control text-center not-export-col',
+      'width': '15px'
+    });
+    return columns;
+  }
+  function getCheckedData(id) {
+    return $('#' + id + ' [class="chkRowDataTable"]:checked').map(function () {
+      return $('#' + id).dataTable().api().row(this.parentElement.parentElement).data();
+    }).toArray();
+  }
+  $.fn.dataTable.Api.register('rows().getSelected()', function () {
+    var id = this.table().node().id;
+    return getCheckedData(id);
+  });
+  $.fn.dataTable.Api.register('formSearch()',
+  /**
+   *
+   * @param data Object
+   */
+  function (data) {
+    var requestParams = new URLSearchParams(data);
+    this.search(requestParams).draw();
+  });
+  $.fn.dataTable.Api.register('rows().getSelectedData()', function (colOrColsToFilter) {
+    var id = this.table().node().id;
+    var rows = getCheckedData(id);
+    return rows.map(function (row) {
+      if (Array.isArray(colOrColsToFilter)) {
+        return _.pick(row, colOrColsToFilter);
+      } else {
+        if (!row.hasOwnProperty(colOrColsToFilter)) {
+          throw "Chave '" + colOrColsToFilter + "' não encontrado na linha selecionada";
+        }
+        return row[colOrColsToFilter];
+      }
+    });
+  });
+  function toggleAcoes(rows) {
+    var acoesWrapper = $("#".concat(opts.tableId, "-acoes-wrapper"));
+    var botoes = $("#".concat(opts.tableId, "_wrapper .btn-acoes-wrapper"));
+    if (rows.length) {
+      acoesWrapper.addClass('d-flex');
+      botoes.addClass('d-flex');
+    } else {
+      acoesWrapper.removeClass('d-flex');
+      botoes.removeClass('d-flex');
+    }
+  }
+}
+var getInfoTopId = tableId => tableId + '_info-badge';
+function onInitCompleteAddRowCount(tableId, opts, settings, json) {
+  var dt = $("#".concat(tableId)).DataTable();
+  var infoTopId = getInfoTopId(tableId);
+  var tableTitle = !opts.tableTitle ? '' : "\n              <h2 class=\"d-flex float-left align-items-center\">\n                  <span>".concat(opts.tableTitle, "</span>\n                  <span \n                      id=\"").concat(infoTopId, "\"\n                      data-toggle=\"tooltip\"\n                      tabindex=\"0\"\n                      class=\"ml-1 mr-2 badge badge-pill text-secondary px-1 font-weight-normal\">\n                  </span>\n              </h2>\n            ");
+  $(dt.table().node()).parents('.dataTables_wrapper').find('.container-acoes-bloco').prepend(tableTitle);
+  $("#".concat(infoTopId)).tooltip({
+    title: () => {
+      var _document$getElementB;
+      return (_document$getElementB = document.getElementById("".concat(tableId, "_info"))) === null || _document$getElementB === void 0 ? void 0 : _document$getElementB.innerText;
+    }
+  });
+}
+function updateTitleCountBadge(tableId, searched, deferLoading, settings) {
+  var infoTopId = getInfoTopId(tableId);
+  var el = document.getElementById(infoTopId);
+  if (el) {
+    if (!searched && deferLoading) {
+      el.style.display = 'none';
+    } else {
+      el.style.display = '';
+    }
+    el.innerHTML = "(".concat(settings.fnRecordsDisplay(), ")");
+  }
+}
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
+  createAcaoConsultar: createAcaoConsultar,
+  createAcaoAlterar: createAcaoAlterar,
+  createAcaoDesativar: createAcaoDesativar,
+  createAcao: createAcao,
+  build: build,
+  buildClientSideWithServerData: buildClientSideWithServerData,
+  ACTION_TYPES: _datatables_action_types_mjs__WEBPACK_IMPORTED_MODULE_0__["default"]
+});
+
+/***/ }),
+
+/***/ "./web/js/src/datatables/action_renderer.mjs":
+/*!***************************************************!*\
+  !*** ./web/js/src/datatables/action_renderer.mjs ***!
+  \***************************************************/
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var lodash__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! lodash */ "./node_modules/lodash/lodash.js");
+/* harmony import */ var _action_types_mjs__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./action_types.mjs */ "./web/js/src/datatables/action_types.mjs");
+/*** IMPORTS FROM imports-loader ***/
+
+var define = false;
+
+
+
+
+const isValid = (acao) => acao.url !== undefined && acao.url !== null && acao.url !== '' && acao.class !== undefined && acao.class !== null && acao.label !== undefined && acao.label !== null
+
+function actionRenderer(acao) {
+    let params;
+
+    if (!isValid(acao)) {
+        return {
+            iconButton: () => '',
+            dropdownItem: () => ''
+        }
+    }
+
+    const attrsToHtml = attrs => lodash__WEBPACK_IMPORTED_MODULE_0__.map(attrs, (v, k) => `${k}="${v}"`).join(' ')
+    const iconButton = (acao, attrs) => {
+        const htmlAttrs = attrsToHtml(attrs)
+
+        return `<a class="${acao.class}"
+            ${acao.strTooltip}
+            ${htmlAttrs}>${icone}</a>`
+    }
+    const dropdownItem = (isExtra, acao, attrs) => {
+        const htmlAttrs = attrsToHtml(attrs)
+        const addClass = isExtra ? 'action-dropdown-item-extra' : 'action-dropdown-item-mobile'
+        return `<a role="presentation"
+            class="${acao.class} dropdown-item pl-2 ${addClass}"
+            ${htmlAttrs}
+            ${strTooltip}>${icone}${acao.label}</a>`
+    }
+
+    // foi trocado o === abaixo por == porque no servidor (DataTableINT) � feito utf8_encode de true, que resulta em 1. Quando o c�digo for isolado, isso poder� ser revertido
+    const icone = (acao.MD == true)
+        ? '<i class="material-icons text-primary">' + acao.icon + '</i>'
+        : '<img src="' + acao.icon + '" alt="' + acao.label + '" class="infraImg">'
+
+    const strTooltip = acao.strTooltip
+
+    switch (acao.tipo) {
+        case _action_types_mjs__WEBPACK_IMPORTED_MODULE_1__["default"].POPUP:
+            params = [acao, {
+                href: `javascript: exibirSubFrm('${acao.url}', ${acao.width}, ${acao.height})`
+            }]
+            return {
+                iconButton: () => iconButton(...params),
+                dropdownItem: (isExtra) => dropdownItem(isExtra, ...params)
+            }
+
+        case _action_types_mjs__WEBPACK_IMPORTED_MODULE_1__["default"].ICONE:
+            params = [acao, {href: "javascript:void(0)"}]
+            return {
+                iconButton: () => iconButton(...params),
+                dropdownItem: (isExtra) => dropdownItem(isExtra, ...params)
+            }
+        case _action_types_mjs__WEBPACK_IMPORTED_MODULE_1__["default"].ONCLICK:
+            params = [acao, {
+                href: "javascript:void(0)",
+                onclick: `executarAcao('${acao.acao}', '${acao.url}', this.closest('tr'));`
+            }]
+            return {
+                iconButton: () => iconButton(...params),
+                dropdownItem: (isExtra) => dropdownItem(isExtra, ...params)
+            }
+        case _action_types_mjs__WEBPACK_IMPORTED_MODULE_1__["default"].NORMAL:
+            params = [acao, {href: acao.url}]
+            return {
+                iconButton: () => iconButton(...params),
+                dropdownItem: (isExtra) => dropdownItem(isExtra, ...params)
+            }
+        case _action_types_mjs__WEBPACK_IMPORTED_MODULE_1__["default"].AJAX:
+            let htmlParams = {
+                href: "javascript:void(0)",
+                id: acao.id,
+                name: acao.name,
+                urlajax: acao.url
+            }
+            $.each(acao.data, (key, val) => {
+                htmlParams[`data-${key}`] = val
+            });
+            $.each(acao.data, (key, val) => {
+                htmlParams[key] = val
+            });
+
+            params = [acao, htmlParams]
+
+            return {
+                iconButton: () => iconButton(...params),
+                dropdownItem: (isExtra) => dropdownItem(isExtra, ...params)
+            }
+        case _action_types_mjs__WEBPACK_IMPORTED_MODULE_1__["default"].NOVAJANELA:
+            params = [acao, {
+                target: "_blank",
+                href: acao.url
+            }]
+
+            return {
+                iconButton: () => iconButton(...params),
+                dropdownItem: (isExtra) => dropdownItem(isExtra, ...params)
+            }
+        default:
+            params = [acao, {href: acao.url}]
+            return {
+                iconButton: () => iconButton(...params),
+                dropdownItem: (isExtra) => dropdownItem(isExtra, ...params)
+            }
+    }
+}
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (actionRenderer);
+
+
+/***/ }),
+
+/***/ "./web/js/src/datatables/action_types.mjs":
+/*!************************************************!*\
+  !*** ./web/js/src/datatables/action_types.mjs ***!
+  \************************************************/
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/*** IMPORTS FROM imports-loader ***/
+
+var define = false;
+
+const ACTION_TYPES = {
+    NORMAL: 'N',
+    POPUP: 'P',
+    AJAX: 'A',
+    ONCLICK: 'O',
+    ICONE: 'I',
+    NOVAJANELA: 'NJ',
+}
+
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (ACTION_TYPES);
+
+
+/***/ }),
+
+/***/ "./web/js/src/datatables/actions.mjs":
+/*!*******************************************!*\
+  !*** ./web/js/src/datatables/actions.mjs ***!
+  \*******************************************/
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ renderActions)
+/* harmony export */ });
+/* harmony import */ var _action_renderer_mjs__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./action_renderer.mjs */ "./web/js/src/datatables/action_renderer.mjs");
+/*** IMPORTS FROM imports-loader ***/
+
+var define = false;
+
+
+
+function renderActions(data, type, row) {
+    /*
+    procedimento:
+    - primeiros 5 aparecendo em xg
+    - dropdown: (- se tiver 5 ou +, visível em displays grandes)
+        - primeiros 5 ocultos em xg
+        - o resto
+     */
+
+    let desktopActions,
+        extraDesktopActions
+
+    let posUltimaAcao = 0
+
+    if (data.length <= 5) {
+        desktopActions = data.slice(0, 5)
+        extraDesktopActions = []
+    } else {
+        // é possível que existam acoes que não devem ser exibidas (invalidas)
+        // neste caso, estas acoes não devem ser consideradas ao exibir as primeiras 4 ações e o dropdown de + ações
+        // para evitar que no caso de alguma das 4 primeiras acões ser invalida,
+        // serem exibidas menos que 4 ações iniciais junto ao dropdown
+        let countAcoesValidas = 0
+        // garantir que vai exibir nas 4 primeiras ações apenas ações válidas (visiveis)
+        data.forEach(acao => {
+            if (acao.url !== undefined && acao.url !== null && acao.url !== '' && acao.class !== undefined && acao.class !== null && acao.label !== undefined && acao.label !== null)
+                countAcoesValidas++;
+            if (countAcoesValidas < 5)
+                posUltimaAcao++;
+        })
+        desktopActions = data.slice(0, posUltimaAcao)
+        extraDesktopActions = data.slice(posUltimaAcao)
+    }
+    const dropdownClass = data.length < 5 || posUltimaAcao === data.length ? 'd-md-none' : ''
+    const mobileActions = data
+
+
+    //add tooltip
+    data.forEach(acao => {
+        if (acao !== '') {
+            let strTooltip = ''
+            if (acao.title !== '' && acao.title !== 'undefined') {
+                strTooltip = 'onmouseover="return infraTooltipMostrar(\'' + acao.title + '\',\'\');" onmouseout="return infraTooltipOcultar();"';
+            }
+            acao.strTooltip = strTooltip
+        }
+    })
+
+    const htmlDesktopActions = desktopActions
+        .map(acao => (0,_action_renderer_mjs__WEBPACK_IMPORTED_MODULE_0__["default"])(acao).iconButton())
+        .join('')
+
+    const htmlDropActions = extraDesktopActions
+        .map(acao => (0,_action_renderer_mjs__WEBPACK_IMPORTED_MODULE_0__["default"])(acao).dropdownItem(true))
+        .join('')
+
+    const htmlMobileActions = mobileActions
+        .map(acao => (0,_action_renderer_mjs__WEBPACK_IMPORTED_MODULE_0__["default"])(acao).dropdownItem(false))
+        .join('')
+
+    const extraDesktopActionsHtml = !extraDesktopActions.length ? '' : `
+        <a class="acoes-trigger-extra" title="Mais ações" data-toggle="dropdown" aria-haspopup="true" href="#">
+            <i class="material-icons text-primary">more_vert</i> 
+        </a>`
+
+    return `
+        <span class="container-acoes-table">
+            <span class="container-acoes-table__desktop">
+                ${htmlDesktopActions}
+            </span>
+            <span class="container-acoes-table__extra dropleft ${dropdownClass}">
+                <a class="acoes-trigger-mobile shadow-sm bg-primary" title="Mais ações" data-toggle="dropdown" aria-haspopup="true" href="#">
+                    <i class="material-icons icon-aligned text-white">more_horiz</i>
+                </a>               
+                
+                ${extraDesktopActionsHtml}
+                
+                <div role="menu" class="dropdown-menu" style="position:relative">
+                    ${htmlDropActions}
+                    ${htmlMobileActions}
+                </div>
+            </span>
+        </span>
+    `
+}
+
+
+/***/ })
+
+}]);
+//# sourceMappingURL=web_js_src_dataTableHelper_js.1090419105545f943a86.js.map

@@ -1,0 +1,130 @@
+(self["webpackChunkeproc"] = self["webpackChunkeproc"] || []).push([["web_js_src_websocket_js"],{
+
+/***/ "./web/js/src/websocket.js":
+/*!*********************************!*\
+  !*** ./web/js/src/websocket.js ***!
+  \*********************************/
+/***/ ((module) => {
+
+/**
+ * Cliente do Eproc para uso de Websockets.
+ */
+
+var _MESSAGE_TYPEID_WELCOME = 0;
+var _MESSAGE_TYPEID_PREFIX = 1;
+var _MESSAGE_TYPEID_CALL = 2;
+var _MESSAGE_TYPEID_CALL_RESULT = 3;
+var _MESSAGE_TYPEID_CALL_ERROR = 4;
+var _MESSAGE_TYPEID_SUBSCRIBE = 5;
+var _MESSAGE_TYPEID_UNSUBSCRIBE = 6;
+var _MESSAGE_TYPEID_PUBLISH = 7;
+var _MESSAGE_TYPEID_EVENT = 8;
+var _SUBPROTOCOL = 'wamp';
+var _TENTATIVAS_RECONEXAO = 13;
+var _isAFunction = f => f && typeof f === 'function';
+class ClienteWebsocket {
+  /**
+   * @param objTopicos objeto no formato {nome_topico1: funcaoCallback1, nome_topico2: funcaoCallback2}
+   * @param objCallback objeto com callbacks para eventos específicos: {onOpen: f(),onClose: f(), objCaller: obj}
+   *      Eventos suportados: onOpen(objCaller), //se objCaller is defined, retorna como parametro do callback
+   *                          onClose(numTentativas, bolTentativaFinal, ev)
+   *
+   * onOpen: callback acionado após a conexão ser estabelecida com sucesso. Para utilizar o enviarMensagem com garantia
+   *         de envio, a chamada deve ser colocada nessa callback
+   */
+  constructor(objTopicos, objCallback) {
+    this.topicos = Object.keys(objTopicos);
+    this.urlGeracaoTicket = $('input[name=url_gerar_ticket]').val();
+    this.tentativasConexao = 0;
+    this.objTopicos = objTopicos;
+    this.objCallback = objCallback || {};
+    this.host = $('input[name=url_websocket]').val();
+  }
+  _send(data) {
+    this.conexao.send(JSON.stringify(data));
+  }
+  _callbackRespostaGeracaoTicket(resposta) {
+    var url = this.host + '?ticket=' + resposta.ticket;
+    this.conexao = new WebSocket(url, [_SUBPROTOCOL]);
+    this.conexao.onopen = e => {
+      this.tentativasConexao = 0;
+      if (_isAFunction(this.objCallback.onOpen) && this.conexao.readyState === WebSocket.OPEN) {
+        if (this.objCallback.objCaller) {
+          this.objCallback.onOpen.bind(this.objCallback.objCaller);
+          this.objCallback.onOpen(e);
+        } else {
+          this.objCallback.onOpen(e);
+        }
+      }
+      this.topicos.forEach(topico => {
+        this._send([_MESSAGE_TYPEID_SUBSCRIBE, topico]);
+      });
+    };
+    this.conexao.onmessage = e => {
+      try {
+        var o = JSON.parse(e.data),
+          messageType = o[0],
+          topic = o[1],
+          val = o[2];
+        if (messageType === _MESSAGE_TYPEID_EVENT) {
+          if (_isAFunction(this.objTopicos[topic])) {
+            if (this.objCallback.objCaller) {
+              this.objTopicos[topic](topic, val.dados, this.objCallback.objCaller);
+            } else {
+              this.objTopicos[topic](topic, val.dados);
+            }
+          }
+        }
+      } catch (err) {
+        console.log('Erro websocket onmessage:' + err + ' Data:' + e.data);
+      }
+    };
+    this.conexao.onclose = e => {
+      var bolTentativaFinal = this.tentativasConexao > _TENTATIVAS_RECONEXAO;
+      if (!e.wasClean) {
+        if (!bolTentativaFinal) {
+          this.tentativasConexao++;
+          console.debug('Tentando novamente. ' + this.tentativasConexao + ' tentativas até agora: ', e);
+          setTimeout(() => {
+            this.conectar();
+          }, Math.pow(Math.E, this.tentativasConexao)); //Algoritmo de backoff exponencial
+        } else {
+          console.error('Número de tentativas chegou ao fim. Encerrando Websocket.', e);
+        }
+      }
+      if (_isAFunction(this.objCallback.onClose)) {
+        this.objCallback.onClose.bind(this.objCallback.objCaller);
+        this.objCallback.onClose(this.tentativasConexao, bolTentativaFinal, e);
+      }
+    };
+  }
+  conectar() {
+    if (this.host == '') {
+      return;
+    }
+    return $.ajax({
+      method: 'POST',
+      data: {
+        strTopico: this.topicos.join(',')
+      },
+      url: this.urlGeracaoTicket
+    }).then(this._callbackRespostaGeracaoTicket.bind(this));
+  }
+  enviarMensagem(topico, mensagem) {
+    if (this.conexao && this.conexao.readyState === WebSocket.OPEN) {
+      this._send([_MESSAGE_TYPEID_PUBLISH, topico, mensagem, [], []]);
+    }
+  }
+  desconectar() {
+    if (this.conexao) {
+      this.conexao.close();
+    }
+  }
+}
+window.ClienteWebsocket = ClienteWebsocket;
+module.exports = ClienteWebsocket;
+
+/***/ })
+
+}]);
+//# sourceMappingURL=web_js_src_websocket_js.575b3379846bebf79dcc.js.map

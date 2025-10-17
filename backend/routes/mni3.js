@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const mni3Client = require('../services/mni3Client');
+const pjeAssuntoClient = require('../services/pjeAssuntoClient');
+const pjeTabelaClient = require('../services/pjeTabelaClient');
 const config = require('../config/mni.config');
 
 /**
@@ -143,31 +145,61 @@ router.get('/classes/:codigoLocalidade', async (req, res) => {
         //                 com serviço público do CNJ para obter descrições.
         // ============================================================
 
-        console.log('[MNI 3.0] AVISO: Retornando apenas códigos nacionais sem descrições localizadas');
-        console.log('[MNI 3.0] Motivo: MNI 2.2 usa códigos locais incompatíveis com códigos nacionais do MNI 3.0');
+        // Tentar enriquecer usando o mapeamento local do PJe (arquivo baixado)
+        try {
+            await pjeTabelaClient.init();
+            const enriched = await pjeTabelaClient.enriquecerLista(codigosValidos);
 
-        // Formatar resposta com códigos nacionais
-        const classesFormatadas = codigosMNI3.map(classe => ({
-            codigo: classe.codigo,
-            descricao: `Classe Processual (Código Nacional ${classe.codigo})`,
-            descricaoCurta: `Classe ${classe.codigo}`,
-            ativo: true,
-            permitePeticionamentoInicial: true,
-            codigoNacional: classe.codigo,
-            fonte: 'MNI 3.0 (apenas códigos nacionais - descrições localizadas indisponíveis)'
-        }));
+            // Montar estrutura final mesclando informação original com descrição local
+            const classesFormatadas = codigosMNI3.map(classe => {
+                const codigoStr = String(classe.codigo);
+                const found = enriched.find(e => e.codigo === codigoStr);
+                return {
+                    codigo: classe.codigo,
+                    descricao: found ? found.descricao : `Classe Processual (Código Nacional ${classe.codigo})`,
+                    descricaoCurta: found ? found.descricao : `Classe ${classe.codigo}`,
+                    ativo: true,
+                    permitePeticionamentoInicial: true,
+                    codigoNacional: classe.codigo,
+                    fonte: found ? 'PJe (arquivo local)' : 'MNI 3.0 (sem descrição local)'
+                };
+            });
 
-        res.json({
-            success: true,
-            versao: '3.0',
-            codigoLocalidade: codigoLocalidade,
-            codigoCompetencia: codigoCompetencia,
-            count: classesFormatadas.length,
-            data: classesFormatadas,
-            observacao: 'IMPORTANTE: MNI 3.0 retorna apenas códigos nacionais. Descrições localizadas requerem tabela de mapeamento CNJ ou integração adicional. Use esses códigos para peticionamento - o sistema e-Proc reconhece os códigos nacionais.',
-            aviso: 'Descrições genéricas. Para descrições completas, seria necessário: (1) tabela de mapeamento manual CNJ, ou (2) integração com serviço público CNJ, ou (3) consulta à documentação das Tabelas Processuais Unificadas do CNJ.',
-            codigosNacionais: codigosValidos
-        });
+            res.json({
+                success: true,
+                versao: '3.0 (enriquecido com PJe local quando disponível)',
+                codigoLocalidade: codigoLocalidade,
+                codigoCompetencia: codigoCompetencia,
+                count: classesFormatadas.length,
+                data: classesFormatadas,
+                observacao: 'Retornando códigos nacionais do MNI 3.0 e, quando disponível, descrições locais obtidas do arquivo PJe baixado.' ,
+                codigosNacionais: codigosValidos
+            });
+
+        } catch (err) {
+            console.error('[MNI 3.0] Erro ao enriquecer classes com PJe local:', err.message);
+            // Fallback para resposta genérica
+            const classesFormatadas = codigosMNI3.map(classe => ({
+                codigo: classe.codigo,
+                descricao: `Classe Processual (Código Nacional ${classe.codigo})`,
+                descricaoCurta: `Classe ${classe.codigo}`,
+                ativo: true,
+                permitePeticionamentoInicial: true,
+                codigoNacional: classe.codigo,
+                fonte: 'MNI 3.0 (apenas códigos nacionais - descrições localizadas indisponíveis)'
+            }));
+
+            res.json({
+                success: true,
+                versao: '3.0',
+                codigoLocalidade: codigoLocalidade,
+                codigoCompetencia: codigoCompetencia,
+                count: classesFormatadas.length,
+                data: classesFormatadas,
+                observacao: 'Fallback: não foi possível enriquecer com PJe local.' ,
+                codigosNacionais: codigosValidos
+            });
+        }
 
     } catch (error) {
         console.error('[MNI 3.0 API] Erro ao consultar classes:', error.message);
@@ -200,15 +232,36 @@ router.get('/assuntos/:codigoLocalidade/:codigoClasse', async (req, res) => {
 
         const assuntos = await mni3Client.consultarAssuntos(codigoLocalidade, codigoClasse, codigoCompetencia);
 
+        // Log detalhado do retorno bruto
+        console.log('[DEBUG MNI3] Assuntos brutos retornados:', JSON.stringify(assuntos, null, 2));
+
+        // Enriquecer os assuntos com descrições locais
+        await pjeAssuntoClient.init();
+
+        // Exibir todos os assuntos, sem filtrar por principal
+        let assuntosFormatados = [];
+        if (Array.isArray(assuntos)) {
+            assuntosFormatados = await Promise.all(assuntos.map(async a => {
+                const codigo = a.codigo || a.codigoNacional || '';
+                const descricaoEnriquecida = await pjeAssuntoClient.getDescricao(codigo);
+                return {
+                    ...a,  // Primeiro espalha as propriedades originais
+                    codigo: codigo,  // Depois sobrescreve com valores corretos
+                    descricao: descricaoEnriquecida,  // Garante que a descrição enriquecida seja usada
+                    ativo: a.ativo !== 'N'
+                };
+            }));
+        }
+
         res.json({
             success: true,
-            versao: '3.0',
+            versao: '3.0 (enriquecido com PJe local quando disponível)',
             codigoLocalidade: codigoLocalidade,
             codigoClasse: codigoClasse,
             codigoCompetencia: codigoCompetencia,
-            count: Array.isArray(assuntos) ? assuntos.length : 0,
-            data: assuntos,
-            observacao: 'Assuntos incluem indicação de principal/complementar'
+            count: assuntosFormatados.length,
+            data: assuntosFormatados,
+            observacao: 'Assuntos enriquecidos com descrições do arquivo PJe baixado.'
         });
 
     } catch (error) {
@@ -474,3 +527,22 @@ router.get('/info', (req, res) => {
 });
 
 module.exports = router;
+
+/**
+ * POST /api/mni3/refresh-classes
+ * Força recarregar o arquivo local de classes do PJe (apenas se debugMode)
+ */
+router.post('/refresh-classes', async (req, res) => {
+    try {
+        if (!config.debugMode) {
+            return res.status(403).json({ success: false, message: 'Rota disponível apenas em debugMode' });
+        }
+
+        await pjeTabelaClient.refresh();
+
+        res.json({ success: true, message: 'Refresh solicitado. Arquivo recarregado.' });
+    } catch (error) {
+        console.error('[MNI 3.0] Erro ao forçar refresh de classes:', error.message);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});

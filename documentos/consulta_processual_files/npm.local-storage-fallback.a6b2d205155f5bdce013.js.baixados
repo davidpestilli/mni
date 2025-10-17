@@ -1,0 +1,255 @@
+"use strict";
+(self["webpackChunkeproc"] = self["webpackChunkeproc"] || []).push([["npm.local-storage-fallback"],{
+
+/***/ "./node_modules/local-storage-fallback/lib/CookieStorage.js":
+/*!******************************************************************!*\
+  !*** ./node_modules/local-storage-fallback/lib/CookieStorage.js ***!
+  \******************************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+
+Object.defineProperty(exports, "__esModule", ({
+  value: true
+}));
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+exports.hasCookies = hasCookies;
+
+var _cookie = __webpack_require__(/*! cookie */ "./node_modules/cookie/index.js");
+
+var _cookie2 = _interopRequireDefault(_cookie);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var prefix = 'lS_';
+
+var CookieStorage = function () {
+  function CookieStorage() {
+    var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+    _classCallCheck(this, CookieStorage);
+
+    this.cookieOptions = Object.assign({ path: '/' }, options);
+    prefix = options.prefix === undefined ? prefix : options.prefix;
+  }
+
+  _createClass(CookieStorage, [{
+    key: 'getItem',
+    value: function getItem(key) {
+      var cookies = _cookie2.default.parse(document.cookie);
+      if (!cookies || !cookies.hasOwnProperty(prefix + key)) {
+        return null;
+      }
+      return cookies[prefix + key];
+    }
+  }, {
+    key: 'setItem',
+    value: function setItem(key, value) {
+      document.cookie = _cookie2.default.serialize(prefix + key, value, this.cookieOptions);
+      return value;
+    }
+  }, {
+    key: 'removeItem',
+    value: function removeItem(key) {
+      var options = Object.assign({}, this.cookieOptions, { maxAge: -1 });
+      document.cookie = _cookie2.default.serialize(prefix + key, '', options);
+      return null;
+    }
+  }, {
+    key: 'clear',
+    value: function clear() {
+      var cookies = _cookie2.default.parse(document.cookie);
+      for (var key in cookies) {
+        if (key.indexOf(prefix) === 0) {
+          this.removeItem(key.substr(prefix.length));
+        }
+      }
+
+      return null;
+    }
+  }]);
+
+  return CookieStorage;
+}();
+
+exports["default"] = CookieStorage;
+function hasCookies() {
+  var storage = new CookieStorage();
+
+  try {
+    var TEST_KEY = '__test';
+    storage.setItem(TEST_KEY, '1');
+    var value = storage.getItem(TEST_KEY);
+    storage.removeItem(TEST_KEY);
+
+    return value === '1';
+  } catch (e) {
+    return false;
+  }
+}
+
+/***/ }),
+
+/***/ "./node_modules/local-storage-fallback/lib/MemoryStorage.js":
+/*!******************************************************************!*\
+  !*** ./node_modules/local-storage-fallback/lib/MemoryStorage.js ***!
+  \******************************************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+
+
+Object.defineProperty(exports, "__esModule", ({
+  value: true
+}));
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var MemoryStorage = function () {
+  function MemoryStorage() {
+    _classCallCheck(this, MemoryStorage);
+
+    this._data = {};
+  }
+
+  _createClass(MemoryStorage, [{
+    key: "getItem",
+    value: function getItem(key) {
+      return this._data.hasOwnProperty(key) ? this._data[key] : null;
+    }
+  }, {
+    key: "setItem",
+    value: function setItem(key, value) {
+      return this._data[key] = String(value);
+    }
+  }, {
+    key: "removeItem",
+    value: function removeItem(key) {
+      return delete this._data[key];
+    }
+  }, {
+    key: "clear",
+    value: function clear() {
+      return this._data = {};
+    }
+  }]);
+
+  return MemoryStorage;
+}();
+
+exports["default"] = MemoryStorage;
+
+/***/ }),
+
+/***/ "./node_modules/local-storage-fallback/lib/index.js":
+/*!**********************************************************!*\
+  !*** ./node_modules/local-storage-fallback/lib/index.js ***!
+  \**********************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+
+Object.defineProperty(exports, "__esModule", ({
+  value: true
+}));
+exports.MemoryStorage = exports.CookieStorage = exports.isSupported = exports.storage = undefined;
+
+var _isSupported = __webpack_require__(/*! ./isSupported */ "./node_modules/local-storage-fallback/lib/isSupported.js");
+
+var _isSupported2 = _interopRequireDefault(_isSupported);
+
+var _CookieStorage = __webpack_require__(/*! ./CookieStorage */ "./node_modules/local-storage-fallback/lib/CookieStorage.js");
+
+var _CookieStorage2 = _interopRequireDefault(_CookieStorage);
+
+var _MemoryStorage = __webpack_require__(/*! ./MemoryStorage */ "./node_modules/local-storage-fallback/lib/MemoryStorage.js");
+
+var _MemoryStorage2 = _interopRequireDefault(_MemoryStorage);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var storage = null;
+
+if ((0, _isSupported2.default)('localStorage')) {
+  // use localStorage
+  exports.storage = storage = window.localStorage;
+} else if ((0, _isSupported2.default)('sessionStorage')) {
+  // use sessionStorage
+  exports.storage = storage = window.sessionStorage;
+} else if ((0, _isSupported2.default)('cookieStorage')) {
+  // use cookies
+  exports.storage = storage = new _CookieStorage2.default();
+} else {
+  // use memory
+  exports.storage = storage = new _MemoryStorage2.default();
+}
+
+exports["default"] = storage;
+exports.storage = storage;
+exports.isSupported = _isSupported2.default;
+exports.CookieStorage = _CookieStorage2.default;
+exports.MemoryStorage = _MemoryStorage2.default;
+
+/***/ }),
+
+/***/ "./node_modules/local-storage-fallback/lib/isSupported.js":
+/*!****************************************************************!*\
+  !*** ./node_modules/local-storage-fallback/lib/isSupported.js ***!
+  \****************************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+
+Object.defineProperty(exports, "__esModule", ({
+  value: true
+}));
+exports["default"] = isSupported;
+
+var _CookieStorage = __webpack_require__(/*! ./CookieStorage */ "./node_modules/local-storage-fallback/lib/CookieStorage.js");
+
+var TEST_KEY = '__test';
+
+function hasStorage(name) {
+  try {
+    var storage = window[name];
+    storage.setItem(TEST_KEY, '1');
+    storage.removeItem(TEST_KEY);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function isSupported() {
+  var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 'localStorage';
+
+  var storage = String(name).replace(/storage$/i, '').toLowerCase();
+
+  if (storage === 'local') {
+    return hasStorage('localStorage');
+  }
+
+  if (storage === 'session') {
+    return hasStorage('sessionStorage');
+  }
+
+  if (storage === 'cookie') {
+    return (0, _CookieStorage.hasCookies)();
+  }
+
+  if (storage === 'memory') {
+    return true;
+  }
+
+  throw new Error('Storage method `' + name + '` is not available.\n    Please use one of the following: localStorage, sessionStorage, cookieStorage, memoryStorage.');
+}
+
+/***/ })
+
+}]);
+//# sourceMappingURL=npm.local-storage-fallback.a6b2d205155f5bdce013.js.map

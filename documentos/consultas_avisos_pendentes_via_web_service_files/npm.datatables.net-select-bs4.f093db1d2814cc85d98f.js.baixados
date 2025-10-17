@@ -1,0 +1,39 @@
+"use strict";
+(self["webpackChunkeproc"] = self["webpackChunkeproc"] || []).push([["npm.datatables.net-select-bs4"],{
+
+/***/ "./node_modules/datatables.net-select-bs4/js/select.bootstrap4.mjs":
+/*!*************************************************************************!*\
+  !*** ./node_modules/datatables.net-select-bs4/js/select.bootstrap4.mjs ***!
+  \*************************************************************************/
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! jquery */ "./node_modules/jquery/dist/jquery-exposed.js");
+/* harmony import */ var datatables_net_bs4__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! datatables.net-bs4 */ "./node_modules/datatables.net-bs4/js/dataTables.bootstrap4.mjs");
+/* harmony import */ var datatables_net_select__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! datatables.net-select */ "./node_modules/datatables.net-select/js/dataTables.select.mjs");
+/*** IMPORTS FROM imports-loader ***/
+
+var define = false;
+
+/*! Bootstrap 4 styling wrapper for Select
+ * © SpryMedia Ltd - datatables.net/license
+ */
+
+
+
+
+
+
+
+
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (datatables_net_bs4__WEBPACK_IMPORTED_MODULE_1__["default"]);
+
+
+
+/***/ })
+
+}]);
+//# sourceMappingURL=npm.datatables.net-select-bs4.f093db1d2814cc85d98f.js.map

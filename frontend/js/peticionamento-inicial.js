@@ -189,42 +189,16 @@ async function carregarAssuntos(codigoLocalidade, codigoClasse, codigoCompetenci
         if (data.success && Array.isArray(data.data) && data.data.length > 0) {
             select.innerHTML = '<option value="">📑 Selecione um assunto (opcional)...</option>';
 
-            // Separar principais e complementares
-            const principais = data.data.filter(a => a.principal === true);
-            const complementares = data.data.filter(a => a.principal !== true);
-
-            // Adicionar principais primeiro
-            if (principais.length > 0) {
-                const optgroupPrinc = document.createElement('optgroup');
-                optgroupPrinc.label = '✨ Assuntos Principais';
-
-                principais.forEach(assunto => {
-                    const option = document.createElement('option');
-                    option.value = assunto.codigo;
-                    option.textContent = `${assunto.codigo} - ${assunto.descricao}`;
-                    optgroupPrinc.appendChild(option);
-                });
-
-                select.appendChild(optgroupPrinc);
-            }
-
-            // Depois complementares
-            if (complementares.length > 0) {
-                const optgroupCompl = document.createElement('optgroup');
-                optgroupCompl.label = '📎 Assuntos Complementares';
-
-                complementares.forEach(assunto => {
-                    const option = document.createElement('option');
-                    option.value = assunto.codigo;
-                    option.textContent = `${assunto.codigo} - ${assunto.descricao}`;
-                    optgroupCompl.appendChild(option);
-                });
-
-                select.appendChild(optgroupCompl);
-            }
+            // Exibir todos os assuntos em uma única lista
+            data.data.forEach(assunto => {
+                const option = document.createElement('option');
+                option.value = assunto.codigo;
+                option.textContent = `${assunto.codigo} - ${assunto.descricao}`;
+                select.appendChild(option);
+            });
 
             select.disabled = false;
-            console.log(`✅ [MNI 3.0] ${data.count} assuntos carregados (${principais.length} principais, ${complementares.length} complementares)`);
+            console.log(`✅ [MNI 3.0] ${data.count} assuntos carregados (todos exibidos)`);
         } else {
             select.innerHTML = '<option value="">📑 Nenhum assunto disponível (opcional)</option>';
             select.disabled = false;

@@ -1,0 +1,469 @@
+(self["webpackChunkeproc"] = self["webpackChunkeproc"] || []).push([["shared"],{
+
+/***/ "./web/js/jquery.hotkeys.js":
+/*!**********************************!*\
+  !*** ./web/js/jquery.hotkeys.js ***!
+  \**********************************/
+/***/ (function() {
+
+/*jslint browser: true*/
+/*jslint jquery: true*/
+
+/*
+ * jQuery Hotkeys Plugin
+ * Copyright 2010, John Resig
+ * Dual licensed under the MIT or GPL Version 2 licenses.
+ *
+ * Based upon the plugin by Tzury Bar Yochay:
+ * https://github.com/tzuryby/jquery.hotkeys
+ *
+ * Original idea by:
+ * Binny V A, http://www.openjs.com/scripts/events/keyboard_shortcuts/
+ */
+
+/*
+ * One small change is: now keys are passed by object { keys: '...' }
+ * Might be useful, when you want to pass some other data to your handler
+ */
+
+/*sintax example:
+$(document).bind('keydown','ctrl+i',fn);
+*/
+
+(function (jQuery) {
+  jQuery.hotkeys = {
+    version: "0.2.0",
+    specialKeys: {
+      8: "backspace",
+      9: "tab",
+      10: "return",
+      13: "return",
+      16: "shift",
+      17: "ctrl",
+      18: "alt",
+      19: "pause",
+      20: "capslock",
+      27: "esc",
+      32: "space",
+      33: "pageup",
+      34: "pagedown",
+      35: "end",
+      36: "home",
+      37: "left",
+      38: "up",
+      39: "right",
+      40: "down",
+      45: "insert",
+      46: "del",
+      59: ";",
+      61: "=",
+      96: "0",
+      97: "1",
+      98: "2",
+      99: "3",
+      100: "4",
+      101: "5",
+      102: "6",
+      103: "7",
+      104: "8",
+      105: "9",
+      106: "*",
+      107: "+",
+      109: "-",
+      110: ".",
+      111: "/",
+      112: "f1",
+      113: "f2",
+      114: "f3",
+      115: "f4",
+      116: "f5",
+      117: "f6",
+      118: "f7",
+      119: "f8",
+      120: "f9",
+      121: "f10",
+      122: "f11",
+      123: "f12",
+      144: "numlock",
+      145: "scroll",
+      173: "-",
+      186: ";",
+      187: "=",
+      188: ",",
+      189: "-",
+      190: ".",
+      191: "/",
+      192: "`",
+      219: "[",
+      220: "\\",
+      221: "]",
+      222: "'"
+    },
+    shiftNums: {
+      "`": "~",
+      "1": "!",
+      "2": "@",
+      "3": "#",
+      "4": "$",
+      "5": "%",
+      "6": "^",
+      "7": "&",
+      "8": "*",
+      "9": "(",
+      "0": ")",
+      "-": "_",
+      "=": "+",
+      ";": ": ",
+      "'": "\"",
+      ",": "<",
+      ".": ">",
+      "/": "?",
+      "\\": "|"
+    },
+    // excludes: button, checkbox, file, hidden, image, password, radio, reset, search, submit, url
+    textAcceptingInputTypes: ["text", "password", "number", "email", "url", "range", "date", "month", "week", "time", "datetime", "datetime-local", "search", "color", "tel"],
+    // default input types not to bind to unless bound directly
+    textInputTypes: /textarea|input|select/i,
+    options: {
+      filterInputAcceptingElements: true,
+      filterTextInputs: true,
+      filterContentEditable: true
+    }
+  };
+  function keyHandler(handleObj) {
+    if (typeof handleObj.data === "string") {
+      handleObj.data = {
+        keys: handleObj.data
+      };
+    }
+
+    // Only care when a possible input has been specified
+    if (!handleObj.data || !handleObj.data.keys || typeof handleObj.data.keys !== "string") {
+      return;
+    }
+    var origHandler = handleObj.handler,
+      keys = handleObj.data.keys.toLowerCase().split(" ");
+    handleObj.handler = function (event) {
+      //      Don't fire in text-accepting inputs that we didn't directly bind to
+      if (this !== event.target && (jQuery.hotkeys.options.filterInputAcceptingElements && jQuery.hotkeys.textInputTypes.test(event.target.nodeName) || jQuery.hotkeys.options.filterContentEditable && jQuery(event.target).attr('contenteditable') || jQuery.hotkeys.options.filterTextInputs && jQuery.inArray(event.target.type, jQuery.hotkeys.textAcceptingInputTypes) > -1)) {
+        return;
+      }
+      var special = event.type !== "keypress" && jQuery.hotkeys.specialKeys[event.which],
+        character = String.fromCharCode(event.which).toLowerCase(),
+        modif = "",
+        possible = {};
+      jQuery.each(["alt", "ctrl", "shift"], function (index, specialKey) {
+        if (event[specialKey + 'Key'] && special !== specialKey) {
+          modif += specialKey + '+';
+        }
+      });
+
+      // metaKey is triggered off ctrlKey erronously
+      if (event.metaKey && !event.ctrlKey && special !== "meta") {
+        modif += "meta+";
+      }
+      if (event.metaKey && special !== "meta" && modif.indexOf("alt+ctrl+shift+") > -1) {
+        modif = modif.replace("alt+ctrl+shift+", "hyper+");
+      }
+      if (special) {
+        possible[modif + special] = true;
+      } else {
+        possible[modif + character] = true;
+        possible[modif + jQuery.hotkeys.shiftNums[character]] = true;
+
+        // "$" can be triggered as "Shift+4" or "Shift+$" or just "$"
+        if (modif === "shift+") {
+          possible[jQuery.hotkeys.shiftNums[character]] = true;
+        }
+      }
+      for (var i = 0, l = keys.length; i < l; i++) {
+        if (possible[keys[i]]) {
+          return origHandler.apply(this, arguments);
+        }
+      }
+    };
+  }
+  jQuery.each(["keydown", "keyup", "keypress"], function () {
+    jQuery.event.special[this] = {
+      add: keyHandler
+    };
+  });
+})(jQuery || this.jQuery || window.jQuery);
+
+/***/ }),
+
+/***/ "./web/js/jquery.simulate.js":
+/*!***********************************!*\
+  !*** ./web/js/jquery.simulate.js ***!
+  \***********************************/
+/***/ (() => {
+
+/*
+ * jquery.simulate - simulate browser mouse and keyboard events
+ *
+ * Copyright (c) 2009 Eduardo Lundgren (eduardolundgren@gmail.com)
+ * and Richard D. Worth (rdworth@gmail.com)
+ *
+ * Dual licensed under the MIT (http://www.opensource.org/licenses/mit-license.php) 
+ * and GPL (http://www.opensource.org/licenses/gpl-license.php) licenses.
+ *
+ */
+
+;
+(function ($) {
+  $.fn.extend({
+    simulate: function simulate(type, options) {
+      return this.each(function () {
+        var opt = $.extend({}, $.simulate.defaults, options || {});
+        new $.simulate(this, type, opt);
+      });
+    }
+  });
+  $.simulate = function (el, type, options) {
+    this.target = el;
+    this.options = options;
+    if (/^drag$/.test(type)) {
+      this[type].apply(this, [this.target, options]);
+    } else {
+      this.simulateEvent(el, type, options);
+    }
+  };
+  $.extend($.simulate.prototype, {
+    simulateEvent: function simulateEvent(el, type, options) {
+      var evt = this.createEvent(type, options);
+      this.dispatchEvent(el, type, evt, options);
+      return evt;
+    },
+    createEvent: function createEvent(type, options) {
+      if (/^mouse(over|out|down|up|move)|(dbl)?click$/.test(type)) {
+        return this.mouseEvent(type, options);
+      } else if (/^key(up|down|press)$/.test(type)) {
+        return this.keyboardEvent(type, options);
+      }
+    },
+    mouseEvent: function mouseEvent(type, options) {
+      var evt;
+      var e = $.extend({
+        bubbles: true,
+        cancelable: type != "mousemove",
+        view: window,
+        detail: 0,
+        screenX: 0,
+        screenY: 0,
+        clientX: 0,
+        clientY: 0,
+        ctrlKey: false,
+        altKey: false,
+        shiftKey: false,
+        metaKey: false,
+        button: 0,
+        relatedTarget: undefined
+      }, options);
+      var relatedTarget = $(e.relatedTarget)[0];
+      if ($.isFunction(document.createEvent)) {
+        evt = document.createEvent("MouseEvents");
+        evt.initMouseEvent(type, e.bubbles, e.cancelable, e.view, e.detail, e.screenX, e.screenY, e.clientX, e.clientY, e.ctrlKey, e.altKey, e.shiftKey, e.metaKey, e.button, e.relatedTarget || document.body.parentNode);
+      } else if (document.createEventObject) {
+        evt = document.createEventObject();
+        $.extend(evt, e);
+        evt.button = {
+          0: 1,
+          1: 4,
+          2: 2
+        }[evt.button] || evt.button;
+      }
+      return evt;
+    },
+    keyboardEvent: function keyboardEvent(type, options) {
+      var evt;
+      var e = $.extend({
+        bubbles: true,
+        cancelable: true,
+        view: window,
+        ctrlKey: false,
+        altKey: false,
+        shiftKey: false,
+        metaKey: false,
+        keyCode: 0,
+        charCode: 0
+      }, options);
+      if ($.isFunction(document.createEvent)) {
+        try {
+          evt = document.createEvent("KeyEvents");
+          evt.initKeyEvent(type, e.bubbles, e.cancelable, e.view, e.ctrlKey, e.altKey, e.shiftKey, e.metaKey, e.keyCode, e.charCode);
+        } catch (err) {
+          evt = document.createEvent("Events");
+          evt.initEvent(type, e.bubbles, e.cancelable);
+          $.extend(evt, {
+            view: e.view,
+            ctrlKey: e.ctrlKey,
+            altKey: e.altKey,
+            shiftKey: e.shiftKey,
+            metaKey: e.metaKey,
+            keyCode: e.keyCode,
+            charCode: e.charCode
+          });
+        }
+      } else if (document.createEventObject) {
+        evt = document.createEventObject();
+        $.extend(evt, e);
+      }
+      if ($.browser !== undefined && ($.browser.msie || $.browser.opera)) {
+        evt.keyCode = e.charCode > 0 ? e.charCode : e.keyCode;
+        evt.charCode = undefined;
+      }
+      return evt;
+    },
+    dispatchEvent: function dispatchEvent(el, type, evt) {
+      if (el.dispatchEvent) {
+        el.dispatchEvent(evt);
+      } else if (el.fireEvent) {
+        el.fireEvent('on' + type, evt);
+      }
+      return evt;
+    },
+    drag: function drag(el) {
+      var self = this,
+        center = this.findCenter(this.target),
+        options = this.options,
+        x = Math.floor(center.x),
+        y = Math.floor(center.y),
+        dx = options.dx || 0,
+        dy = options.dy || 0,
+        target = this.target;
+      var coord = {
+        clientX: x,
+        clientY: y
+      };
+      this.simulateEvent(target, "mousedown", coord);
+      coord = {
+        clientX: x + 1,
+        clientY: y + 1
+      };
+      this.simulateEvent(document, "mousemove", coord);
+      coord = {
+        clientX: x + dx,
+        clientY: y + dy
+      };
+      this.simulateEvent(document, "mousemove", coord);
+      this.simulateEvent(document, "mousemove", coord);
+      this.simulateEvent(target, "mouseup", coord);
+    },
+    findCenter: function findCenter(el) {
+      var el = $(this.target),
+        o = el.offset();
+      return {
+        x: o.left + el.outerWidth() / 2,
+        y: o.top + el.outerHeight() / 2
+      };
+    }
+  });
+  $.extend($.simulate, {
+    defaults: {
+      speed: 'sync'
+    },
+    VK_TAB: 9,
+    VK_ENTER: 13,
+    VK_ESC: 27,
+    VK_PGUP: 33,
+    VK_PGDN: 34,
+    VK_END: 35,
+    VK_HOME: 36,
+    VK_LEFT: 37,
+    VK_UP: 38,
+    VK_RIGHT: 39,
+    VK_DOWN: 40
+  });
+})(jQuery);
+
+/***/ }),
+
+/***/ "./web/js/src/jquery-extensoes.js":
+/*!****************************************!*\
+  !*** ./web/js/src/jquery-extensoes.js ***!
+  \****************************************/
+/***/ (() => {
+
+(function ($) {
+  $.fn.extend({
+    limit: function limit(_limit, input) {
+      var element = '#sp'.concat(input);
+      var interval, f;
+      var self = $(this);
+      $(this).focus(function () {
+        interval = window.setInterval(substring, 100);
+      });
+      $(this).keyup(function () {
+        interval = window.setInterval(substring, 100);
+        var valor = $(self).val();
+        var tamanho = valor.length;
+      });
+      $(this).blur(function () {
+        clearInterval(interval);
+        substring();
+      });
+      substringFunction = "function substring(){ " + "var val = $(self).val();" + "var tamanho = val.length;" + "var bol = false;" + "if(tamanho > limit){" + "bol = true;" + "$(self).val($(self).val().substring(0,limit));" + "}";
+      if (typeof element != 'undefined') substringFunction += "if($(element).html() != limit-tamanho){" + "$(element).html((limit-tamanho<=0)?'0':limit-tamanho);" + "strResult = '#hdn'.concat(input);" + "$(strResult).val((limit-tamanho<=0)?'0':limit-tamanho);" + "}";
+      substringFunction += "if(bol){alert('A descrição do lembrete excedeu " + _limit + " caracteres.'); } }";
+      eval(substringFunction);
+      substring();
+    }
+  });
+  jQuery.fn.pop = function () {
+    var top = this.get(-1);
+    this.splice(this.length - 1, 1);
+    return top;
+  };
+  jQuery.fn.shift = function () {
+    var bottom = this.get(0);
+    this.splice(0, 1);
+    return bottom;
+  };
+})(jQuery || $);
+
+/***/ }),
+
+/***/ "./web/js/src/jquery-ui.js":
+/*!*********************************!*\
+  !*** ./web/js/src/jquery-ui.js ***!
+  \*********************************/
+/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
+
+__webpack_require__(/*! jquery-ui/ui/widget */ "./node_modules/jquery-ui/ui/widget.js");
+__webpack_require__(/*! jquery-ui/ui/widgets/autocomplete */ "./node_modules/jquery-ui/ui/widgets/autocomplete.js");
+__webpack_require__(/*! jquery-ui/ui/widgets/checkboxradio */ "./node_modules/jquery-ui/ui/widgets/checkboxradio.js");
+__webpack_require__(/*! jquery-ui/ui/widgets/datepicker */ "./node_modules/jquery-ui/ui/widgets/datepicker.js");
+__webpack_require__(/*! jquery-ui/ui/widgets/dialog */ "./node_modules/jquery-ui/ui/widgets/dialog.js");
+__webpack_require__(/*! jquery-ui/ui/widgets/draggable */ "./node_modules/jquery-ui/ui/widgets/draggable.js");
+__webpack_require__(/*! jquery-ui/ui/widgets/menu */ "./node_modules/jquery-ui/ui/widgets/menu.js");
+__webpack_require__(/*! jquery-ui/ui/widgets/resizable */ "./node_modules/jquery-ui/ui/widgets/resizable.js");
+__webpack_require__(/*! jquery-ui/ui/widgets/selectmenu */ "./node_modules/jquery-ui/ui/widgets/selectmenu.js");
+__webpack_require__(/*! jquery-ui/ui/widgets/slider */ "./node_modules/jquery-ui/ui/widgets/slider.js");
+__webpack_require__(/*! jquery-ui/ui/widgets/sortable */ "./node_modules/jquery-ui/ui/widgets/sortable.js");
+__webpack_require__(/*! jquery-ui/ui/widgets/tabs */ "./node_modules/jquery-ui/ui/widgets/tabs.js");
+__webpack_require__(/*! jquery-ui/ui/widgets/tooltip */ "./node_modules/jquery-ui/ui/widgets/tooltip.js");
+
+/***/ }),
+
+/***/ "./web/js/src/jquery.js":
+/*!******************************!*\
+  !*** ./web/js/src/jquery.js ***!
+  \******************************/
+/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
+
+__webpack_require__(/*! jquery-contextmenu */ "./node_modules/jquery-contextmenu/dist/jquery.contextMenu.js");
+__webpack_require__(/*! ./jquery-ui */ "./web/js/src/jquery-ui.js");
+__webpack_require__(/*! ../jquery.hotkeys.js */ "./web/js/jquery.hotkeys.js");
+__webpack_require__(/*! ../jquery.simulate.js */ "./web/js/jquery.simulate.js");
+__webpack_require__(/*! ./jquery-extensoes */ "./web/js/src/jquery-extensoes.js");
+
+/***/ })
+
+},
+/******/ __webpack_require__ => { // webpackRuntimeModules
+/******/ var __webpack_exec__ = (moduleId) => (__webpack_require__(__webpack_require__.s = moduleId))
+/******/ __webpack_require__.O(0, ["npm.jquery-ui","npm.jquery","npm.js-cookie","npm.jquery-contextmenu","npm.expose-loader"], () => (__webpack_exec__("./web/js/src/jquery.js"), __webpack_exec__("./node_modules/js-cookie/src/js.cookie.js")));
+/******/ var __webpack_exports__ = __webpack_require__.O();
+/******/ }
+]);
+//# sourceMappingURL=shared.fed07459510951064702.js.map

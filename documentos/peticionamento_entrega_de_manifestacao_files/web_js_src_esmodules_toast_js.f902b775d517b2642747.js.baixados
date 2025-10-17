@@ -1,0 +1,170 @@
+"use strict";
+(self["webpackChunkeproc"] = self["webpackChunkeproc"] || []).push([["web_js_src_esmodules_toast_js"],{
+
+/***/ "./web/js/src/esmodules/showToast.js":
+/*!*******************************************!*\
+  !*** ./web/js/src/esmodules/showToast.js ***!
+  \*******************************************/
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (/* binding */ showToast)
+/* harmony export */ });
+/* harmony import */ var lodash__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! lodash */ "./node_modules/lodash/lodash.js");
+
+
+
+var idSuffix = 0;
+
+/**
+ * @param {{
+ *  text: string,
+ *  title: string,
+ *  toastClass: string,
+ *  titleClass: string,
+ *  toastIconClass: string,
+ *  icon: string
+ * }} opts
+ */
+/**
+ *
+ * @param opts IToastParams
+ * @param defaults
+ */
+function showToast(opts, defaults) {
+  idSuffix++;
+  opts = consolidateOpts(opts, defaults);
+  var strData = lodash__WEBPACK_IMPORTED_MODULE_0__.map(opts.data, (v, k) => "data-".concat(k, "=\"").concat(v.toString(), "\"")).join(' ');
+  var toastElem = createToastHtml(opts, strData);
+  $('#toasts-container').prepend(toastElem);
+  attachHandlers(toastElem, opts, idSuffix);
+  toastElem.toast('show');
+}
+function consolidateOpts(opts, defaults) {
+  var defaultBootstrapData = {
+    autohide: false,
+    animation: true
+  };
+  if (typeof opts === 'string') {
+    opts = {
+      text: opts
+    };
+  }
+  opts = lodash__WEBPACK_IMPORTED_MODULE_0__.merge(defaults, opts);
+  opts.toastBackgroundClass = opts.toastBackgroundClass || '';
+  opts.data = opts.data || defaultBootstrapData;
+  return opts;
+}
+function attachHandlers(toastElem, opts, idSuffix) {
+  toastElem.on('hidden.bs.toast', function () {
+    $(this).remove();
+  });
+  if (isQuestion(opts)) {
+    var primButton = "toast-questio-btn-prim-".concat(idSuffix);
+    var secButton = "toast-questio-btn-sec-".concat(idSuffix);
+    document.getElementById(primButton).addEventListener('click', opts.primaryActionCallback);
+    document.getElementById(secButton).addEventListener('click', opts.secondaryActionCallback);
+  }
+}
+function createToastHtml(opts, strData) {
+  var buttons = createButtons(opts);
+  var title = opts.title ? "<strong class=\"toast-title mb-2 d-flex align-items-center ".concat(opts.titleClass, "\">").concat(opts.title, "</strong>") : '';
+  var description = opts.text ? "<div class=\"toast-description mb-2 d-flex align-items-center mh-100 mw-100 overflow-hidden\">".concat(opts.text, "</div>") : '';
+  var noTitleClass = opts.title ? '' : 'no-title';
+  var html = "        \n            <div \n                class=\"toast ".concat(opts.toastClass, " fade hide ").concat(noTitleClass, " flex-grow-1\"\n                role=\"alert\" \n                aria-live=\"assertive\" \n                aria-atomic=\"true\" \n                ").concat(strData, ">\n                <div class=\"").concat(opts.toastBackgroundClass, " mw-100 d-flex p-3 flex-grow-1\">\n                    <div class=\"toast-icon toast-icon d-flex align-items-top\">\n                        <span>\n                            <i class=\"material-icons\">").concat(opts.icon, "</i>\n                        </span>\n                    </div>\n    \n                    <div class=\"toast-body flex-grow-1 mw-100 mh-100 overflow-hidden d-flex flex-column p-0 ml-3\">\n                        ").concat(title, "\n                        ").concat(description, "\n                        ").concat(buttons, "\n                    </div>\n                    \n                    <div class=\"d-flex align-items-top\">\n                        <button type=\"button\" class=\"close d-flex\" data-dismiss=\"toast\" aria-label=\"Close\">\n                            <span aria-hidden=\"true\">\xD7</span>\n                        </button>\n                    </div>\n                </div>\n            </div>\n    ");
+  return $(html);
+}
+
+/**
+ *
+ * @param opts IToastParams
+ * @returns {string}
+ */
+function createButtons(opts) {
+  if (isQuestion(opts)) {
+    return "\n            <div class=\"mt-2\">\n                <button id=\"toast-questio-btn-prim-".concat(idSuffix, "\" class=\"btn btn-primary btn-sm\" data-dismiss=\"toast\">\n                    ").concat(opts.primaryActionText, "\n                </button>\n                <button id=\"toast-questio-btn-sec-").concat(idSuffix, "\" class=\"btn btn-link btn-sm\" data-dismiss=\"toast\">\n                    ").concat(opts.secondaryActionText, "\n                </button>\n            </div>");
+  }
+  return '';
+}
+function isQuestion(opts) {
+  return opts.primaryActionText && opts.primaryActionCallback;
+}
+
+/***/ }),
+
+/***/ "./web/js/src/esmodules/toast.js":
+/*!***************************************!*\
+  !*** ./web/js/src/esmodules/toast.js ***!
+  \***************************************/
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
+/* harmony export */ });
+/* harmony import */ var _showToast_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./showToast.js */ "./web/js/src/esmodules/showToast.js");
+
+/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = ({
+  /**
+   * @param opts IToastParams|string
+   *
+   */
+  success: opts => {
+    (0,_showToast_js__WEBPACK_IMPORTED_MODULE_0__["default"])(opts, {
+      title: 'Sucesso',
+      text: 'Operação realizada com sucesso!',
+      toastClass: 'toast-success',
+      toastBackgroundClass: 'alert-success',
+      icon: 'check_circle_outline'
+    });
+  },
+  /**
+   * @param opts IToastParams|string
+   */
+  error: opts => {
+    (0,_showToast_js__WEBPACK_IMPORTED_MODULE_0__["default"])(opts, {
+      title: 'Erro',
+      text: 'Um erro ocorreu.',
+      toastClass: 'toast-fail',
+      toastBackgroundClass: 'alert-danger',
+      icon: 'error_outline'
+    });
+  },
+  /**
+   * @param opts IToastParams|string
+   */
+  warning: opts => {
+    (0,_showToast_js__WEBPACK_IMPORTED_MODULE_0__["default"])(opts, {
+      title: 'Aviso',
+      text: 'Este é um aviso.',
+      toastClass: 'toast-warning',
+      toastBackgroundClass: 'alert-warning',
+      icon: 'warning_amber'
+    });
+  },
+  /**
+   * @param opts IQuestionToastParams
+   */
+  question: opts => {
+    if (!opts.primaryActionCallback) {
+      throw new Error('primaryActionCallback não especificado');
+    }
+    (0,_showToast_js__WEBPACK_IMPORTED_MODULE_0__["default"])(opts, {
+      text: '',
+      primaryActionText: 'Sim',
+      primaryActionCallback: () => {},
+      secondaryActionText: 'Dispensar',
+      toastClass: 'toast-primary',
+      toastBackgroundClass: 'bg-light',
+      titleClass: 'text-dark',
+      icon: 'help_outline',
+      title: ''
+    });
+  }
+});
+
+/***/ })
+
+}]);
+//# sourceMappingURL=web_js_src_esmodules_toast_js.f902b775d517b2642747.js.map

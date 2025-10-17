@@ -1,0 +1,8 @@
+"use strict";
+(self["webpackChunkeproc"] = self["webpackChunkeproc"] || []).push([["websocket"],{},
+/******/ __webpack_require__ => { // webpackRuntimeModules
+/******/ var __webpack_exec__ = (moduleId) => (__webpack_require__(__webpack_require__.s = moduleId))
+/******/ __webpack_require__.O(0, ["web_js_src_websocket_js"], () => (__webpack_exec__("./web/js/src/websocket.js")));
+/******/ var __webpack_exports__ = __webpack_require__.O();
+/******/ }
+]);
