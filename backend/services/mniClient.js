@@ -24,7 +24,12 @@ class MNIClient {
             }
 
             const options = {
-                timeout: this.config.timeout
+                timeout: this.config.timeout,
+                // Habilitar processamento de attachments MTOM/XOP
+                parseReponseAttachments: true,
+                // Usar encoding binário para attachments (não UTF-8)
+                encoding: null,
+                forceSoap12Headers: true
             };
 
             this.client = await soap.createClientAsync(this.config.wsdlUrl, options);
@@ -62,6 +67,8 @@ class MNIClient {
                 }
 
                 if (this.config.debugMode) {
+                    const contentType = response.headers['content-type'] || '';
+                    console.log('[MNI] Response Content-Type:', contentType);
                     console.log('[MNI] ===== SOAP RESPONSE =====');
                     console.log(body);
                     console.log('[MNI] Status:', response.statusCode);
@@ -145,6 +152,7 @@ class MNIClient {
                 idConsultante,
                 senhaConsultante,
                 numeroProcesso,
+                movimentos: true,
                 incluirDocumentos
             };
 
@@ -181,23 +189,31 @@ class MNIClient {
 
     /**
      * Consultar conteúdo de documento
+     *
+     * No MNI 2.2, não existe operação separada para consultar documento.
+     * Usa-se consultarProcesso passando o parâmetro 'documento' com o ID desejado.
      */
     async consultarConteudoDocumento(idConsultante, senhaConsultante, numeroProcesso, idDocumento) {
         try {
             await this.initialize();
 
+            // Segundo a documentação MNI 2.2 (seção 3.2), usa-se consultarProcesso
+            // com o parâmetro 'documento' contendo o ID do documento desejado
             const args = {
                 idConsultante,
                 senhaConsultante,
                 numeroProcesso,
-                idDocumento
+                movimentos: false,           // Não precisa retornar movimentos
+                incluirCabecalho: false,     // Não precisa retornar cabeçalho
+                documento: idDocumento        // ID do documento específico
             };
 
             if (this.config.debugMode) {
-                console.log('[MNI] Consultando documento:', idDocumento);
+                console.log('[MNI] Consultando conteúdo do documento:', idDocumento);
+                console.log('[MNI] Processo:', numeroProcesso);
             }
 
-            const [result] = await this.client.consultarConteudoDocumentoAsync(args);
+            const [result] = await this.client.consultarProcessoAsync(args);
 
             return this.parseDocumento(result);
         } catch (error) {
@@ -643,11 +659,112 @@ class MNIClient {
     }
 
     parseDocumento(result) {
-        // Retorna o conteúdo Base64 do documento
-        return {
-            conteudo: result.documento || '',
-            mimetype: result.mimetype || 'application/pdf'
-        };
+        try {
+            // A resposta vem no formato: { processo: { documento: {...} } }
+            const processo = result.processo || result;
+            const documento = processo.documento || {};
+
+            // Se for array, pegar o primeiro documento
+            const doc = Array.isArray(documento) ? documento[0] : documento;
+
+            // Extrair atributos
+            const docAttrs = doc.attributes || doc.$attributes || {};
+            const mimetype = docAttrs.mimetype || docAttrs.mimeType || 'application/pdf';
+
+            // Extrair conteúdo do documento
+            let conteudo = this.extrairConteudoDocumento(doc, result);
+
+            // Converter para string se não for
+            conteudo = typeof conteudo === 'string' ? conteudo : String(conteudo || '');
+
+            if (this.config.debugMode) {
+                console.log('[MNI] Documento processado - mimetype:', mimetype, 'tamanho:', conteudo.length);
+            }
+
+            return {
+                conteudo: conteudo,
+                mimetype: mimetype
+            };
+        } catch (error) {
+            console.error('[MNI] Erro ao parsear documento:', error.message);
+            return {
+                conteudo: '',
+                mimetype: 'application/pdf'
+            };
+        }
+    }
+
+    /**
+     * Extrai conteúdo de documento MTOM/XOP
+     */
+    extrairConteudoDocumento(doc, result) {
+        // 1. Tentar pegar do campo conteudo direto
+        if (doc.conteudo) {
+            if (typeof doc.conteudo === 'string') {
+                return doc.conteudo;
+            }
+
+            if (typeof doc.conteudo === 'object') {
+                const conteudo = doc.conteudo.$value || doc.conteudo._ || doc.conteudo.value || '';
+                if (conteudo) return conteudo;
+
+                // Procurar primeira string longa nos valores
+                const valores = Object.values(doc.conteudo);
+                const primeiraString = valores.find(v => typeof v === 'string' && v.length > 50);
+                if (primeiraString) return primeiraString;
+            }
+        }
+
+        // 2. Tentar outras localizações no documento
+        const conteudoDocumento = doc.$value || doc._ || doc.value || doc.text;
+        if (conteudoDocumento) return conteudoDocumento;
+
+        // 3. Extrair de attachments MTOM/XOP
+        const attachments = result.mtomAttachments || (this.client && this.client.lastResponseAttachments);
+        if (!attachments) return '';
+
+        return this.extrairDeAttachments(attachments);
+    }
+
+    /**
+     * Extrai conteúdo de attachments MTOM em diferentes formatos
+     */
+    extrairDeAttachments(attachments) {
+        // Formato 1: Array de attachments
+        if (Array.isArray(attachments) && attachments.length > 0) {
+            return this.extrairDeAttachment(attachments[0]);
+        }
+
+        // Formato 2: Objeto com propriedade 'parts'
+        if (attachments.parts && Array.isArray(attachments.parts) && attachments.parts.length > 0) {
+            return this.extrairDeAttachment(attachments.parts[0]);
+        }
+
+        // Formato 3: Objeto único (attachment direto)
+        return this.extrairDeAttachment(attachments);
+    }
+
+    /**
+     * Extrai conteúdo de um attachment individual
+     */
+    extrairDeAttachment(attachment) {
+        if (!attachment) return '';
+
+        // Tentar body primeiro
+        if (attachment.body) {
+            return Buffer.isBuffer(attachment.body)
+                ? attachment.body.toString('base64')
+                : attachment.body;
+        }
+
+        // Alternativa: campo data
+        if (attachment.data) {
+            return Buffer.isBuffer(attachment.data)
+                ? attachment.data.toString('base64')
+                : attachment.data;
+        }
+
+        return '';
     }
 
     parseManifestacao(result) {
