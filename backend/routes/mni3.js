@@ -526,6 +526,58 @@ router.get('/info', (req, res) => {
     });
 });
 
+/**
+ * GET /api/mni3/descricao-classe/:codigo
+ * Buscar descrição de uma classe processual por código
+ */
+router.get('/descricao-classe/:codigo', async (req, res) => {
+    try {
+        const { codigo } = req.params;
+
+        await pjeTabelaClient.init();
+        const descricao = await pjeTabelaClient.getDescricao(codigo);
+
+        res.json({
+            success: true,
+            codigo: codigo,
+            descricao: descricao || codigo,
+            encontrado: !!descricao
+        });
+    } catch (error) {
+        console.error('[MNI 3.0 API] Erro ao buscar descrição de classe:', error.message);
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
+/**
+ * GET /api/mni3/descricao-assunto/:codigo
+ * Buscar descrição de um assunto por código
+ */
+router.get('/descricao-assunto/:codigo', async (req, res) => {
+    try {
+        const { codigo } = req.params;
+
+        await pjeAssuntoClient.init();
+        const descricao = await pjeAssuntoClient.getDescricao(codigo);
+
+        res.json({
+            success: true,
+            codigo: codigo,
+            descricao: descricao || codigo,
+            encontrado: descricao && descricao !== codigo && !descricao.includes('não encontrada')
+        });
+    } catch (error) {
+        console.error('[MNI 3.0 API] Erro ao buscar descrição de assunto:', error.message);
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
 module.exports = router;
 
 /**

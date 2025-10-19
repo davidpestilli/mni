@@ -26,7 +26,7 @@ async function carregarAvisos() {
     }
 }
 
-function renderizarAvisos(avisos) {
+async function renderizarAvisos(avisos) {
     if (!avisos || avisos.length === 0) {
         avisosContainer.innerHTML = `
             <div class="empty-state">
@@ -38,9 +38,19 @@ function renderizarAvisos(avisos) {
         return;
     }
 
+    // Mapear avisos com descrições de classe
+    const avisosComDescricao = await Promise.all(avisos.map(async (aviso) => {
+        const codigoClasse = aviso.classeProcessual || '';
+        const descricaoClasse = codigoClasse ? await buscarDescricaoClasse(codigoClasse) : 'N/A';
+        return {
+            ...aviso,
+            descricaoClasse: descricaoClasse
+        };
+    }));
+
     const html = `
         <div class="avisos-list">
-            ${avisos.map(aviso => criarCardAviso(aviso)).join('')}
+            ${avisosComDescricao.map(aviso => criarCardAviso(aviso)).join('')}
         </div>
     `;
 
@@ -51,6 +61,11 @@ function criarCardAviso(aviso) {
     const statusClass = aviso.status === 'Aberto' ? 'badge-aberto' : 'badge-aguardando';
     const numeroFormatado = formatarNumeroProcesso(aviso.numeroProcesso);
     const tipoBadgeClass = aviso.tipoComunicacao === 'INT' ? 'badge-intimacao' : 'badge-citacao';
+
+    // Usar descrição se disponível, caso contrário usar código
+    const classeExibir = aviso.descricaoClasse || aviso.classeProcessual || 'N/A';
+    const codigoClasse = aviso.classeProcessual || '';
+    const mostrarCodigo = codigoClasse && aviso.descricaoClasse && codigoClasse !== aviso.descricaoClasse;
 
     return `
         <div class="aviso-card">
@@ -78,7 +93,7 @@ function criarCardAviso(aviso) {
                 </div>
                 <div class="aviso-info-item">
                     <span class="aviso-info-label">Classe:</span>
-                    <span class="aviso-info-value">${aviso.classeProcessual || 'N/A'}</span>
+                    <span class="aviso-info-value">${classeExibir}${mostrarCodigo ? ` <span style="color: #999; font-size: 12px;">(${codigoClasse})</span>` : ''}</span>
                 </div>
                 <div class="aviso-info-item">
                     <span class="aviso-info-label">ID Aviso:</span>

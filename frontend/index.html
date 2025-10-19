@@ -61,6 +61,17 @@
                             Use a chave para consultar processos nos quais você não está vinculado
                         </small>
 
+                        <label for="data-referencia" style="margin-top: 15px;">Data de Referência (opcional)</label>
+                        <input
+                            type="text"
+                            id="data-referencia"
+                            placeholder="Ex: 12/03/2025 ou 12/03/2025 17:45:10"
+                            maxlength="19"
+                        >
+                        <small style="color: #666; font-size: 12px; margin-top: 5px; display: block;">
+                            Retorna apenas movimentos a partir desta data. Se não informar hora, será considerado 00:00:00
+                        </small>
+
                         <button class="btn btn-primary" id="btn-consultar-processo" style="margin-top: 10px;">
                             Consultar
                         </button>

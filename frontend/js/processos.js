@@ -1,5 +1,6 @@
 const numeroProcessoInput = document.getElementById('numero-processo');
 const chaveConsultaInput = document.getElementById('chave-consulta');
+const dataReferenciaInput = document.getElementById('data-referencia');
 const btnConsultarProcesso = document.getElementById('btn-consultar-processo');
 const processoContainer = document.getElementById('processo-container');
 const processoLoading = document.getElementById('processo-loading');
@@ -40,14 +41,80 @@ numeroProcessoInput.addEventListener('paste', (e) => {
     e.target.setSelectionRange(cursorPosition + cleanedText.length, cursorPosition + cleanedText.length);
 });
 
+// Formatação automática para data de referência (DD/MM/AAAA HH:MM:SS)
+dataReferenciaInput.addEventListener('input', (e) => {
+    let valor = e.target.value;
+    const cursorPosition = e.target.selectionStart;
+
+    // Remove tudo que não é número
+    let numeros = valor.replace(/\D/g, '');
+
+    // Aplica formatação progressiva
+    let formatado = '';
+
+    // DD
+    if (numeros.length > 0) {
+        formatado = numeros.substring(0, 2);
+    }
+
+    // DD/MM
+    if (numeros.length >= 3) {
+        formatado += '/' + numeros.substring(2, 4);
+    }
+
+    // DD/MM/AAAA
+    if (numeros.length >= 5) {
+        formatado += '/' + numeros.substring(4, 8);
+    }
+
+    // DD/MM/AAAA HH
+    if (numeros.length >= 9) {
+        formatado += ' ' + numeros.substring(8, 10);
+    }
+
+    // DD/MM/AAAA HH:MM
+    if (numeros.length >= 11) {
+        formatado += ':' + numeros.substring(10, 12);
+    }
+
+    // DD/MM/AAAA HH:MM:SS
+    if (numeros.length >= 13) {
+        formatado += ':' + numeros.substring(12, 14);
+    }
+
+    e.target.value = formatado;
+
+    // Ajustar posição do cursor
+    if (valor !== formatado) {
+        // Contar quantos caracteres especiais foram adicionados antes do cursor
+        const caracteresEspeciaisAntes = formatado.substring(0, cursorPosition).replace(/\d/g, '').length;
+        const caracteresEspeciaisAntesOriginal = valor.substring(0, cursorPosition).replace(/\d/g, '').length;
+        const diff = caracteresEspeciaisAntes - caracteresEspeciaisAntesOriginal;
+
+        e.target.setSelectionRange(cursorPosition + diff, cursorPosition + diff);
+    }
+});
+
 async function consultarProcesso() {
     const numeroProcesso = numeroProcessoInput.value.trim();
     const chaveConsulta = chaveConsultaInput.value.trim();
+    const dataReferenciaFormatada = dataReferenciaInput.value.trim();
 
     // Validação
     if (!validarNumeroProcesso(numeroProcesso)) {
         showError(processoContainer, 'Número do processo inválido. Deve conter exatamente 20 dígitos.');
         return;
+    }
+
+    // Converter data de referência do formato brasileiro para MNI
+    let dataReferenciaMNI = null;
+    if (dataReferenciaFormatada) {
+        try {
+            dataReferenciaMNI = converterDataParaMNI(dataReferenciaFormatada);
+        } catch (error) {
+            showError(processoContainer, 'Data de referência inválida. Use o formato DD/MM/AAAA ou DD/MM/AAAA HH:MM:SS');
+            return;
+        }
     }
 
     try {
@@ -56,17 +123,27 @@ async function consultarProcesso() {
 
         // Usar MNI 2.2 (endpoint original)
         let url = `/api/processos/${numeroProcesso}`;
+        const params = new URLSearchParams();
 
         // Adicionar chave se fornecida
         if (chaveConsulta) {
-            url += `?chave=${encodeURIComponent(chaveConsulta)}`;
+            params.append('chave', chaveConsulta);
+        }
+
+        // Adicionar data de referência se fornecida
+        if (dataReferenciaMNI) {
+            params.append('dataReferencia', dataReferenciaMNI);
+        }
+
+        if (params.toString()) {
+            url += `?${params.toString()}`;
         }
 
         const response = await apiRequest(url);
         const data = await response.json();
 
         if (data.success && data.data) {
-            renderizarProcesso(data.data);
+            await renderizarProcesso(data.data);
         } else {
             showError(processoContainer, data.message || 'Erro ao consultar processo');
         }
@@ -79,7 +156,57 @@ async function consultarProcesso() {
     }
 }
 
-function renderizarProcesso(processo) {
+/**
+ * Converte data do formato brasileiro (DD/MM/AAAA HH:MM:SS) para formato MNI (AAAAMMDDHHMMSS)
+ * Se hora não for informada, preenche com 00:00:00
+ */
+function converterDataParaMNI(dataFormatada) {
+    // Remove espaços extras
+    dataFormatada = dataFormatada.trim();
+
+    // Separar data e hora
+    const partes = dataFormatada.split(' ');
+    const dataParte = partes[0]; // DD/MM/AAAA
+    const horaParte = partes[1] || '00:00:00'; // HH:MM:SS ou 00:00:00 se não informado
+
+    // Validar e extrair data
+    const dataMatch = dataParte.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (!dataMatch) {
+        throw new Error('Formato de data inválido');
+    }
+
+    const dia = dataMatch[1];
+    const mes = dataMatch[2];
+    const ano = dataMatch[3];
+
+    // Validar e extrair hora (pode estar incompleta)
+    let hora = '00';
+    let minuto = '00';
+    let segundo = '00';
+
+    if (horaParte) {
+        const horaPartes = horaParte.split(':');
+        hora = (horaPartes[0] || '00').padStart(2, '0');
+        minuto = (horaPartes[1] || '00').padStart(2, '0');
+        segundo = (horaPartes[2] || '00').padStart(2, '0');
+    }
+
+    // Validações básicas
+    if (parseInt(dia) < 1 || parseInt(dia) > 31) {
+        throw new Error('Dia inválido');
+    }
+    if (parseInt(mes) < 1 || parseInt(mes) > 12) {
+        throw new Error('Mês inválido');
+    }
+    if (parseInt(hora) > 23 || parseInt(minuto) > 59 || parseInt(segundo) > 59) {
+        throw new Error('Hora inválida');
+    }
+
+    // Retornar no formato AAAAMMDDHHMMSS
+    return `${ano}${mes}${dia}${hora}${minuto}${segundo}`;
+}
+
+async function renderizarProcesso(processo) {
     // Extrair dados da estrutura real do MNI
     // MNI 3.0 tem estrutura aninhada: processo.dadosBasicos.dadosBasicos
     const dadosBasicosRaiz = processo.dadosBasicos || {};
@@ -94,7 +221,8 @@ function renderizarProcesso(processo) {
 
     // Valores do cabeçalho
     const numeroFormatado = formatarNumeroProcesso(attributes.numero || numeroProcessoInput.value);
-    const classeProcessual = dadosBasicosRaiz.classeProcessual || attributes.classeProcessual || 'N/A';
+    const codigoClasse = dadosBasicosRaiz.classeProcessual || attributes.classeProcessual || '';
+    const classeProcessual = codigoClasse ? await buscarDescricaoClasse(codigoClasse) : 'N/A';
     const nomeOrgao = orgaoAttrs.nome || orgaoAttrs.nomeOrgao || 'N/A';
     const valorCausa = dadosBasicosRaiz.valorCausa ? `R$ ${parseFloat(dadosBasicosRaiz.valorCausa).toLocaleString('pt-BR', {minimumFractionDigits: 2})}` : 'R$ 0,00';
     const nivelSigilo = dadosBasicosRaiz.nivelSigilo || attributes.nivelSigilo || 'N/A';
@@ -147,6 +275,16 @@ function renderizarProcesso(processo) {
 
     // Obter assuntos (pode estar em dadosBasicosRaiz ou dadosBasicos)
     const assuntos = dadosBasicosRaiz.assunto || dadosBasicos.assunto ? (Array.isArray(dadosBasicosRaiz.assunto || dadosBasicos.assunto) ? (dadosBasicosRaiz.assunto || dadosBasicos.assunto) : [dadosBasicosRaiz.assunto || dadosBasicos.assunto]) : [];
+
+    // Mapear assuntos para incluir descrições
+    const assuntosComDescricao = await Promise.all(assuntos.map(async (assunto) => {
+        const codigo = assunto.codigoNacional || '';
+        const descricao = codigo ? await buscarDescricaoAssunto(codigo) : 'N/A';
+        return {
+            ...assunto,
+            descricao: descricao
+        };
+    }));
 
     // Obter prioridades (pode estar em dadosBasicosRaiz ou dadosBasicos)
     const prioridades = dadosBasicosRaiz.prioridade || dadosBasicos.prioridade ? (Array.isArray(dadosBasicosRaiz.prioridade || dadosBasicos.prioridade) ? (dadosBasicosRaiz.prioridade || dadosBasicos.prioridade) : [dadosBasicosRaiz.prioridade || dadosBasicos.prioridade]) : [];
@@ -205,15 +343,18 @@ function renderizarProcesso(processo) {
         ` : ''}
 
         <!-- Assuntos -->
-        ${assuntos.length > 0 ? `
+        ${assuntosComDescricao.length > 0 ? `
             <div style="margin-bottom: 20px;">
                 <h3 style="color: #333; margin-bottom: 15px; font-size: 18px;">📌 Assuntos</h3>
                 <div class="processo-card">
-                    ${assuntos.map(assunto => {
+                    ${assuntosComDescricao.map(assunto => {
                         const isPrincipal = assunto.attributes && assunto.attributes.principal === 'true';
+                        const codigo = assunto.codigoNacional || 'N/A';
+                        const descricao = assunto.descricao || codigo;
                         return `
                             <div style="padding: 8px 0;">
-                                <span style="font-weight: 500;">Código: ${assunto.codigoNacional || 'N/A'}</span>
+                                <span style="font-weight: 500;">${descricao}</span>
+                                ${codigo !== descricao ? ` <span style="color: #666; font-size: 13px;">(${codigo})</span>` : ''}
                                 ${isPrincipal ? '<span class="badge badge-aberto" style="margin-left: 10px;">Principal</span>' : ''}
                             </div>
                         `;

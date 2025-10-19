@@ -144,7 +144,7 @@ class MNIClient {
     /**
      * Consultar processo
      */
-    async consultarProcesso(idConsultante, senhaConsultante, numeroProcesso, incluirDocumentos = true, chave = null) {
+    async consultarProcesso(idConsultante, senhaConsultante, numeroProcesso, incluirDocumentos = true, chave = null, dataReferencia = null) {
         try {
             await this.initialize();
 
@@ -155,6 +155,13 @@ class MNIClient {
                 movimentos: true,
                 incluirDocumentos
             };
+
+            // Adicionar data de referência se fornecida
+            // Formato esperado: <tip:dataReferencia>AAAAMMDDHHMMSS</tip:dataReferencia>
+            // Só inclui a tag se dataReferencia for fornecida
+            if (dataReferencia) {
+                args.dataReferencia = dataReferencia;
+            }
 
             // Adicionar chave de consulta se fornecida
             // Formato correto esperado: <tip:outroParametro nome="chave" valor="..."/>
@@ -175,6 +182,9 @@ class MNIClient {
                 console.log('[MNI] Consultando processo:', numeroProcesso);
                 if (chave) {
                     console.log('[MNI] Com chave de consulta:', chave);
+                }
+                if (dataReferencia) {
+                    console.log('[MNI] Com data de referência:', dataReferencia);
                 }
             }
 

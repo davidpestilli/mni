@@ -189,3 +189,125 @@ function getDataHoraMNI() {
 
     return `${ano}${mes}${dia}${hora}${minuto}${segundo}`;
 }
+
+// ========================================
+// CACHE DE CLASSES E ASSUNTOS
+// ========================================
+
+const mapeamentoCache = {
+    classes: new Map(),
+    assuntos: new Map(),
+    classesCarregado: false,
+    assuntosCarregado: false
+};
+
+/**
+ * Buscar descrição de classe processual
+ * Retorna o código se não encontrar descrição
+ */
+async function buscarDescricaoClasse(codigo) {
+    if (!codigo) return '';
+
+    const codigoStr = String(codigo);
+
+    // Retornar do cache se já carregado
+    if (mapeamentoCache.classes.has(codigoStr)) {
+        return mapeamentoCache.classes.get(codigoStr);
+    }
+
+    // Buscar do backend
+    try {
+        const response = await fetch(`/api/mni3/descricao-classe/${codigoStr}`);
+        const data = await response.json();
+
+        if (data.success && data.descricao) {
+            // Adicionar ao cache
+            mapeamentoCache.classes.set(codigoStr, data.descricao);
+            return data.descricao;
+        }
+    } catch (error) {
+        console.error('[CACHE] Erro ao buscar descrição de classe:', error);
+    }
+
+    return codigoStr;
+}
+
+/**
+ * Buscar descrição de assunto
+ * Retorna o código se não encontrar descrição
+ */
+async function buscarDescricaoAssunto(codigo) {
+    if (!codigo) return '';
+
+    const codigoStr = String(codigo);
+
+    // Retornar do cache se já carregado
+    if (mapeamentoCache.assuntos.has(codigoStr)) {
+        return mapeamentoCache.assuntos.get(codigoStr);
+    }
+
+    // Buscar do backend
+    try {
+        const response = await fetch(`/api/mni3/descricao-assunto/${codigoStr}`);
+        const data = await response.json();
+
+        if (data.success && data.descricao) {
+            // Adicionar ao cache
+            mapeamentoCache.assuntos.set(codigoStr, data.descricao);
+            return data.descricao;
+        }
+    } catch (error) {
+        console.error('[CACHE] Erro ao buscar descrição de assunto:', error);
+    }
+
+    return codigoStr;
+}
+
+/**
+ * Carregar classes de uma localidade para o cache
+ * Isso permite que as descrições fiquem disponíveis
+ */
+async function carregarClassesNoCache(codigoLocalidade) {
+    if (!codigoLocalidade) return;
+
+    try {
+        const response = await fetch(`/api/mni3/classes/${codigoLocalidade}`);
+        const data = await response.json();
+
+        if (data.success && Array.isArray(data.data)) {
+            data.data.forEach(classe => {
+                const codigo = String(classe.codigo);
+                const descricao = classe.descricao || codigo;
+                mapeamentoCache.classes.set(codigo, descricao);
+            });
+            mapeamentoCache.classesCarregado = true;
+            console.log('[CACHE] Classes carregadas:', mapeamentoCache.classes.size);
+        }
+    } catch (error) {
+        console.error('[CACHE] Erro ao carregar classes:', error);
+    }
+}
+
+/**
+ * Carregar assuntos de uma localidade/classe para o cache
+ */
+async function carregarAssuntosNoCache(codigoLocalidade, codigoClasse) {
+    if (!codigoLocalidade || !codigoClasse) return;
+
+    try {
+        const response = await fetch(`/api/mni3/assuntos/${codigoLocalidade}/${codigoClasse}`);
+        const data = await response.json();
+
+        if (data.success && Array.isArray(data.data)) {
+            data.data.forEach(assunto => {
+                const codigo = String(assunto.codigo || assunto.codigoNacional);
+                const descricao = assunto.descricao || codigo;
+                mapeamentoCache.assuntos.set(codigo, descricao);
+            });
+            mapeamentoCache.assuntosCarregado = true;
+            console.log('[CACHE] Assuntos carregados:', mapeamentoCache.assuntos.size);
+        }
+    } catch (error) {
+        console.error('[CACHE] Erro ao carregar assuntos:', error);
+    }
+}

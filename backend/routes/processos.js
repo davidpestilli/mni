@@ -39,13 +39,21 @@ router.get('/:numeroProcesso', extractCredentials, async (req, res) => {
     try {
         const { numeroProcesso } = req.params;
         const { idConsultante, senhaConsultante } = req.credentials;
-        const { incluirDocumentos, chave } = req.query;
+        const { incluirDocumentos, chave, dataReferencia } = req.query;
 
         // Validar número do processo (20 dígitos)
         if (!/^\d{20}$/.test(numeroProcesso)) {
             return res.status(400).json({
                 success: false,
                 message: 'Número do processo inválido. Deve conter 20 dígitos.'
+            });
+        }
+
+        // Validar data de referência se fornecida (14 dígitos: AAAAMMDDHHMMSS)
+        if (dataReferencia && !/^\d{14}$/.test(dataReferencia)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Data de referência inválida. Deve conter 14 dígitos no formato AAAAMMDDHHMMSS.'
             });
         }
 
@@ -57,7 +65,8 @@ router.get('/:numeroProcesso', extractCredentials, async (req, res) => {
             senhaHash,
             numeroProcesso,
             incluirDocumentos !== 'false',
-            chave || null
+            chave || null,
+            dataReferencia || null
         );
 
         res.json({
