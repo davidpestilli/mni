@@ -360,7 +360,7 @@ router.get('/processo/:numeroProcesso', async (req, res) => {
             incluirCabecalho: req.query.incluirCabecalho !== 'false',
             incluirPartes: req.query.incluirPartes !== 'false',
             incluirEnderecos: req.query.incluirEnderecos === 'true',
-            incluirMovimentos: req.query.incluirMovimentos === 'true',
+            incluirMovimentos: req.query.incluirMovimentos !== 'false',
             incluirDocumentos: req.query.incluirDocumentos === 'true'
         };
 

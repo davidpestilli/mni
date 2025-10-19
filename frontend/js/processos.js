@@ -109,7 +109,7 @@ function renderizarProcesso(processo) {
     });
     const rito = ritoParam ? (ritoParam.attributes?.valor || ritoParam.valor || 'N/A') : 'N/A';
 
-    // Contar documentos
+    // Extrair documentos
     const documentos = processo.documento ? (Array.isArray(processo.documento) ? processo.documento : [processo.documento]) : [];
     const totalDocumentos = documentos.length;
 
@@ -118,6 +118,29 @@ function renderizarProcesso(processo) {
     const docsHTML = documentos.filter(d => d.attributes && d.attributes.mimetype === 'text/html').length;
     const docsVideo = documentos.filter(d => d.attributes && d.attributes.mimetype && d.attributes.mimetype.startsWith('video/')).length;
     const docsComSigilo = documentos.filter(d => d.attributes && parseInt(d.attributes.nivelSigilo || '0') > 0).length;
+
+    // Extrair movimentos
+    const movimentos = processo.movimento ? (Array.isArray(processo.movimento) ? processo.movimento : [processo.movimento]) : [];
+    const totalMovimentos = movimentos.length;
+
+    // Criar mapa movimento -> documentos para vincular
+    const documentosPorMovimento = {};
+    documentos.forEach(doc => {
+        const movimentoId = doc.attributes?.movimento;
+        if (movimentoId) {
+            if (!documentosPorMovimento[movimentoId]) {
+                documentosPorMovimento[movimentoId] = [];
+            }
+            documentosPorMovimento[movimentoId].push(doc);
+        }
+    });
+
+    // Ordenar movimentos por data (mais recente primeiro)
+    const movimentosOrdenados = movimentos.sort((a, b) => {
+        const dataA = a.attributes?.dataHora || '0';
+        const dataB = b.attributes?.dataHora || '0';
+        return dataB.localeCompare(dataA);
+    });
 
     // Obter polos (pode estar em dadosBasicosRaiz ou dadosBasicos)
     const polos = dadosBasicosRaiz.polo || dadosBasicos.polo ? (Array.isArray(dadosBasicosRaiz.polo || dadosBasicos.polo) ? (dadosBasicosRaiz.polo || dadosBasicos.polo) : [dadosBasicosRaiz.polo || dadosBasicos.polo]) : [];
@@ -225,11 +248,11 @@ function renderizarProcesso(processo) {
             </div>
         ` : ''}
 
-        <!-- Documentos -->
-        ${totalDocumentos > 0 ? `
+        <!-- Linha do Tempo Processual -->
+        ${totalMovimentos > 0 ? `
             <div style="margin-bottom: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h3 style="color: #333; font-size: 18px; margin: 0;">📄 Documentos (${totalDocumentos})</h3>
+                    <h3 style="color: #333; font-size: 18px; margin: 0;">📅 Linha do Tempo Processual (${totalMovimentos})</h3>
                     <div style="display: flex; gap: 10px; font-size: 12px;">
                         ${docsPDF > 0 ? `<span class="badge" style="background: #dc3545; color: white;">PDF: ${docsPDF}</span>` : ''}
                         ${docsHTML > 0 ? `<span class="badge" style="background: #6c757d; color: white;">HTML: ${docsHTML}</span>` : ''}
@@ -237,8 +260,8 @@ function renderizarProcesso(processo) {
                         ${docsComSigilo > 0 ? `<span class="badge" style="background: #ffc107; color: #000;">🔒 Sigilo: ${docsComSigilo}</span>` : ''}
                     </div>
                 </div>
-                <div style="display: grid; gap: 10px;">
-                    ${documentos.map(doc => criarCardDocumento(doc)).join('')}
+                <div style="display: grid; gap: 12px;">
+                    ${movimentosOrdenados.map(mov => criarCardMovimento(mov, documentosPorMovimento)).join('')}
                 </div>
             </div>
         ` : ''}
@@ -328,6 +351,133 @@ function criarCardParte(parte) {
                     }).join('')}
                 </div>
             ` : ''}
+        </div>
+    `;
+}
+
+function criarCardMovimento(movimento, documentosPorMovimento) {
+    const movAttrs = movimento.attributes || {};
+    const movimentoId = movAttrs.identificadorMovimento || '';
+    const dataHora = movAttrs.dataHora ? formatarDataHoraMNI(movAttrs.dataHora) : 'N/A';
+
+    const movimentoLocal = movimento.movimentoLocal || {};
+    const movLocalAttrs = movimentoLocal.attributes || {};
+    const descricao = movLocalAttrs.descricao || 'Movimento';
+    const codigoMovimento = movLocalAttrs.codigoMovimento || '';
+
+    // Complementos (informações adicionais)
+    const complementos = movimento.complemento ? (Array.isArray(movimento.complemento) ? movimento.complemento : [movimento.complemento]) : [];
+
+    // Documentos vinculados a este movimento
+    const docsVinculados = documentosPorMovimento[movimentoId] || [];
+
+    return `
+        <div class="processo-card" style="padding: 15px; border-left: 4px solid #667eea; position: relative;">
+            <!-- Indicador visual de linha do tempo -->
+            <div style="position: absolute; left: -8px; top: 20px; width: 12px; height: 12px; background: #667eea; border-radius: 50%; border: 2px solid white;"></div>
+
+            <div style="display: flex; justify-content: space-between; align-items: start; gap: 15px;">
+                <div style="flex: 1;">
+                    <!-- Data e hora -->
+                    <div style="font-size: 11px; color: #999; font-weight: 600; margin-bottom: 5px;">
+                        📅 ${dataHora}
+                    </div>
+
+                    <!-- Descrição do movimento -->
+                    <div style="font-weight: 600; color: #333; font-size: 15px; margin-bottom: 8px;">
+                        ${descricao}
+                    </div>
+
+                    <!-- Complementos (quem movimentou, referências, etc) -->
+                    ${complementos.length > 0 ? `
+                        <div style="font-size: 12px; color: #666; line-height: 1.6; margin-bottom: 10px;">
+                            ${complementos.map(comp => `
+                                <div style="margin-bottom: 3px;">• ${comp}</div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+
+                    <!-- Documentos vinculados -->
+                    ${docsVinculados.length > 0 ? `
+                        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #eee;">
+                            <div style="font-weight: 500; font-size: 13px; color: #555; margin-bottom: 8px;">
+                                📎 Documentos anexados (${docsVinculados.length}):
+                            </div>
+                            <div style="display: grid; gap: 8px;">
+                                ${docsVinculados.map(doc => criarCardDocumentoCompacto(doc)).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+
+                <!-- Badge com ID do movimento -->
+                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 5px;">
+                    <span class="badge" style="background: #667eea; color: white; font-size: 11px; padding: 4px 10px;">
+                        #${movimentoId}
+                    </span>
+                    ${codigoMovimento ? `
+                        <span style="font-size: 10px; color: #999;">
+                            Cód: ${codigoMovimento}
+                        </span>
+                    ` : ''}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function criarCardDocumentoCompacto(doc) {
+    const docAttrs = doc.attributes || {};
+    const outrosParams = doc.outroParametro || [];
+    const rotuloParam = outrosParams.find(p => p.attributes && p.attributes.nome === 'rotulo');
+    const tamanhoParam = outrosParams.find(p => p.attributes && p.attributes.nome === 'tamanho');
+
+    const rotulo = rotuloParam ? rotuloParam.attributes.valor : '';
+    const tamanho = tamanhoParam ? formatarTamanhoBytes(parseInt(tamanhoParam.attributes.valor)) : '';
+
+    const isPDF = docAttrs.mimetype === 'application/pdf';
+    const isVideo = docAttrs.mimetype && docAttrs.mimetype.startsWith('video/');
+    const nivelSigilo = parseInt(docAttrs.nivelSigilo || '0');
+    const temSigilo = nivelSigilo > 0;
+
+    // Ícone baseado no tipo
+    let icone = '📝';
+    if (isPDF) icone = '📄';
+    if (isVideo) icone = '🎥';
+
+    // Tipo de arquivo
+    let tipoArquivo = 'HTML';
+    if (isPDF) tipoArquivo = 'PDF';
+    if (isVideo) tipoArquivo = 'MP4';
+
+    const idDocumento = docAttrs.idDocumento || '';
+    const descricao = docAttrs.descricao || 'Documento';
+    const mimetype = docAttrs.mimetype || 'application/pdf';
+
+    return `
+        <div style="background: #f8f9fa; padding: 10px; border-radius: 5px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px;">
+                <div style="flex: 1; min-width: 0;">
+                    <div style="font-weight: 500; font-size: 13px; color: #333; display: flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        ${icone} ${descricao}
+                        ${temSigilo ? '<span style="background: #ffc107; color: #000; padding: 1px 6px; border-radius: 6px; font-size: 10px; font-weight: 700;">🔒</span>' : ''}
+                    </div>
+                    <div style="font-size: 11px; color: #666; margin-top: 2px;">
+                        ${rotulo ? rotulo + ' | ' : ''}${tamanho}
+                    </div>
+                </div>
+                <span class="badge" style="background: ${isPDF ? '#dc3545' : isVideo ? '#6f42c1' : '#6c757d'}; color: white; font-size: 10px; padding: 3px 8px; white-space: nowrap;">
+                    ${tipoArquivo}
+                </span>
+            </div>
+            <button
+                onclick="visualizarDocumento('${numeroProcessoInput.value}', '${idDocumento}', '${descricao.replace(/'/g, "\\'")}', '${mimetype}')"
+                style="width: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; transition: transform 0.2s;"
+                onmouseover="this.style.transform='scale(1.02)'"
+                onmouseout="this.style.transform='scale(1)'"
+            >
+                👁️ Visualizar Documento
+            </button>
         </div>
     `;
 }
@@ -525,3 +675,271 @@ window.copiarParaClipboard = function(elementId) {
         alert('Erro ao copiar: ' + err);
     });
 };
+
+// ========================================
+// VISUALIZAÇÃO DE DOCUMENTOS
+// ========================================
+
+async function visualizarDocumento(numeroProcesso, idDocumento, descricao, mimetype) {
+    try {
+        // Criar modal de loading
+        mostrarModalLoading(descricao);
+
+        // Fazer requisição para obter o conteúdo do documento
+        const response = await apiRequest(`/api/processos/${numeroProcesso}/documentos/${idDocumento}`);
+        const data = await response.json();
+
+        if (!data.success || !data.data) {
+            throw new Error(data.message || 'Erro ao carregar documento');
+        }
+
+        const { conteudo, mimetype: mimetypeRetornado } = data.data;
+        const mimetypeFinal = mimetypeRetornado || mimetype;
+
+        // VALIDAÇÕES DE SEGURANÇA
+        console.log('Conteúdo recebido - tipo:', typeof conteudo, 'tamanho:', conteudo ? conteudo.length : 0);
+        console.log('Primeiros 100 chars:', conteudo ? conteudo.substring(0, 100) : 'vazio');
+
+        // Validar que conteudo é uma string
+        if (typeof conteudo !== 'string') {
+            console.error('ERRO: Conteúdo não é uma string:', conteudo);
+            throw new Error('Formato inválido: conteúdo do documento não é uma string');
+        }
+
+        // Validar que não está vazio
+        if (!conteudo || conteudo.length === 0) {
+            throw new Error('Conteúdo do documento está vazio');
+        }
+
+        // Validar que parece ser Base64 (caracteres válidos)
+        const base64Regex = /^[A-Za-z0-9+/=]+$/;
+        if (!base64Regex.test(conteudo.substring(0, Math.min(100, conteudo.length)))) {
+            console.error('ERRO: Conteúdo não parece ser Base64 válido');
+            throw new Error('Formato inválido: conteúdo não está em Base64');
+        }
+
+        // Fechar modal de loading
+        fecharModalDocumento();
+
+        // Exibir o documento no modal
+        mostrarModalDocumento(conteudo, mimetypeFinal, descricao, numeroProcesso, idDocumento);
+
+    } catch (error) {
+        console.error('Erro ao visualizar documento:', error);
+        fecharModalDocumento();
+        alert('Erro ao carregar documento: ' + error.message);
+    }
+}
+
+function mostrarModalLoading(descricao) {
+    const modalHTML = `
+        <div id="modal-documento" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; display: flex; align-items: center; justify-content: center;">
+            <div style="background: white; border-radius: 10px; padding: 40px; text-align: center; max-width: 400px;">
+                <div style="font-size: 48px; margin-bottom: 20px; animation: spin 1s linear infinite;">⏳</div>
+                <h3 style="color: #333; margin: 0 0 10px 0;">Carregando Documento</h3>
+                <p style="color: #666; margin: 0;">${descricao}</p>
+            </div>
+        </div>
+        <style>
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        </style>
+    `;
+
+    // Remover modal existente se houver
+    const modalExistente = document.getElementById('modal-documento');
+    if (modalExistente) {
+        modalExistente.remove();
+    }
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
+
+function mostrarModalDocumento(conteudoBase64, mimetype, descricao, numeroProcesso, idDocumento) {
+    // Preparar conteúdo para visualização baseado no mimetype
+    let conteudoHTML = '';
+
+    if (mimetype === 'application/pdf') {
+        // PDF: usar embed ou iframe
+        const pdfDataUri = `data:${mimetype};base64,${conteudoBase64}`;
+        conteudoHTML = `
+            <embed
+                src="${pdfDataUri}"
+                type="application/pdf"
+                width="100%"
+                height="100%"
+                style="border: none; border-radius: 5px;"
+            />
+        `;
+    } else if (mimetype === 'text/html') {
+        // HTML: usar iframe com srcdoc
+        const htmlContent = atob(conteudoBase64);
+        conteudoHTML = `
+            <iframe
+                srcdoc="${htmlContent.replace(/"/g, '&quot;')}"
+                width="100%"
+                height="100%"
+                style="border: none; border-radius: 5px; background: white;"
+            ></iframe>
+        `;
+    } else if (mimetype && mimetype.startsWith('video/')) {
+        // Vídeo: usar tag video
+        const videoDataUri = `data:${mimetype};base64,${conteudoBase64}`;
+        conteudoHTML = `
+            <video
+                controls
+                width="100%"
+                height="100%"
+                style="border-radius: 5px; background: black;"
+            >
+                <source src="${videoDataUri}" type="${mimetype}">
+                Seu navegador não suporta a reprodução de vídeos.
+            </video>
+        `;
+    } else if (mimetype && mimetype.startsWith('image/')) {
+        // Imagem: usar tag img
+        const imgDataUri = `data:${mimetype};base64,${conteudoBase64}`;
+        conteudoHTML = `
+            <div style="display: flex; align-items: center; justify-content: center; height: 100%; background: #f5f5f5; border-radius: 5px;">
+                <img
+                    src="${imgDataUri}"
+                    style="max-width: 100%; max-height: 100%; object-fit: contain;"
+                    alt="${descricao}"
+                />
+            </div>
+        `;
+    } else {
+        // Tipo não suportado para visualização: oferecer download apenas
+        conteudoHTML = `
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; background: #f8f9fa; border-radius: 5px; padding: 40px; text-align: center;">
+                <div style="font-size: 64px; margin-bottom: 20px;">📄</div>
+                <h3 style="color: #333; margin: 0 0 10px 0;">Tipo de arquivo não suportado para visualização</h3>
+                <p style="color: #666; margin: 0 0 20px 0;">MIME Type: ${mimetype}</p>
+                <button
+                    onclick="downloadDocumento('${conteudoBase64}', '${mimetype}', '${descricao}')"
+                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: 600;"
+                >
+                    ⬇️ Fazer Download
+                </button>
+            </div>
+        `;
+    }
+
+    const modalHTML = `
+        <div id="modal-documento" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; display: flex; flex-direction: column; padding: 20px;">
+            <!-- Cabeçalho do Modal -->
+            <div style="background: white; border-radius: 10px 10px 0 0; padding: 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                <div style="flex: 1;">
+                    <h3 style="margin: 0 0 5px 0; color: #333; font-size: 18px;">${descricao}</h3>
+                    <div style="font-size: 12px; color: #666;">
+                        Processo: ${formatarNumeroProcesso(numeroProcesso)} | ID Documento: ${idDocumento} | Tipo: ${mimetype}
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button
+                        onclick="downloadDocumento('${conteudoBase64}', '${mimetype}', '${descricao}')"
+                        style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 6px;"
+                        onmouseover="this.style.background='#218838'"
+                        onmouseout="this.style.background='#28a745'"
+                    >
+                        ⬇️ Download
+                    </button>
+                    <button
+                        onclick="fecharModalDocumento()"
+                        style="background: #dc3545; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: 600;"
+                        onmouseover="this.style.background='#c82333'"
+                        onmouseout="this.style.background='#dc3545'"
+                    >
+                        ✖ Fechar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Área de visualização do documento -->
+            <div style="flex: 1; background: white; border-radius: 0 0 10px 10px; overflow: hidden; position: relative;">
+                ${conteudoHTML}
+            </div>
+        </div>
+    `;
+
+    // Remover modal existente se houver
+    const modalExistente = document.getElementById('modal-documento');
+    if (modalExistente) {
+        modalExistente.remove();
+    }
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // Adicionar listener para fechar com ESC
+    document.addEventListener('keydown', fecharModalComEsc);
+}
+
+function fecharModalDocumento() {
+    const modal = document.getElementById('modal-documento');
+    if (modal) {
+        modal.remove();
+    }
+    document.removeEventListener('keydown', fecharModalComEsc);
+}
+
+function fecharModalComEsc(event) {
+    if (event.key === 'Escape') {
+        fecharModalDocumento();
+    }
+}
+
+function downloadDocumento(conteudoBase64, mimetype, descricao) {
+    try {
+        // Converter Base64 para Blob
+        const byteCharacters = atob(conteudoBase64);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: mimetype });
+
+        // Criar URL do blob
+        const url = window.URL.createObjectURL(blob);
+
+        // Definir extensão do arquivo baseado no mimetype
+        let extensao = '';
+        if (mimetype === 'application/pdf') extensao = '.pdf';
+        else if (mimetype === 'text/html') extensao = '.html';
+        else if (mimetype.startsWith('video/')) extensao = '.mp4';
+        else if (mimetype.startsWith('image/png')) extensao = '.png';
+        else if (mimetype.startsWith('image/jpeg')) extensao = '.jpg';
+        else if (mimetype.startsWith('image/')) extensao = '.jpg';
+        else extensao = '.bin';
+
+        // Criar link de download
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${descricao.replace(/[^a-zA-Z0-9]/g, '_')}${extensao}`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // Liberar URL do blob
+        window.URL.revokeObjectURL(url);
+
+        // Feedback visual
+        const btn = event.target;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '✅ Download iniciado!';
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+        }, 2000);
+
+    } catch (error) {
+        console.error('Erro ao fazer download:', error);
+        alert('Erro ao fazer download do documento: ' + error.message);
+    }
+}
+
+// Tornar funções globais para uso nos botões onclick
+window.visualizarDocumento = visualizarDocumento;
+window.fecharModalDocumento = fecharModalDocumento;
+window.downloadDocumento = downloadDocumento;
