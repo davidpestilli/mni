@@ -30,26 +30,18 @@
         <main>
             <form id="formPeticionamentoInicial" class="form-card">
 
-                <!-- Autenticação -->
+                <!-- CPF do Signatário (Novo - Primeiro Campo) -->
                 <fieldset>
-                    <legend>🔐 Autenticação</legend>
+                    <legend>✍️ Signatário</legend>
 
                     <div class="info-box">
-                        <p>ℹ️ <strong>Credenciais de Acesso:</strong> Utilize o CPF/Sigla e senha cadastrados no sistema e-Proc/MNI do advogado que representa a parte. A senha será convertida para hash SHA256 antes do envio.</p>
+                        <p>ℹ️ <strong>CPF do Signatário:</strong> O CPF preenchido abaixo será registrado no processo como o representante da parte peticionante e como responsável pelo evento no e-Proc.</p>
                     </div>
 
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="cpfSigla" class="required">CPF/Sigla do Procurador</label>
-                            <input type="text" id="cpfSigla" required placeholder="Ex: 12345678901" autocomplete="username">
-                            <small>📌 CPF do advogado cadastrado no MNI/e-Proc</small>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="senha" class="required">Senha</label>
-                            <input type="password" id="senha" required placeholder="Digite sua senha" autocomplete="current-password">
-                            <small>🔒 Senha de acesso ao e-Proc</small>
-                        </div>
+                    <div class="form-group">
+                        <label for="signatario" class="required">CPF do Signatário</label>
+                        <input type="text" id="signatario" required placeholder="Ex: 12345678901" autocomplete="off">
+                        <small>✍️ CPF de quem assina a petição (campo obrigatório)</small>
                     </div>
                 </fieldset>
 
@@ -280,12 +272,6 @@
                         <label for="peticaoInicial" class="required">Petição Inicial (PDF)</label>
                         <input type="file" id="peticaoInicial" accept=".pdf" required>
                         <small>📄 Selecione o arquivo PDF contendo a petição inicial</small>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="signatario">CPF do Signatário</label>
-                        <input type="text" id="signatario" placeholder="12345678901">
-                        <small>✍️ CPF de quem assina a petição (opcional para assinatura digital)</small>
                     </div>
 
                     <div class="form-group">

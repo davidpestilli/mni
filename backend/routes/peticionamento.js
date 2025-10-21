@@ -4,14 +4,56 @@ const mniClient = require('../services/mniClient');
 const { gerarSenhaHashMNI } = require('../services/hashUtils');
 
 /**
+ * Função auxiliar: Extrair credenciais do header Authorization
+ * Formato: Bearer <token_base64>
+ * Token: cpfSigla:senha (em base64)
+ */
+function extrairCredenciaisDoHeader(req) {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        throw new Error('Header Authorization ausente ou inválido');
+    }
+
+    const token = authHeader.substring(7); // Remove "Bearer "
+
+    try {
+        const decoded = Buffer.from(token, 'base64').toString('utf-8');
+        const [cpfSigla, senha] = decoded.split(':');
+
+        if (!cpfSigla || !senha) {
+            throw new Error('Token inválido ou mal formatado');
+        }
+
+        return { cpfSigla, senha };
+    } catch (error) {
+        throw new Error('Erro ao decodificar token: ' + error.message);
+    }
+}
+
+/**
  * POST /api/peticionamento/inicial
  * Realizar peticionamento inicial (criar novo processo)
+ *
+ * ATUALIZAÇÃO: Credenciais (CPF/Sigla e Senha) agora vêm do header Authorization
+ * Não é mais necessário fornecer essas informações no corpo da requisição
  */
 router.post('/inicial', async (req, res) => {
     try {
+        // Extrair credenciais do header Authorization
+        let cpfSigla, senha;
+        try {
+            const creds = extrairCredenciaisDoHeader(req);
+            cpfSigla = creds.cpfSigla;
+            senha = creds.senha;
+        } catch (error) {
+            return res.status(401).json({
+                success: false,
+                message: error.message || 'Falha na autenticação: ' + error.message
+            });
+        }
+
         const {
-            cpfSigla,
-            senha,
             codigoLocalidade,
             classeProcessual,
             assunto,
@@ -20,17 +62,11 @@ router.post('/inicial', async (req, res) => {
             nivelSigilo,
             poloAtivo,
             poloPassivo,
+            signatario,
             documentos
         } = req.body;
 
         // Validar campos obrigatórios
-        if (!cpfSigla || !senha) {
-            return res.status(400).json({
-                success: false,
-                message: 'CPF/Sigla e senha são obrigatórios'
-            });
-        }
-
         if (!codigoLocalidade || !classeProcessual) {
             return res.status(400).json({
                 success: false,
@@ -59,8 +95,24 @@ router.post('/inicial', async (req, res) => {
             });
         }
 
+        if (!signatario || signatario.replace(/\D/g, '').length !== 11) {
+            return res.status(400).json({
+                success: false,
+                message: 'CPF do signatário é obrigatório e deve ser válido'
+            });
+        }
+
         // Gerar hash SHA256 da senha
         const senhaHash = gerarSenhaHashMNI(senha);
+
+        console.log(`[PETICIONAMENTO] Processando petição inicial para: ${cpfSigla}`);
+        console.log(`[PETICIONAMENTO] Signatário: ${signatario}`);
+
+        // Adicionar signatario a todos os documentos
+        const documentosComSignatario = documentos.map(doc => ({
+            ...doc,
+            signatario
+        }));
 
         // Montar dados para peticionamento inicial
         const dadosIniciais = {
@@ -72,7 +124,7 @@ router.post('/inicial', async (req, res) => {
             nivelSigilo: nivelSigilo || 0,
             poloAtivo,
             poloPassivo,
-            documentos
+            documentos: documentosComSignatario
         };
 
         // Realizar peticionamento inicial

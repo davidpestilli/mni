@@ -443,15 +443,31 @@ async function handleSubmit(event) {
     try {
         showLoading('Enviando petição inicial via MNI 3.0...');
 
-        const cpfSigla = document.getElementById('cpfSigla').value.trim();
-        const senha = document.getElementById('senha').value;
+        // Recuperar credenciais do localStorage (já autenticadas)
+        const token = localStorage.getItem('mni_token');
+        if (!token) {
+            throw new Error('Sessão expirada. Por favor, faça login novamente.');
+        }
+
+        // Decodificar token (base64: cpfSigla:senha)
+        let cpfSigla, senha;
+        try {
+            const decoded = atob(token);
+            [cpfSigla, senha] = decoded.split(':');
+            if (!cpfSigla || !senha) {
+                throw new Error('Token inválido');
+            }
+        } catch (e) {
+            throw new Error('Erro ao decodificar credenciais. Por favor, faça login novamente.');
+        }
+
         const localidade = document.getElementById('localidade').value;
         const classe = document.getElementById('classe').value.trim();
         const assunto = document.getElementById('assunto').value.trim();
         const valorCausa = document.getElementById('valorCausa').value;
         const competencia = document.getElementById('competencia').value.trim();
         const nivelSigilo = document.getElementById('nivelSigilo').value;
-        const signatario = document.getElementById('signatario').value.trim();
+        const signatario = document.getElementById('signatario').value.trim().replace(/\D/g, '');
 
         if (!localidade) {
             throw new Error('Selecione uma localidade judicial');
@@ -459,6 +475,10 @@ async function handleSubmit(event) {
 
         if (!classe) {
             throw new Error('Informe a classe processual');
+        }
+
+        if (!signatario || signatario.length !== 11) {
+            throw new Error('Informe um CPF válido para o signatário');
         }
 
         const poloAtivo = extrairPartes('ativo');
@@ -502,8 +522,6 @@ async function handleSubmit(event) {
         }
 
         const payload = {
-            cpfSigla,
-            senha,
             codigoLocalidade: localidade,
             classeProcessual: classe,
             assunto: assunto || null,
@@ -512,6 +530,7 @@ async function handleSubmit(event) {
             nivelSigilo: parseInt(nivelSigilo),
             poloAtivo,
             poloPassivo,
+            signatario,
             documentos
         };
 
@@ -520,7 +539,8 @@ async function handleSubmit(event) {
         const response = await fetch(`${API_BASE}/peticionamento/inicial`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify(payload)
         });
