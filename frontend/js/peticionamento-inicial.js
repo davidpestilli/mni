@@ -308,6 +308,88 @@ function resetarAssunto() {
 function configurarFormulario() {
     const form = document.getElementById('formPeticionamentoInicial');
     form.addEventListener('submit', handleSubmit);
+
+    // Configurar formatação automática de datas
+    configurarEventosData();
+}
+
+/**
+ * ========================================
+ * FORMATAÇÃO DE DATA (DD/MM/YYYY)
+ * ========================================
+ */
+
+/**
+ * Formatar data automaticamente enquanto digita
+ * Transforma "12031985" em "12/03/1985"
+ */
+function formatarDataAutomatica(input) {
+    // Remove tudo que não é número
+    let valor = input.value.replace(/\D/g, '');
+
+    // Limita a 8 dígitos (DD MM YYYY)
+    if (valor.length > 8) {
+        valor = valor.substring(0, 8);
+    }
+
+    // Formata conforme digita
+    if (valor.length >= 2) {
+        valor = valor.substring(0, 2) + '/' + valor.substring(2);
+    }
+
+    if (valor.length >= 5) {
+        valor = valor.substring(0, 5) + '/' + valor.substring(5);
+    }
+
+    input.value = valor;
+}
+
+/**
+ * Configurar eventos de formatação para campos de data
+ */
+function configurarEventosData() {
+    // Selecionar todos os campos de data de nascimento
+    const camposData = document.querySelectorAll('.dataNascimento');
+
+    camposData.forEach(campo => {
+        // Evento para formatação automática enquanto digita
+        campo.addEventListener('input', function() {
+            formatarDataAutomatica(this);
+        });
+
+        // Evento para limpar formatação ao focar (opcional)
+        campo.addEventListener('focus', function() {
+            // Seleciona todo o texto para facilitar substituição
+            this.select();
+        });
+    });
+
+    // Usar MutationObserver para detectar novos campos de data adicionados dinamicamente
+    // (quando usuário clica em "+ Adicionar Autor" ou "+ Adicionar Réu")
+    const observer = new MutationObserver(() => {
+        const novosCampos = document.querySelectorAll('.dataNascimento');
+        novosCampos.forEach(campo => {
+            // Verificar se já tem listener (não re-adicionar)
+            if (!campo.dataset.dataListenerAdicionado) {
+                campo.addEventListener('input', function() {
+                    formatarDataAutomatica(this);
+                });
+                campo.addEventListener('focus', function() {
+                    this.select();
+                });
+                campo.dataset.dataListenerAdicionado = 'true';
+            }
+        });
+    });
+
+    // Observar mudanças no DOM (quando novas partes são adicionadas)
+    const containers = document.querySelectorAll('#poloAtivoContainer, #poloPassivoContainer');
+    containers.forEach(container => {
+        observer.observe(container, {
+            childList: true,
+            subtree: true
+        });
+    });
 }
 
 function toggleTipoPessoa(select) {
