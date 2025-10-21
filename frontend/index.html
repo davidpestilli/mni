@@ -33,11 +33,33 @@
                         </button>
                     </div>
 
+                    <!-- Seção: Avisos Aguardando Abertura -->
+                    <div id="avisos-aguardando-section">
+                        <h2 style="margin-top: 20px; margin-bottom: 15px; color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">
+                            ⏳ Prazos Aguardando Abertura
+                        </h2>
+                        <div id="avisos-aguardando-loading" class="loading" style="display: none;">
+                            <div class="spinner"></div>
+                        </div>
+                        <div id="avisos-aguardando-container"></div>
+                    </div>
+
+                    <!-- Seção: Prazos Abertos -->
+                    <div id="prazos-abertos-section" style="margin-top: 30px;">
+                        <h2 style="margin-top: 20px; margin-bottom: 15px; color: #333; border-bottom: 2px solid #28a745; padding-bottom: 10px;">
+                            ✅ Prazos Abertos
+                        </h2>
+                        <div id="prazos-abertos-loading" class="loading" style="display: none;">
+                            <div class="spinner"></div>
+                        </div>
+                        <div id="prazos-abertos-container"></div>
+                    </div>
+
+                    <!-- Manter compatibilidade com avisos-container para carregamento inicial -->
+                    <div id="avisos-container" style="display: none;"></div>
                     <div id="avisos-loading" class="loading" style="display: none;">
                         <div class="spinner"></div>
                     </div>
-
-                    <div id="avisos-container"></div>
                 </div>
 
                 <!-- Tab: Consultar Processo -->

@@ -34,20 +34,46 @@ function extractCredentials(req, res, next) {
 /**
  * GET /api/avisos
  * Listar avisos pendentes
+ *
+ * Query parameters:
+ *   - status=aguardando (padrão): Retorna apenas avisos com prazo aguardando abertura
+ *   - status=abertos: Retorna apenas avisos com prazo aberto
+ *   - status=todos: Retorna avisos aguardando abertura E abertos
  */
 router.get('/', extractCredentials, async (req, res) => {
     try {
         const { idConsultante, senhaConsultante } = req.credentials;
+        const status = req.query.status || 'aguardando';
 
         // Gerar hash SHA256 da senha com data
         const senhaHash = gerarSenhaHashMNI(senhaConsultante);
 
-        const avisos = await mniClient.consultarAvisosPendentes(idConsultante, senhaHash);
+        // Configurar opções de acordo com o status solicitado
+        const opcoes = {};
+        if (status === 'abertos' || status === 'todos') {
+            opcoes.todosPrazos = true;
+            opcoes.informacoesDetalhadas = true;
+        }
+
+        const avisos = await mniClient.consultarAvisosPendentes(idConsultante, senhaHash, opcoes);
+
+        // Filtrar avisos conforme status solicitado
+        let avisosFiltrados = avisos;
+        if (status === 'aguardando') {
+            avisosFiltrados = avisos.filter(a => a.status !== 'Aberto');
+        } else if (status === 'abertos') {
+            avisosFiltrados = avisos.filter(a => a.status === 'Aberto');
+        }
+        // Se status === 'todos', retorna todos
+
+        if (req.query.debug) {
+            console.log(`[AVISOS] Status: ${status}, Totais: ${avisos.length}, Filtrados: ${avisosFiltrados.length}`);
+        }
 
         res.json({
             success: true,
-            count: avisos.length,
-            data: avisos
+            count: avisosFiltrados.length,
+            data: avisosFiltrados
         });
 
     } catch (error) {

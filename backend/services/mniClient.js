@@ -91,8 +91,13 @@ class MNIClient {
 
     /**
      * Consultar avisos pendentes
+     * @param {string} idConsultante - ID do consultante (CPF/Sigla)
+     * @param {string} senhaConsultante - Senha do consultante (já em hash)
+     * @param {object} opcoes - Opções adicionais
+     *   - todosPrazos: boolean (padrão: false) - Incluir prazos abertos além dos aguardando abertura
+     *   - informacoesDetalhadas: boolean (padrão: false) - Retornar informações detalhadas (movimento, prazo, status)
      */
-    async consultarAvisosPendentes(idConsultante, senhaConsultante) {
+    async consultarAvisosPendentes(idConsultante, senhaConsultante, opcoes = {}) {
         try {
             await this.initialize();
 
@@ -101,8 +106,37 @@ class MNIClient {
                 senhaConsultante
             };
 
+            // Adicionar parâmetros adicionais se especificados
+            if (opcoes.todosPrazos || opcoes.informacoesDetalhadas) {
+                args.outroParametro = [];
+
+                if (opcoes.todosPrazos) {
+                    args.outroParametro.push({
+                        attributes: {
+                            nome: 'todosPrazos',
+                            valor: 'true'
+                        }
+                    });
+                }
+
+                if (opcoes.informacoesDetalhadas) {
+                    args.outroParametro.push({
+                        attributes: {
+                            nome: 'informacoesDetalhadas',
+                            valor: 'true'
+                        }
+                    });
+                }
+            }
+
             if (this.config.debugMode) {
                 console.log('[MNI] Consultando avisos pendentes para:', idConsultante);
+                if (opcoes.todosPrazos) {
+                    console.log('[MNI] Incluindo prazos abertos (todosPrazos=true)');
+                }
+                if (opcoes.informacoesDetalhadas) {
+                    console.log('[MNI] Retornando informações detalhadas (informacoesDetalhadas=true)');
+                }
             }
 
             const [result] = await this.client.consultarAvisosPendentesAsync(args);
