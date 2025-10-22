@@ -39,9 +39,13 @@ const { gerarSenhaHashMNI } = require('./hashUtils');
 
 class MNI3Client {
     constructor() {
-        // Ambiente de HOMOLOGAÇÃO
-        this.wsdlUrl = 'https://eproc-1g-sp-hml.tjsp.jus.br/ws/intercomunicacao3.0/wsdl/servico-intercomunicacao-3.0.0.wsdl';
-        this.endpoint = 'https://eproc-1g-sp-hml.tjsp.jus.br/ws/controlador_ws.php?srv=intercomunicacao3.0';
+        // Obter endpoints do gerenciador de ambiente
+        const ambienteManager = require('../config/ambiente');
+        const endpoints = ambienteManager.getEndpoints3_0();
+
+        this.wsdlUrl = endpoints.wsdlUrl;
+        this.endpoint = endpoints.endpoint;
+        this.ambiente = endpoints.ambiente;
         this.client = null;
 
         // Namespaces MNI 3.0

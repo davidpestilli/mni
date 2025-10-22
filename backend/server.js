@@ -12,6 +12,7 @@ const tabelasRoutes = require('./routes/tabelas');
 const peticionamentoRoutes = require('./routes/peticionamento');
 const debugRoutes = require('./routes/debug');
 const mni3Routes = require('./routes/mni3'); // MNI 3.0
+const ambienteRoutes = require('./routes/ambiente'); // Gerenciador de Ambiente
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -32,6 +33,7 @@ app.use('/api/tabelas', tabelasRoutes);
 app.use('/api/mni3', mni3Routes); // MNI 3.0
 app.use('/api/peticionamento', peticionamentoRoutes);
 app.use('/api/debug', debugRoutes);
+app.use('/api/ambiente', ambienteRoutes); // Gerenciador de Ambiente (HML/PROD)
 
 // Rota de health check
 app.get('/api/health', (req, res) => {
