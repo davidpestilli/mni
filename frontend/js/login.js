@@ -20,8 +20,10 @@ loginForm.addEventListener('submit', async (e) => {
     }
 
     // Validar CPF (11 dígitos) ou sigla
-    if (!/^\d{11}$/.test(idConsultante) && !/^[A-Za-z0-9]{3,20}$/.test(idConsultante)) {
-        showAlert('CPF deve ter 11 dígitos ou forneça uma sigla válida', 'error');
+    // Sigla pode conter: letras, números, pontos (.), underscores (_), hífens (-)
+    // Exemplos: RS0099569A, ENT.ESTAD_SP_DPE, OAB-SP-12345
+    if (!/^\d{11}$/.test(idConsultante) && !/^[A-Za-z0-9._-]{3,50}$/.test(idConsultante)) {
+        showAlert('CPF deve ter 11 dígitos ou forneça uma sigla válida (ex: ENT.ESTAD_SP_DPE)', 'error');
         return;
     }
 
