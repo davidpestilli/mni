@@ -1,52 +1,15 @@
-<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
-   xmlns:ser="http://www.cnj.jus.br/servico-intercomunicacao-2.2.2/"
-   xmlns:tip="http://www.cnj.jus.br/tipos-servico-intercomunicacao-2.2.2">
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ser="http://www.cnj.jus.br/servico-intercomunicacao-2.2.2/" xmlns:tip="http://www.cnj.jus.br/tipos-servico-intercomunicacao-2.2.2" xmlns:int="http://www.cnj.jus.br/intercomunicacao-2.2.2">
    <soapenv:Header/>
    <soapenv:Body>
-      <ser:consultarAvisosPendentes>
-         <tip:idConsultante>ID_CONSULTANTE</tip:idConsultante>
-         <tip:senhaConsultante>SENHA</tip:senhaConsultante>
-         <!-- Opcional -->
-         <tip:idRepresentado>CPF_OU_CNPJ_DO_REPRESENTADO</tip:idRepresentado>
-         <!-- Opcional -->
-         <tip:dataReferencia>DATA_REFERENCIA_NO_FORMATO_AAAAMMDDHHMMSS</tip:dataReferencia>
-         <!-- Parâmetros adicionais -->
-         <tip:outroParametro nome="prazo" valor="true"/>
- 	 <tip:outroParametro nome="inicioPrazo" valor="true"/>
-	 <tip:outroParametro nome="finalPrazo" valor="true"/>
-      </ser:consultarAvisosPendentes>
+      <ser:entregarManifestacaoProcessual>
+         <!--Optional:-->
+         <tip:idManifestante>ENT.PROC_REP_TESTE</tip:idManifestante>
+         <!--Optional:-->
+         <tip:senhaManifestante>22e9585abe5a97b8c5ba1d4f9f5efa246ca0d67883b70b89275e1107aef956c4</tip:senhaManifestante>
+      <tip:numeroProcesso>40043242420258260960</tip:numeroProcesso>
+         <tip:documento tipoDocumento="13" mimetype="application/pdf" nivelSigilo="0">
+            <!--Optional:-->
+            <int:conteudo>==</int:conteudo>
+      </ser:entregarManifestacaoProcessual>
    </soapenv:Body>
 </soapenv:Envelope>
-
-
-<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"
-   xmlns:ns1="http://www.cnj.jus.br/tipos-servico-intercomunicacao-2.2.2"
-   xmlns:ns2="http://www.cnj.jus.br/intercomunicacao-2.2.2"
-   xmlns:ns3="http://www.cnj.jus.br/servico-intercomunicacao-2.2.2/"
-   xmlns:xmime="http://www.w3.org/2005/05/xmlmime">
-   <SOAP-ENV:Body>
-      <ns3:consultarAvisosPendentesResposta>
-         <ns1:sucesso>true</ns1:sucesso>
-         <ns1:mensagem>Consulta realizada com sucesso</ns1:mensagem>
-         <ns1:aviso idAviso="201805170000004" tipoComunicacao="INT">
-            <ns2:destinatario>
-               <ns2:pessoa nome="INSTITUTO NACIONAL DO SEGURO SOCIAL - INSS" numeroDocumentoPrincipal="29979036000140" tipoPessoa="juridica"/>
-            </ns2:destinatario>
-            <ns2:processo numero="50000528420188210044" competencia="61" classeProcessual="7" nivelSigilo="0" dataAjuizamento="20180221094736">
-               <ns2:outroParametro nome="rito" valor="2"/>
-               <ns2:outroParametro nome="ritoProcessual" valor="Ordinário"/>
-               <ns2:outroParametro nome="dataAutuacao" valor="20180221094736"/>
-               <ns2:orgaoJulgador codigoOrgao="241601" nomeOrgao="Juízo da 2ª Vara Judicial da Comarca de Encantado" instancia="ORIG" codigoMunicipioIBGE="4306809"/>
-            </ns2:processo>
-            <ns2:dataDisponibilizacao>20180517174725</ns2:dataDisponibilizacao>
-            <ns2:outroParametro nome="identificadorMovimento" valor="5"/>
-            <ns2:outroParametro nome="descricaoMovimento" valor="Intimação Eletrônica - Expedida/Certificada - Audiência"/>
-            <ns2:outroParametro nome="prazo" valor="10"/>
-            <ns2:outroParametro nome="status" valor="Aberto"/>
-            <ns2:outroParametro nome="inicioPrazo" valor="20180521000000"/>
-            <ns2:outroParametro nome="finalPrazo" valor="20180601235959"/>
-            <ns2:outroParametro nome="dataHoraMovimento" valor="20180511121056"/>
-         </ns1:aviso>
-      </ns3:consultarAvisosPendentesResposta>
-   </SOAP-ENV:Body>
-</SOAP-ENV:Envelope>

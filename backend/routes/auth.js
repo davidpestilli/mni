@@ -19,11 +19,13 @@ router.post('/login', async (req, res) => {
             });
         }
 
-        // Validar CPF (11 dígitos) ou sigla
-        if (!/^\d{11}$/.test(idConsultante) && !/^[A-Za-z0-9]{3,20}$/.test(idConsultante)) {
+        // Validar CPF (11 dígitos) ou sigla (sem limite de tamanho)
+        // CPF: exatamente 11 dígitos
+        // Sigla: mínimo 3 caracteres, pode conter letras, números, pontos (.), underscores (_), hífens (-)
+        if (!/^\d{11}$/.test(idConsultante) && !/^[A-Za-z0-9._-]{3,}$/.test(idConsultante)) {
             return res.status(400).json({
                 success: false,
-                message: 'CPF deve ter 11 dígitos ou forneça uma sigla válida'
+                message: 'Informe um CPF com 11 dígitos ou uma sigla válida (mínimo 3 caracteres)'
             });
         }
 

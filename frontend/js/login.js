@@ -19,11 +19,12 @@ loginForm.addEventListener('submit', async (e) => {
         return;
     }
 
-    // Validar CPF (11 dígitos) ou sigla
-    // Sigla pode conter: letras, números, pontos (.), underscores (_), hífens (-)
-    // Exemplos: RS0099569A, ENT.ESTAD_SP_DPE, OAB-SP-12345
-    if (!/^\d{11}$/.test(idConsultante) && !/^[A-Za-z0-9._-]{3,50}$/.test(idConsultante)) {
-        showAlert('CPF deve ter 11 dígitos ou forneça uma sigla válida (ex: ENT.ESTAD_SP_DPE)', 'error');
+    // Validar CPF (11 dígitos) ou sigla (sem limite de tamanho)
+    // CPF: exatamente 11 dígitos
+    // Sigla: mínimo 3 caracteres, pode conter letras, números, pontos (.), underscores (_), hífens (-)
+    // Exemplos: RS0099569A, ENT.ESTAD_SP_DPE, OAB-SP-12345, MUITO_LONGA_SIGLA_COM_MUITOS_CARACTERES
+    if (!/^\d{11}$/.test(idConsultante) && !/^[A-Za-z0-9._-]{3,}$/.test(idConsultante)) {
+        showAlert('Informe um CPF com 11 dígitos ou uma sigla válida (mínimo 3 caracteres)', 'error');
         return;
     }
 
