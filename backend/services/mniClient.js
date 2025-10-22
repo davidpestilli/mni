@@ -619,6 +619,14 @@ class MNIClient {
             //       <ns2:orgaoJulgador codigoOrgao="..." nomeOrgao="..." />
             //    </ns2:processo>
             //    <ns2:dataDisponibilizacao>20251013215003</ns2:dataDisponibilizacao>
+            //    <!-- Quando informacoesDetalhadas=true -->
+            //    <ns2:outroParametro nome="prazo" valor="10"/>
+            //    <ns2:outroParametro nome="status" valor="Aberto"/>
+            //    <ns2:outroParametro nome="inicioPrazo" valor="20180521000000"/>
+            //    <ns2:outroParametro nome="finalPrazo" valor="20180601235959"/>
+            //    <ns2:outroParametro nome="dataHoraMovimento" valor="20180511121056"/>
+            //    <ns2:outroParametro nome="descricaoMovimento" valor="Intimação Eletrônica"/>
+            //    <ns2:outroParametro nome="identificadorMovimento" valor="123"/>
             // </ns1:aviso>
 
             const avisoAttrs = aviso.attributes || aviso.$attributes || {};
@@ -630,7 +638,15 @@ class MNIClient {
             const orgaoJulgador = processo.orgaoJulgador || {};
             const orgaoAttrs = orgaoJulgador.attributes || orgaoJulgador.$attributes || {};
 
-            return {
+            // Extrair parâmetros adicionais (outroParametro)
+            const outrosParametros = this.extrairOutrosParametros(aviso);
+
+            if (this.config.debugMode && outrosParametros) {
+                console.log('[MNI] Parâmetros adicionais extraídos:', outrosParametros);
+            }
+
+            // Montar objeto com dados básicos
+            const avisoParseado = {
                 // ID do aviso
                 idAviso: avisoAttrs.idAviso || '',
                 tipoComunicacao: avisoAttrs.tipoComunicacao || 'INT',
@@ -652,14 +668,38 @@ class MNIClient {
                 // Data de disponibilização
                 dataDisponibilizacao: this.formatarDataHora(aviso.dataDisponibilizacao),
 
-                // Campos para compatibilidade com interface atual
-                descricaoMovimento: avisoAttrs.tipoComunicacao === 'INT' ? 'Intimação' : 'Citação',
-                status: 'Aberto',
-                prazo: '', // Não disponível nessa estrutura
-
                 // Campo identificador para consultar teor
                 identificadorMovimento: avisoAttrs.idAviso || ''
             };
+
+            // Adicionar campos de parâmetros adicionais se disponíveis
+            if (outrosParametros) {
+                // Status do prazo (Aberto / Aguardando Abertura)
+                avisoParseado.status = outrosParametros.status || 'Aguardando Abertura';
+
+                // Prazo em dias
+                avisoParseado.prazo = outrosParametros.prazo || '';
+
+                // Datas do prazo
+                avisoParseado.inicioPrazo = outrosParametros.inicioPrazo || '';
+                avisoParseado.finalPrazo = outrosParametros.finalPrazo || '';
+
+                // Descrição do movimento (ex: "Intimação Eletrônica - Expedida/Certificada")
+                avisoParseado.descricaoMovimento = outrosParametros.descricaoMovimento ||
+                    (avisoAttrs.tipoComunicacao === 'INT' ? 'Intimação' : 'Citação');
+
+                // Identificador do movimento (pode ser diferente do ID do aviso)
+                if (outrosParametros.identificadorMovimento) {
+                    avisoParseado.identificadorMovimento = outrosParametros.identificadorMovimento;
+                }
+            } else {
+                // Fallback para campos padrão (sem informacoesDetalhadas)
+                avisoParseado.descricaoMovimento = avisoAttrs.tipoComunicacao === 'INT' ? 'Intimação' : 'Citação';
+                avisoParseado.status = 'Aguardando Abertura';
+                avisoParseado.prazo = '';
+            }
+
+            return avisoParseado;
         } catch (error) {
             console.error('[MNI] Erro ao parsear aviso individual:', error);
             return {
@@ -669,6 +709,43 @@ class MNIClient {
                 descricaoMovimento: 'Erro ao parsear',
                 status: 'Erro'
             };
+        }
+    }
+
+    /**
+     * Extrair parâmetros adicionais (outroParametro) do aviso
+     * Converte array de { attributes: { nome, valor } } em objeto { nome: valor }
+     */
+    extrairOutrosParametros(aviso) {
+        try {
+            const parametros = {};
+            let outrosParametros = aviso.outroParametro;
+
+            // Se não houver parâmetros, retornar null
+            if (!outrosParametros) {
+                return null;
+            }
+
+            // Garantir que é um array
+            if (!Array.isArray(outrosParametros)) {
+                outrosParametros = [outrosParametros];
+            }
+
+            // Mapear nome → valor
+            outrosParametros.forEach(param => {
+                const attrs = param.attributes || param.$attributes || {};
+                const nome = attrs.nome || param.nome;
+                const valor = attrs.valor || param.valor;
+
+                if (nome && valor !== undefined) {
+                    parametros[nome] = valor;
+                }
+            });
+
+            return Object.keys(parametros).length > 0 ? parametros : null;
+        } catch (error) {
+            console.error('[MNI] Erro ao extrair outros parâmetros:', error);
+            return null;
         }
     }
 
