@@ -61,6 +61,31 @@ class MNI3Client {
     }
 
     /**
+     * Recarrega endpoints quando o ambiente muda (HML/PROD)
+     * Limpa o cliente SOAP para forçar reinicialização com novos endpoints
+     */
+    reloadEndpoints() {
+        try {
+            const ambienteManager = require('../config/ambiente');
+            const endpoints = ambienteManager.getEndpoints3_0();
+
+            this.wsdlUrl = endpoints.wsdlUrl;
+            this.endpoint = endpoints.endpoint;
+            this.ambiente = endpoints.ambiente;
+            this.client = null; // Forçar reinicialização na próxima chamada
+
+            console.log('[MNI 3.0] Endpoints recarregados');
+            console.log('[MNI 3.0] Novo ambiente:', this.ambiente);
+            console.log('[MNI 3.0] Novo endpoint:', this.endpoint);
+
+            return { sucesso: true, ambiente: this.ambiente, endpoint: this.endpoint };
+        } catch (error) {
+            console.error('[MNI 3.0] Erro ao recarregar endpoints:', error.message);
+            throw error;
+        }
+    }
+
+    /**
      * Inicializa o cliente SOAP MNI 3.0
      */
     async initialize() {

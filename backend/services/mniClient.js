@@ -12,6 +12,34 @@ class MNIClient {
     }
 
     /**
+     * Recarrega endpoints quando o ambiente muda (HML/PROD)
+     * Limpa o cliente SOAP para forçar reinicialização com novos endpoints
+     */
+    reloadEndpoints() {
+        try {
+            // Recarregar configuração do ambienteManager
+            const ambienteManager = require('../config/ambiente');
+            const endpoints = ambienteManager.getEndpoints2_2();
+
+            this.config.endpoint = endpoints.endpoint;
+            this.config.wsdlUrl = endpoints.wsdlUrl;
+            this.config.ambiente = endpoints.ambiente;
+            this.config.versao = endpoints.versao;
+
+            this.client = null; // Forçar reinicialização na próxima chamada
+
+            console.log('[MNI 2.2] Endpoints recarregados');
+            console.log('[MNI 2.2] Novo ambiente:', this.config.ambiente);
+            console.log('[MNI 2.2] Novo endpoint:', this.config.endpoint);
+
+            return { sucesso: true, ambiente: this.config.ambiente, endpoint: this.config.endpoint };
+        } catch (error) {
+            console.error('[MNI 2.2] Erro ao recarregar endpoints:', error.message);
+            throw error;
+        }
+    }
+
+    /**
      * Inicializa o cliente SOAP
      */
     async initialize() {

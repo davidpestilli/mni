@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const ambienteManager = require('../config/ambiente');
+const mniClient = require('../services/mniClient');
+const mni3Client = require('../services/mni3Client');
 
 /**
  * GET /api/ambiente
@@ -41,6 +43,22 @@ router.post('/', (req, res) => {
 
         // Atualizar ambiente
         const resultado = ambienteManager.setAmbiente(ambiente);
+
+        // Recarregar endpoints nos clientes SOAP
+        // Isso força a reinicialização dos clientes com os novos endpoints
+        try {
+            mniClient.reloadEndpoints();
+            console.log('[AMBIENTE] MNI 2.2 Client endpoints recarregados');
+        } catch (error) {
+            console.error('[AMBIENTE] Erro ao recarregar MNI 2.2:', error.message);
+        }
+
+        try {
+            mni3Client.reloadEndpoints();
+            console.log('[AMBIENTE] MNI 3.0 Client endpoints recarregados');
+        } catch (error) {
+            console.error('[AMBIENTE] Erro ao recarregar MNI 3.0:', error.message);
+        }
 
         // Retornar resultado
         res.json({
