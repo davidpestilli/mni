@@ -19,7 +19,14 @@ function extractCredentials(req, res, next) {
     try {
         const token = authHeader.substring(7);
         const decoded = Buffer.from(token, 'base64').toString('utf-8');
-        const [idConsultante, senhaConsultante] = decoded.split(':');
+        // Decodificar credenciais: formato "idConsultante:senha"
+        // A senha pode conter ":" então usar split com limit ou usar spread operator
+        const colonIndex = decoded.indexOf(':');
+        if (colonIndex === -1) {
+            throw new Error('Token mal formatado');
+        }
+        const idConsultante = decoded.substring(0, colonIndex);
+        const senhaConsultante = decoded.substring(colonIndex + 1);
 
         req.credentials = { idConsultante, senhaConsultante };
         next();

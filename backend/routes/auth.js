@@ -78,7 +78,13 @@ router.post('/validate', (req, res) => {
     try {
         // Decodificar token (em produção seria JWT)
         const decoded = Buffer.from(token, 'base64').toString('utf-8');
-        const [id] = decoded.split(':');
+        // Extrair ID (antes do primeiro ":")
+        // A senha pode conter ":" então usar indexOf para encontrar o primeiro ":"
+        const colonIndex = decoded.indexOf(':');
+        if (colonIndex === -1) {
+            throw new Error('Token mal formatado');
+        }
+        const id = decoded.substring(0, colonIndex);
 
         res.json({
             success: true,

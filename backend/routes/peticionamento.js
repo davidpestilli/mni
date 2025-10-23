@@ -19,7 +19,14 @@ function extrairCredenciaisDoHeader(req) {
 
     try {
         const decoded = Buffer.from(token, 'base64').toString('utf-8');
-        const [cpfSigla, senha] = decoded.split(':');
+        // Decodificar credenciais: formato "cpfSigla:senha"
+        // A senha pode conter ":" então usar indexOf para encontrar o primeiro ":"
+        const colonIndex = decoded.indexOf(':');
+        if (colonIndex === -1) {
+            throw new Error('Token mal formatado');
+        }
+        const cpfSigla = decoded.substring(0, colonIndex);
+        const senha = decoded.substring(colonIndex + 1);
 
         if (!cpfSigla || !senha) {
             throw new Error('Token inválido ou mal formatado');
