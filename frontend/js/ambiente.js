@@ -66,15 +66,15 @@ async function mudarAmbiente(novoAmbiente) {
         if (data.success) {
             const ambiente = data.data.ambiente;
             atualizarStatusAmbiente(ambiente);
-            mostrarNotificacao(`✅ Ambiente alterado para ${ambiente}`, 'success');
+            notificarAmbiente(`✅ Ambiente alterado para ${ambiente}`, 'success');
             console.log('[AMBIENTE] Endpoints atualizados:', data.data.endpoints);
         } else {
-            mostrarNotificacao(`❌ Erro: ${data.message}`, 'error');
+            notificarAmbiente(`❌ Erro: ${data.message}`, 'error');
             carregarAmbienteAtual(); // Recarregar valor anterior
         }
     } catch (error) {
         console.error('[AMBIENTE] Erro ao mudar ambiente:', error);
-        mostrarNotificacao('❌ Erro ao mudar ambiente', 'error');
+        notificarAmbiente('❌ Erro ao mudar ambiente', 'error');
         carregarAmbienteAtual();
     } finally {
         selectAmbiente.disabled = false;
@@ -97,14 +97,14 @@ function atualizarStatusAmbiente(ambiente) {
 }
 
 /**
- * Mostrar notificação (reutiliza função do app.js ou usa console)
+ * Mostrar notificação (reutiliza função global se disponível, ou usa console)
  */
-function mostrarNotificacao(mensagem, tipo) {
-    if (typeof window.mostrarNotificacao === 'function') {
-        // Se estamos no dashboard, use a função do app.js
+function notificarAmbiente(mensagem, tipo) {
+    // Tentar chamar a função global de notificação se existir
+    if (typeof window.mostrarNotificacao === 'function' && window.mostrarNotificacao !== notificarAmbiente) {
         window.mostrarNotificacao(mensagem, tipo);
     } else {
-        // Se estamos na tela de login, use console ou crie notificação simples
+        // Fallback para console
         console.log(`[${tipo.toUpperCase()}] ${mensagem}`);
     }
 }
