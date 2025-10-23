@@ -1,10 +1,25 @@
 const soap = require('soap');
 const xml2js = require('xml2js');
-const config = require('../config/mni.config');
 
 class MNIClient {
     constructor() {
-        this.config = config;
+        // Carregar endpoints dinamicamente do ambienteManager (não usar config estático)
+        const ambienteManager = require('../config/ambiente');
+        const endpoints = ambienteManager.getEndpoints2_2();
+
+        this.config = {
+            endpoint: endpoints.endpoint,
+            wsdlUrl: endpoints.wsdlUrl,
+            ambiente: endpoints.ambiente,
+            versao: endpoints.versao,
+            namespaces: {
+                service: process.env.MNI_NAMESPACE_SERVICE,
+                types: process.env.MNI_NAMESPACE_TYPES
+            },
+            timeout: parseInt(process.env.REQUEST_TIMEOUT) || 60000,
+            debugMode: process.env.DEBUG_MODE === 'true'
+        };
+
         this.client = null;
         this.lastRequest = null;
         this.lastResponse = null;

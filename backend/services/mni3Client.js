@@ -1,6 +1,5 @@
 const soap = require('soap');
 const crypto = require('crypto');
-const config = require('../config/mni.config');
 const { gerarSenhaHashMNI } = require('./hashUtils');
 
 /**
@@ -55,6 +54,10 @@ class MNI3Client {
             int: 'http://www.cnj.jus.br/mni/v300/intercomunicacao'
         };
 
+        // Configurações
+        this.timeout = parseInt(process.env.REQUEST_TIMEOUT) || 60000;
+        this.debugMode = process.env.DEBUG_MODE === 'true';
+
         // Armazenar último request/response para debug
         this.lastRequestXML = null;
         this.lastResponseXML = null;
@@ -93,7 +96,7 @@ class MNI3Client {
 
         try {
             const options = {
-                timeout: 60000,
+                timeout: this.timeout,
                 disableCache: true
             };
 
@@ -104,7 +107,7 @@ class MNI3Client {
                 this.client.setEndpoint(this.endpoint);
             }
 
-            if (config.debugMode) {
+            if (this.debugMode) {
                 console.log('[MNI 3.0] Cliente SOAP inicializado');
                 console.log('[MNI 3.0] Endpoint:', this.endpoint);
                 console.log('[MNI 3.0] Métodos disponíveis:', Object.keys(this.client).filter(k => typeof this.client[k] === 'function'));
@@ -162,13 +165,13 @@ class MNI3Client {
                 estado: estado
             };
 
-            if (config.debugMode) {
+            if (this.debugMode) {
                 console.log('[MNI 3.0] Consultando localidades para estado:', estado);
             }
 
             const [result] = await this.client.consultarLocalidadesAsync(args);
 
-            if (config.debugMode) {
+            if (this.debugMode) {
                 console.log('[MNI 3.0] Localidades retornadas:', result);
             }
 
@@ -196,13 +199,13 @@ class MNI3Client {
                 codigoLocalidade: codigoLocalidade
             };
 
-            if (config.debugMode) {
+            if (this.debugMode) {
                 console.log('[MNI 3.0] Consultando competências para localidade:', codigoLocalidade);
             }
 
             const [result] = await this.client.consultarCompetenciasAsync(args);
 
-            if (config.debugMode) {
+            if (this.debugMode) {
                 console.log('[MNI 3.0] Competências retornadas:', result);
             }
 
@@ -237,13 +240,13 @@ class MNI3Client {
                 args.codigoCompetencia = codigoCompetencia;
             }
 
-            if (config.debugMode) {
+            if (this.debugMode) {
                 console.log('[MNI 3.0] Consultando classes para:', args);
             }
 
             const [result] = await this.client.consultarClassesAsync(args);
 
-            if (config.debugMode) {
+            if (this.debugMode) {
                 console.log('[MNI 3.0] Classes retornadas:', result);
             }
 
@@ -279,13 +282,13 @@ class MNI3Client {
                 args.codigoCompetencia = codigoCompetencia;
             }
 
-            if (config.debugMode) {
+            if (this.debugMode) {
                 console.log('[MNI 3.0] Consultando assuntos para:', args);
             }
 
             const [result] = await this.client.consultarAssuntosAsync(args);
 
-            if (config.debugMode) {
+            if (this.debugMode) {
                 console.log('[MNI 3.0] Assuntos retornados:', result);
             }
 
@@ -323,13 +326,13 @@ class MNI3Client {
             if (options.tiposAviso) args.tiposAviso = options.tiposAviso;
             if (options.outroParametro) args.outroParametro = options.outroParametro;
 
-            if (config.debugMode) {
+            if (this.debugMode) {
                 console.log('[MNI 3.0] Consultando avisos pendentes para usuário:', usuario);
             }
 
             const [result] = await this.client.consultarAvisosPendentesAsync(args);
 
-            if (config.debugMode) {
+            if (this.debugMode) {
                 console.log('[MNI 3.0] Avisos retornados:', result);
             }
 
@@ -509,7 +512,7 @@ class MNI3Client {
                 ? result.codigosClasse
                 : [result.codigosClasse];
 
-            if (config.debugMode) {
+            if (this.debugMode) {
                 console.log(`[MNI 3.0] ${codigos.length} códigos de classe retornados:`, codigos);
             }
 
