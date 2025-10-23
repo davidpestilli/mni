@@ -9,10 +9,14 @@ const ambienteStatus = document.getElementById('ambiente-status-login') || docum
 // Verificar se os elementos existem antes de adicionar listeners
 if (selectAmbiente && ambienteStatus) {
     /**
-     * Carregar ambiente atual ao abrir a página
+     * Carregar ambiente atual ao abrir a página (apenas no dashboard)
+     * Na tela de login, o ambiente padrão é sempre HML
      */
     document.addEventListener('DOMContentLoaded', () => {
-        carregarAmbienteAtual();
+        // Se estamos no dashboard (não há elemento de login), sincronizar com backend
+        if (!document.getElementById('login-form')) {
+            carregarAmbienteAtual();
+        }
     });
 
     /**
