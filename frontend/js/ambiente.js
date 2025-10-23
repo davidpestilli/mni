@@ -48,7 +48,7 @@ async function carregarAmbienteAtual() {
  */
 async function mudarAmbiente(novoAmbiente) {
     try {
-        ambienteStatus.textContent = 'Alterando...';
+        ambienteStatus.textContent = '⏳';
         selectAmbiente.disabled = true;
 
         const response = await fetch('/api/ambiente', {
