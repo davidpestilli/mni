@@ -2,23 +2,27 @@
  * Gerenciador de Ambiente (HML/PROD) - Frontend
  */
 
-const selectAmbiente = document.getElementById('select-ambiente');
-const ambienteStatus = document.getElementById('ambiente-status');
+// Suporta tanto a tela de login quanto o dashboard
+const selectAmbiente = document.getElementById('select-ambiente-login') || document.getElementById('select-ambiente');
+const ambienteStatus = document.getElementById('ambiente-status-login') || document.getElementById('ambiente-status');
 
-/**
- * Carregar ambiente atual ao abrir a página
- */
-document.addEventListener('DOMContentLoaded', () => {
-    carregarAmbienteAtual();
-});
+// Verificar se os elementos existem antes de adicionar listeners
+if (selectAmbiente && ambienteStatus) {
+    /**
+     * Carregar ambiente atual ao abrir a página
+     */
+    document.addEventListener('DOMContentLoaded', () => {
+        carregarAmbienteAtual();
+    });
 
-/**
- * Evento de mudança de ambiente
- */
-selectAmbiente.addEventListener('change', async (e) => {
-    const novoAmbiente = e.target.value;
-    await mudarAmbiente(novoAmbiente);
-});
+    /**
+     * Evento de mudança de ambiente
+     */
+    selectAmbiente.addEventListener('change', async (e) => {
+        const novoAmbiente = e.target.value;
+        await mudarAmbiente(novoAmbiente);
+    });
+}
 
 /**
  * Carregar ambiente atual do backend
@@ -93,12 +97,14 @@ function atualizarStatusAmbiente(ambiente) {
 }
 
 /**
- * Mostrar notificação (reutiliza função do app.js)
+ * Mostrar notificação (reutiliza função do app.js ou usa console)
  */
 function mostrarNotificacao(mensagem, tipo) {
     if (typeof window.mostrarNotificacao === 'function') {
+        // Se estamos no dashboard, use a função do app.js
         window.mostrarNotificacao(mensagem, tipo);
     } else {
+        // Se estamos na tela de login, use console ou crie notificação simples
         console.log(`[${tipo.toUpperCase()}] ${mensagem}`);
     }
 }
