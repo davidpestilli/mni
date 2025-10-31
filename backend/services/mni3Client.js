@@ -570,6 +570,53 @@ class MNI3Client {
             return result;
         }
     }
+
+    /**
+     * CONSULTAR TEOR DA COMUNICAÇÃO
+     *
+     * Consulta o teor (conteúdo) de uma comunicação específica de um processo.
+     *
+     * @param {string} usuario - CPF/Sigla do usuário
+     * @param {string} senha - Senha do usuário (será hasheada)
+     * @param {string} numeroProcesso - Número do processo (20 dígitos)
+     * @param {string} identificadorMovimento - Identificador do movimento
+     * @returns {Object} Teor da comunicação
+     */
+    async consultarTeorComunicacao(usuario, senha, numeroProcesso, identificadorMovimento) {
+        try {
+            await this.initialize();
+
+            const args = {
+                consultante: this.criarAutenticacao(usuario, senha),
+                numeroProcesso: numeroProcesso,
+                identificadorMovimento: identificadorMovimento
+            };
+
+            if (this.debugMode) {
+                console.log('[MNI 3.0] Consultando teor da comunicação:', { numeroProcesso, identificadorMovimento });
+            }
+
+            const [result] = await this.client.consultarTeorComunicacaoAsync(args);
+
+            if (this.debugMode) {
+                console.log('[MNI 3.0] Teor retornado:', result);
+            }
+
+            return this.parseTeorComunicacao(result);
+
+        } catch (error) {
+            console.error('[MNI 3.0] Erro ao consultar teor:', error.message);
+            throw new Error(`Erro ao consultar teor da comunicação: ${error.message}`);
+        }
+    }
+
+    /**
+     * Parse do teor da comunicação
+     * TODO: Implementar parsing específico se necessário
+     */
+    parseTeorComunicacao(result) {
+        return result;
+    }
 }
 
 module.exports = new MNI3Client();

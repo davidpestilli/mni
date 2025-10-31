@@ -5,19 +5,65 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - MNI Web App</title>
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            padding: 10px;
+        }
+
+        #alert-container {
+            margin-bottom: 12px;
+        }
+
+        #alert-container .alert {
+            margin-bottom: 0;
+            padding: 10px;
+            font-size: 13px;
+        }
+
+        .login-footer {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #eee;
+            text-align: center;
+            font-size: 11px;
+            color: #999;
+            line-height: 1.4;
+        }
+
+        .login-footer p {
+            margin: 2px 0;
+        }
+    </style>
 </head>
 <body>
     <div class="login-container">
         <h1>MNI Web App</h1>
         <p class="subtitle">Sistema de Teste de Integração MNI</p>
 
-        <!-- Ambiente Selector -->
-        <div id="ambiente-selector-login" style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 30px; padding: 15px; background: #f9f9f9; border-radius: 8px; border: 1px solid #e0e0e0;">
-            <select id="select-ambiente-login" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; flex: 1; max-width: 200px;">
-                <option value="HML" selected>🏢 Homologação (HML)</option>
-                <option value="PROD">🚀 Produção (PROD)</option>
-            </select>
-            <span id="ambiente-status-login" style="font-size: 12px; color: #666; padding: 6px 10px; background: #f0f0f0; border-radius: 4px; white-space: nowrap;">🏢 HML</span>
+        <!-- Seletores de Sistema e Ambiente -->
+        <div id="ambiente-selector-login" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; padding: 12px; background: #f9f9f9; border-radius: 8px; border: 1px solid #e0e0e0;">
+            <!-- Seletor de Sistema -->
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+                <label style="font-size: 11px; color: #666; font-weight: 600;">Sistema</label>
+                <select id="select-sistema-login" style="padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 12px; width: 100%;">
+                    <option value="1G_CIVIL" selected>⚖️ Civil</option>
+                    <option value="1G_EXEC_FISCAL">💰 Execução Fiscal</option>
+                </select>
+            </div>
+
+            <!-- Seletor de Ambiente -->
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+                <label style="font-size: 11px; color: #666; font-weight: 600;">Ambiente</label>
+                <select id="select-ambiente-login" style="padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 12px; width: 100%;">
+                    <option value="HML" selected>🏢 Homologação</option>
+                    <option value="PROD">🚀 Produção</option>
+                </select>
+            </div>
+
+            <!-- Status (ocupa as duas colunas) -->
+            <div style="grid-column: 1 / -1; display: flex; justify-content: center; padding-top: 4px; border-top: 1px solid #ddd;">
+                <span id="ambiente-status-login" style="font-size: 12px; color: #666; padding: 4px 12px; background: #f0f0f0; border-radius: 4px; text-align: center;">⚖️ HML</span>
+            </div>
         </div>
 
         <div id="alert-container"></div>
@@ -47,14 +93,31 @@
                 >
             </div>
 
+            <div class="form-group">
+                <label for="idRepresentado">
+                    ID Representado (Opcional)
+                    <span style="font-size: 11px; color: #999;">ℹ️ CPF ou CNPJ</span>
+                </label>
+                <input
+                    type="text"
+                    id="idRepresentado"
+                    name="idRepresentado"
+                    placeholder="Ex: 29.979.036/0001-40 (opcional)"
+                    autocomplete="off"
+                >
+                <small style="display: block; color: #666;">
+                    Deixe em branco para ver todos os avisos
+                </small>
+            </div>
+
             <button type="submit" class="btn btn-primary" id="btn-login">
                 Entrar
             </button>
         </form>
 
-        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-size: 12px; color: #999;">
-            <p>⚠️ Use apenas em ambiente de testes/homologação</p>
-            <p>Desenvolvido para fins de aprendizagem e suporte técnico</p>
+        <div class="login-footer">
+            <p>⚠️ Ambiente de testes/homologação</p>
+            <p>Fins de aprendizagem e suporte técnico</p>
         </div>
     </div>
 

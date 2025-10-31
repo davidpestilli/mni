@@ -12,10 +12,11 @@ loginForm.addEventListener('submit', async (e) => {
 
     const idConsultante = document.getElementById('idConsultante').value.trim();
     const senhaConsultante = document.getElementById('senhaConsultante').value;
+    let idRepresentado = document.getElementById('idRepresentado').value.trim();
 
     // Validações básicas
     if (!idConsultante || !senhaConsultante) {
-        showAlert('Preencha todos os campos', 'error');
+        showAlert('Preencha todos os campos obrigatórios', 'error');
         return;
     }
 
@@ -28,19 +29,65 @@ loginForm.addEventListener('submit', async (e) => {
         return;
     }
 
+    // Validar idRepresentado (opcional)
+    if (idRepresentado) {
+        // Remover separadores para validação
+        const idRepresentadoSemSeparadores = idRepresentado.replace(/[^\d]/g, '');
+
+        // CPF tem 11 dígitos ou CNPJ tem 14 dígitos
+        if (!/^\d{11}$/.test(idRepresentadoSemSeparadores) && !/^\d{14}$/.test(idRepresentadoSemSeparadores)) {
+            showAlert('ID Representado inválido. Informe um CPF (11 dígitos) ou CNPJ (14 dígitos)', 'error');
+            return;
+        }
+
+        // Usar apenas os dígitos para a requisição
+        idRepresentado = idRepresentadoSemSeparadores;
+    } else {
+        // Se deixado em branco, enviar null
+        idRepresentado = null;
+    }
+
     try {
         btnLogin.disabled = true;
         btnLogin.textContent = 'Autenticando...';
+
+        // Obter o sistema selecionado na tela de login
+        const selectSistemaLogin = document.getElementById('select-sistema-login');
+        const sistemaSelecionado = selectSistemaLogin ? selectSistemaLogin.value : '1G_CIVIL';
+
+        // Salvar sistema selecionado no localStorage
+        localStorage.setItem('mni_sistema_selecionado', sistemaSelecionado);
+
+        // ⚠️ IMPORTANTE: Usar Civil para autenticação
+        // (Execução Fiscal não suporta MNI 2.2, necessário para autenticação)
+        try {
+            await fetch('/api/ambiente', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ sistema: '1G_CIVIL' })
+            });
+        } catch (error) {
+            console.warn('[LOGIN] Aviso ao resetar sistema para Civil:', error.message);
+        }
+
+        const requestBody = {
+            idConsultante,
+            senhaConsultante
+        };
+
+        // Adicionar idRepresentado apenas se foi preenchido
+        if (idRepresentado) {
+            requestBody.idRepresentado = idRepresentado;
+        }
 
         const response = await fetch('/api/auth/login', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                idConsultante,
-                senhaConsultante
-            })
+            body: JSON.stringify(requestBody)
         });
 
         const data = await response.json();
@@ -50,7 +97,35 @@ loginForm.addEventListener('submit', async (e) => {
             localStorage.setItem('mni_token', data.token);
             localStorage.setItem('mni_user_id', data.user.id);
 
+            // Salvar idRepresentado se foi informado
+            if (data.user.idRepresentado) {
+                localStorage.setItem('mni_representado_id', data.user.idRepresentado);
+            } else {
+                localStorage.removeItem('mni_representado_id');
+            }
+
             showAlert('Login realizado com sucesso!', 'success');
+
+            // Trocar para o sistema selecionado na tela de login (se não for Civil)
+            const sistemaSelecionado = localStorage.getItem('mni_sistema_selecionado') || '1G_CIVIL';
+            if (sistemaSelecionado !== '1G_CIVIL') {
+                try {
+                    await fetch('/api/ambiente', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ sistema: sistemaSelecionado })
+                    });
+                    // Salvar no localStorage para que o dashboard saiba qual sistema usar
+                    localStorage.setItem('mni_sistema_atual', sistemaSelecionado);
+                } catch (error) {
+                    console.warn('[LOGIN] Aviso ao trocar para sistema selecionado:', error.message);
+                }
+            } else {
+                // Se for Civil, salvar também
+                localStorage.setItem('mni_sistema_atual', '1G_CIVIL');
+            }
 
             // Redirecionar para dashboard
             setTimeout(() => {

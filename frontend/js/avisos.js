@@ -42,10 +42,29 @@ async function carregarTodosAvisos() {
         showLoading(avisosAguardandoLoading);
         showLoading(prazosAbertosLoading);
 
+        // Verificar se há idRepresentado armazenado
+        let idRepresentado = localStorage.getItem('mni_representado_id');
+
+        // Garantir que idRepresentado seja null se vazio
+        idRepresentado = idRepresentado && idRepresentado.trim() ? idRepresentado.trim() : null;
+
+        // Determinar qual versão MNI usar baseado no sistema atual
+        const sistema = localStorage.getItem('mni_sistema_atual') || '1G_CIVIL';
+        const baseUrl = (sistema === '1G_EXEC_FISCAL') ? '/api/avisos-v3' : '/api/avisos';
+
+        let urlAguardando = baseUrl + '?status=aguardando';
+        let urlAbertos = baseUrl + '?status=abertos';
+
+        // Adicionar idRepresentado à URL se foi armazenado (apenas para MNI 2.2)
+        if (idRepresentado && sistema !== '1G_EXEC_FISCAL') {
+            urlAguardando += `&idRepresentado=${encodeURIComponent(idRepresentado)}`;
+            urlAbertos += `&idRepresentado=${encodeURIComponent(idRepresentado)}`;
+        }
+
         // Fazer ambas as requisições em paralelo
         const [respostaAguardando, respostaAbertos] = await Promise.all([
-            apiRequest('/api/avisos?status=aguardando'),
-            apiRequest('/api/avisos?status=abertos')
+            apiRequest(urlAguardando),
+            apiRequest(urlAbertos)
         ]);
 
         const dataAguardando = await respostaAguardando.json();
@@ -54,6 +73,11 @@ async function carregarTodosAvisos() {
         // Renderizar avisos aguardando
         if (dataAguardando.success) {
             renderizarAvisosAguardando(dataAguardando.data);
+
+            // Mostrar indicador de filtro se ativo
+            if (idRepresentado) {
+                exibirIndicadorFiltroRepresentado(idRepresentado);
+            }
         } else {
             showError(avisosAguardandoContainer, dataAguardando.message || 'Erro ao carregar avisos');
         }
@@ -273,8 +297,12 @@ async function abrirPrazo(numeroProcesso, identificadorMovimento) {
     try {
         showLoading(prazosAbertosLoading);
 
+        // Determinar qual versão MNI usar baseado no sistema atual
+        const sistema = localStorage.getItem('mni_sistema_atual') || '1G_CIVIL';
+        const baseUrl = (sistema === '1G_EXEC_FISCAL') ? '/api/avisos-v3' : '/api/avisos';
+
         // Consultar teor da comunicação
-        const response = await apiRequest(`/api/avisos/${numeroProcesso}/${identificadorMovimento}`);
+        const response = await apiRequest(`${baseUrl}/${numeroProcesso}/${identificadorMovimento}`);
         const data = await response.json();
 
         if (data.success) {
@@ -311,6 +339,74 @@ function formatarDataHora(dataHora) {
     const segundo = dataHora.substring(12, 14);
 
     return `${dia}/${mes}/${ano} ${hora}:${minuto}:${segundo}`;
+}
+
+/**
+ * Exibir indicador visual de que o filtro de representado está ativo
+ */
+function exibirIndicadorFiltroRepresentado(idRepresentado) {
+    // Procurar por elemento existente e remover se houver
+    const indicadorExistente = document.getElementById('indicador-filtro-representado');
+    if (indicadorExistente) {
+        indicadorExistente.remove();
+    }
+
+    // Criar novo indicador
+    const indicador = document.createElement('div');
+    indicador.id = 'indicador-filtro-representado';
+    indicador.style.cssText = `
+        padding: 12px 16px;
+        background-color: #e3f2fd;
+        border-left: 4px solid #2196f3;
+        border-radius: 4px;
+        margin-bottom: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 14px;
+        color: #1565c0;
+    `;
+
+    const textoFiltro = document.createElement('span');
+    textoFiltro.innerHTML = `<strong>🔍 Filtro ativo:</strong> Exibindo avisos apenas do representado: <code>${idRepresentado}</code>`;
+
+    const btnLimpar = document.createElement('button');
+    btnLimpar.textContent = '✕ Limpar';
+    btnLimpar.style.cssText = `
+        background: none;
+        border: 1px solid #2196f3;
+        color: #2196f3;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        transition: all 0.3s;
+    `;
+
+    btnLimpar.onmouseover = function() {
+        this.style.backgroundColor = '#e3f2fd';
+    };
+    btnLimpar.onmouseout = function() {
+        this.style.backgroundColor = 'transparent';
+    };
+
+    btnLimpar.onclick = function() {
+        // Limpar idRepresentado do localStorage
+        localStorage.removeItem('mni_representado_id');
+        // Recarregar avisos
+        carregarTodosAvisos();
+    };
+
+    indicador.appendChild(textoFiltro);
+    indicador.appendChild(btnLimpar);
+
+    // Inserir no topo do container de avisos
+    const sectionAguardando = document.querySelector('[data-section="avisos-aguardando"]');
+    if (sectionAguardando && sectionAguardando.parentElement) {
+        sectionAguardando.parentElement.insertBefore(indicador, sectionAguardando);
+    } else if (avisosAguardandoContainer.parentElement) {
+        avisosAguardandoContainer.parentElement.insertBefore(indicador, avisosAguardandoContainer);
+    }
 }
 
 /**
