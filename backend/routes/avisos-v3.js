@@ -78,6 +78,19 @@ router.get('/', extractCredentials, async (req, res) => {
             opcoes.tipoPendencia = 'AM'; // Ambos
         }
 
+        // Adicionar parâmetros obrigatórios conforme documentação MNI 3.0
+        // Esses parâmetros são necessários para retornar informações detalhadas dos avisos
+        opcoes.outroParametro = [
+            {
+                nome: 'todosPrazos',
+                valor: 'true'
+            },
+            {
+                nome: 'informacoesDetalhadas',
+                valor: 'true'
+            }
+        ];
+
         console.log('[AVISOS V3] Opções enviadas:', opcoes);
 
         // Chamar MNI 3.0
