@@ -2,10 +2,10 @@
  * Gerenciador de Ambiente (HML/PROD) e Sistema (1G_CIVIL/1G_EXEC_FISCAL) - Frontend
  */
 
-// Suporta tanto a tela de login quanto o dashboard
-const selectSistema = document.getElementById('select-sistema-login') || document.getElementById('select-sistema');
-const selectAmbiente = document.getElementById('select-ambiente-login') || document.getElementById('select-ambiente');
-const ambienteStatus = document.getElementById('ambiente-status-login') || document.getElementById('ambiente-status');
+// Suporta apenas a tela de login (seletores removidos do dashboard)
+const selectSistema = document.getElementById('select-sistema-login');
+const selectAmbiente = document.getElementById('select-ambiente-login');
+const ambienteStatus = document.getElementById('ambiente-status-login');
 
 // Configuração dos sistemas e ambientes suportados
 const SISTEMAS_CONFIG = {
