@@ -326,20 +326,52 @@ class MNI3Client {
             if (options.tiposAviso) args.tiposAviso = options.tiposAviso;
             if (options.outroParametro) args.outroParametro = options.outroParametro;
 
-            if (this.debugMode) {
-                console.log('[MNI 3.0] Consultando avisos pendentes para usuário:', usuario);
-            }
+            console.log('[MNI 3.0] ========================================');
+            console.log('[MNI 3.0] Usuário:', usuario);
+            console.log('[MNI 3.0] Senha hasheada (SHA256 com data):', this.criarAutenticacao(usuario, senha).autenticacaoSimples.senha);
+            console.log('[MNI 3.0] Args completo:', JSON.stringify(args, null, 2));
+            console.log('[MNI 3.0] ========================================');
 
             const [result] = await this.client.consultarAvisosPendentesAsync(args);
 
+            // Armazenar XMLs para debug
+            this.lastRequestXML = this.client.lastRequest;
+            this.lastResponseXML = this.client.lastResponse;
+
+            // Log do XML enviado
+            console.log('[MNI 3.0] ========================================');
+            console.log('[MNI 3.0] XML ENVIADO PARA MNI 3.0:');
+            console.log(this.lastRequestXML);
+            console.log('[MNI 3.0] ========================================');
+            console.log('[MNI 3.0] XML RESPOSTA MNI 3.0:');
+            console.log(this.lastResponseXML);
+            console.log('[MNI 3.0] ========================================');
+
             if (this.debugMode) {
-                console.log('[MNI 3.0] Avisos retornados:', result);
+                console.log('[MNI 3.0] Avisos retornados (JSON):', JSON.stringify(result, null, 2));
             }
 
             return result;
 
         } catch (error) {
-            console.error('[MNI 3.0] Erro ao consultar avisos pendentes:', error.message);
+            // Armazenar XMLs mesmo em caso de erro
+            if (this.client) {
+                this.lastRequestXML = this.client.lastRequest;
+                this.lastResponseXML = this.client.lastResponse;
+            }
+
+            console.error('[MNI 3.0] ========================================');
+            console.error('[MNI 3.0] ERRO ao consultar avisos pendentes:', error.message);
+            console.error('[MNI 3.0] Stack:', error.stack);
+            if (this.lastRequestXML) {
+                console.error('[MNI 3.0] XML Request que causou erro:');
+                console.error(this.lastRequestXML);
+            }
+            if (this.lastResponseXML) {
+                console.error('[MNI 3.0] XML Response:');
+                console.error(this.lastResponseXML);
+            }
+            console.error('[MNI 3.0] ========================================');
             throw new Error(`Erro ao consultar avisos: ${error.message}`);
         }
     }
