@@ -5,7 +5,18 @@
       "WebFetch(domain:www.cnj.jus.br)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(test:*)",
+      "Bash(npm start)",
+      "Bash(curl:*)",
+      "Bash(pkill:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(wmic process:*)",
+      "Bash(node -e:*)",
+      "Bash(find:*)",
+      "Bash(tasklist:*)",
+      "Bash(taskkill /PID 32828 /F)"
     ],
     "deny": [],
     "ask": []

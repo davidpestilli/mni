@@ -9,7 +9,7 @@ const { gerarSenhaHashMNI } = require('../services/hashUtils');
  */
 router.post('/login', async (req, res) => {
     try {
-        const { idConsultante, senhaConsultante } = req.body;
+        const { idConsultante, senhaConsultante, idRepresentado } = req.body;
 
         // Validações básicas
         if (!idConsultante || !senhaConsultante) {
@@ -29,28 +29,50 @@ router.post('/login', async (req, res) => {
             });
         }
 
+        // Validar idRepresentado (opcional)
+        // Deve ser CPF (11 dígitos) ou CNPJ (14 dígitos)
+        if (idRepresentado) {
+            if (!/^\d{11}$/.test(idRepresentado) && !/^\d{14}$/.test(idRepresentado)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'ID Representado inválido. Deve ser um CPF (11 dígitos) ou CNPJ (14 dígitos)'
+                });
+            }
+
+            console.log('[AUTH] Login com filtro de representado:', idRepresentado);
+        }
+
         // Gerar hash SHA256 da senha com data (formato MNI)
         const senhaHash = gerarSenhaHashMNI(senhaConsultante);
 
-        console.log('[AUTH] Senha original (sem exibir por segurança)');
+        console.log('[AUTH] Autenticando para:', idConsultante);
         console.log('[AUTH] Senha com hash SHA256:', senhaHash);
 
         // Tentar autenticar fazendo uma consulta simples de avisos
-        const avisos = await mniClient.consultarAvisosPendentes(idConsultante, senhaHash);
+        const avisos = await mniClient.consultarAvisosPendentes(
+            idConsultante,
+            senhaHash,
+            {},
+            idRepresentado  // Passar idRepresentado como 4º parâmetro
+        );
 
         // Se chegou aqui, autenticação foi bem-sucedida
-        // Em produção, você geraria um JWT token aqui
-        res.json({
+        const responseData = {
             success: true,
             message: 'Autenticação realizada com sucesso',
             user: {
                 id: idConsultante
             },
-            // Por enquanto, retornamos as credenciais para usar nas próximas requisições
-            // Em produção, isso seria um token JWT
             // IMPORTANTE: Armazenar a senha ORIGINAL, não o hash, pois o hash muda diariamente
             token: Buffer.from(`${idConsultante}:${senhaConsultante}`).toString('base64')
-        });
+        };
+
+        // Incluir idRepresentado na resposta se foi informado
+        if (idRepresentado) {
+            responseData.user.idRepresentado = idRepresentado;
+        }
+
+        res.json(responseData);
 
     } catch (error) {
         console.error('[AUTH] Erro no login:', error.message);

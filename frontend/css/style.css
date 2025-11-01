@@ -24,7 +24,7 @@ body {
 .login-container {
     background: white;
     border-radius: 10px;
-    padding: 40px;
+    padding: 30px 35px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     width: 100%;
     max-width: 400px;
@@ -32,34 +32,36 @@ body {
 
 .login-container h1 {
     text-align: center;
-    margin-bottom: 10px;
+    margin-bottom: 5px;
     color: #333;
+    font-size: 24px;
 }
 
 .login-container .subtitle {
     text-align: center;
     color: #666;
-    margin-bottom: 30px;
-    font-size: 14px;
+    margin-bottom: 20px;
+    font-size: 13px;
 }
 
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 16px;
 }
 
 .form-group label {
     display: block;
-    margin-bottom: 5px;
+    margin-bottom: 4px;
     color: #333;
     font-weight: 500;
+    font-size: 13px;
 }
 
 .form-group input {
     width: 100%;
-    padding: 12px;
+    padding: 10px;
     border: 1px solid #ddd;
     border-radius: 5px;
-    font-size: 14px;
+    font-size: 13px;
     transition: border-color 0.3s;
 }
 
@@ -68,15 +70,21 @@ body {
     border-color: #667eea;
 }
 
+.form-group small {
+    font-size: 12px !important;
+    margin-top: 3px !important;
+}
+
 .btn {
     width: 100%;
-    padding: 12px;
+    padding: 11px;
     border: none;
     border-radius: 5px;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s;
+    margin-top: 6px;
 }
 
 .btn-primary {

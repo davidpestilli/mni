@@ -27,22 +27,33 @@ router.get('/', (req, res) => {
 
 /**
  * POST /api/ambiente
- * Mudar ambiente (HML ou PROD)
- * Body: { ambiente: "HML" ou "PROD" }
+ * Mudar ambiente (HML ou PROD) ou sistema (1G_CIVIL ou 1G_EXEC_FISCAL)
+ * Body: { ambiente: "HML" ou "PROD" } ou { sistema: "1G_CIVIL" ou "1G_EXEC_FISCAL" }
  */
 router.post('/', (req, res) => {
     try {
-        const { ambiente } = req.body;
+        const { ambiente, sistema } = req.body;
 
-        if (!ambiente) {
+        if (!ambiente && !sistema) {
             return res.status(400).json({
                 success: false,
-                message: 'Campo "ambiente" é obrigatório'
+                message: 'Campo "ambiente" ou "sistema" é obrigatório'
             });
         }
 
-        // Atualizar ambiente
-        const resultado = ambienteManager.setAmbiente(ambiente);
+        let resultado;
+
+        // Mudar sistema se fornecido
+        if (sistema) {
+            resultado = ambienteManager.setSistema(sistema);
+            console.log(`[AMBIENTE] Sistema alterado para: ${resultado.sistema.nome}`);
+        }
+
+        // Mudar ambiente se fornecido
+        if (ambiente) {
+            resultado = ambienteManager.setAmbiente(ambiente);
+            console.log(`[AMBIENTE] Ambiente alterado para: ${resultado.ambiente}`);
+        }
 
         // Recarregar endpoints nos clientes SOAP
         // Isso força a reinicialização dos clientes com os novos endpoints
@@ -63,14 +74,14 @@ router.post('/', (req, res) => {
         // Retornar resultado
         res.json({
             success: true,
-            message: `Ambiente alterado para: ${resultado.ambiente}`,
+            message: resultado.sucesso ? 'Configuração alterada com sucesso' : 'Erro ao alterar configuração',
             data: resultado
         });
     } catch (error) {
-        console.error('[AMBIENTE] Erro ao mudar ambiente:', error.message);
+        console.error('[AMBIENTE] Erro ao mudar ambiente/sistema:', error.message);
         res.status(400).json({
             success: false,
-            message: error.message || 'Erro ao mudar ambiente'
+            message: error.message || 'Erro ao mudar ambiente/sistema'
         });
     }
 });

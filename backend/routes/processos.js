@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const mniClient = require('../services/mniClient');
 const { gerarSenhaHashMNI } = require('../services/hashUtils');
+const { middlewareMNI2_2Validation } = require('../config/ambiente');
 
 /**
  * Middleware para extrair credenciais do token
@@ -42,7 +43,7 @@ function extractCredentials(req, res, next) {
  * GET /api/processos/:numeroProcesso
  * Consultar dados do processo
  */
-router.get('/:numeroProcesso', extractCredentials, async (req, res) => {
+router.get('/:numeroProcesso', middlewareMNI2_2Validation, extractCredentials, async (req, res) => {
     try {
         const { numeroProcesso } = req.params;
         const { idConsultante, senhaConsultante } = req.credentials;
@@ -94,7 +95,7 @@ router.get('/:numeroProcesso', extractCredentials, async (req, res) => {
  * GET /api/processos/:numeroProcesso/documentos/:idDocumento
  * Baixar documento do processo
  */
-router.get('/:numeroProcesso/documentos/:idDocumento', extractCredentials, async (req, res) => {
+router.get('/:numeroProcesso/documentos/:idDocumento', middlewareMNI2_2Validation, extractCredentials, async (req, res) => {
     try {
         const { numeroProcesso, idDocumento } = req.params;
         const { idConsultante, senhaConsultante } = req.credentials;
@@ -139,7 +140,7 @@ router.get('/:numeroProcesso/documentos/:idDocumento', extractCredentials, async
  * POST /api/processos/:numeroProcesso/manifestacoes
  * Enviar manifestação processual
  */
-router.post('/:numeroProcesso/manifestacoes', extractCredentials, async (req, res) => {
+router.post('/:numeroProcesso/manifestacoes', middlewareMNI2_2Validation, extractCredentials, async (req, res) => {
     try {
         const { numeroProcesso } = req.params;
         const { idConsultante, senhaConsultante } = req.credentials;

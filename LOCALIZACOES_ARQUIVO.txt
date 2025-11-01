@@ -1,0 +1,185 @@
+================================================================================
+LOCALIZAÇÕES EXATAS DE ARQUIVOS E LINHAS DO CODIGO
+================================================================================
+
+1. ARQUIVO CENTRAL - GERENCIADOR DE AMBIENTE E VERSAO MNI
+================================================================================
+
+Arquivo: C:\Users\david\mni\backend\config\ambiente.js
+
+Linha 9-10:     Estados globais (sistemaAtual, ambienteAtual)
+Linha 13-22:    SISTEMAS_DISPONÍVEIS (define EXEC_FISCAL com HML apenas)
+Linha 27-45:    getEndpoints2_2() - Retorna endpoints MNI 2.2
+Linha 50-84:    getEndpoints3_0() - Retorna endpoints MNI 3.0 (com lógica EXEC_FISCAL)
+Linha 155-187:  setSistema() - Muda o sistema global
+Linha 205-214:  suportaMNI2_2() - Valida se sistema suporta MNI 2.2
+Linha 228-240:  middlewareMNI2_2Validation - Middleware que bloqueia MNI 2.2
+
+ONDE EXEC_FISCAL USA MNI 3.0:
+  - Linha 18-21: Define EXEC_FISCAL em SISTEMAS_DISPONÍVEIS
+  - Linha 57-65: if (sistema === '1G_EXEC_FISCAL') carrega endpoints 3.0
+  - Linha 209: Bloqueia MNI 2.2 se sistema = EXEC_FISCAL
+
+
+2. CONFIGURACAO DE ENDPOINTS
+================================================================================
+
+Arquivo: C:\Users\david\mni\backend\.env
+
+Linha 8:        AMBIENTE_ATIVO=HML (padrão)
+Linha 12-13:    SISTEMA_ATIVO=1G_CIVIL (padrão)
+
+MNI 2.2 - HOMOLOGACAO:
+Linha 16-19:    MNI_2_2_HML_ENDPOINT e WSDL_URL
+
+MNI 2.2 - PRODUCAO:
+Linha 22-25:    MNI_2_2_PROD_ENDPOINT e WSDL_URL
+
+MNI 3.0 - CIVIL (HOMOLOGACAO):
+Linha 28-31:    MNI_3_0_HML_ENDPOINT e WSDL_URL
+
+MNI 3.0 - CIVIL (PRODUCAO):
+Linha 34-37:    MNI_3_0_PROD_ENDPOINT e WSDL_URL
+
+MNI 3.0 - EXECUCAO FISCAL (HOMOLOGACAO):
+Linha 40-44:    MNI_3_0_EXEC_FISCAL_HML_ENDPOINT e WSDL_URL
+
+MNI 3.0 - EXECUCAO FISCAL (PRODUCAO):
+Linha 46-48:    MNI_3_0_EXEC_FISCAL_PROD_ENDPOINT e WSDL_URL (VAZIOS!)
+
+
+3. ROTEAMENTO - AVISOS PENDENTES (MNI 2.2)
+================================================================================
+
+Arquivo: C:\Users\david\mni\backend\routes\avisos.js
+
+Linha 1-5:      Imports (mniClient é MNI 2.2)
+Linha 5:        Import do middleware middlewareMNI2_2Validation
+Linha 52:       GET / com middlewareMNI2_2Validation
+Linha 69-74:    Chama mniClient.consultarAvisosPendentes()
+Linha 105:      GET /:numeroProcesso/:identificadorMovimento com middleware
+
+
+4. ROTEAMENTO - AVISOS EXECUCAO FISCAL (MNI 3.0)
+================================================================================
+
+Arquivo: C:\Users\david\mni\backend\routes\avisos-v3.js
+
+Linha 1-5:      Imports (mni3Client é MNI 3.0)
+Linha 50:       GET / SEM middleware (sempre usa 3.0)
+Linha 63-68:    Comentário: idRepresentado não funciona em MNI 3.0 (bug)
+Linha 84-88:    Chama mni3Client.consultarAvisosPendentes()
+Linha 142:      GET /:numeroProcesso/:identificadorMovimento
+
+
+5. ROTA DE MUDANCA DE AMBIENTE/SISTEMA
+================================================================================
+
+Arquivo: C:\Users\david\mni\backend\routes\ambiente.js
+
+Linha 33-87:    POST /api/ambiente - Recebe { ambiente } ou { sistema }
+Linha 48:       Chama ambienteManager.setSistema()
+Linha 61-72:    Recarrega endpoints nos clientes SOAP
+
+
+6. FRONTEND - SELETOR DE SISTEMA E AMBIENTE
+================================================================================
+
+Arquivo: C:\Users\david\mni\frontend\index.html
+
+Linha 18-27:    SELECT#select-sistema (dropdown de sistema)
+Linha 20:       Option "1G_EXEC_FISCAL" - Execução Fiscal
+Linha 24-26:    SELECT#select-ambiente (dropdown de ambiente)
+
+
+7. FRONTEND - GERENCIADOR DE AMBIENTE (JavaScript)
+================================================================================
+
+Arquivo: C:\Users\david\mni\frontend\js\ambiente.js
+
+Linha 6-8:      Obtem elementos do DOM (select-sistema, select-ambiente)
+Linha 11-20:    SISTEMAS_CONFIG (cópia local das configurações)
+Linha 27-37:    DOMContentLoaded - Inicializa configurações
+Linha 43-46:    addEventListener('change') para mudar sistema
+Linha 52-55:    addEventListener('change') para mudar ambiente
+Linha 61-86:    carregarAmbienteAtual() - GET /api/ambiente
+Linha 91-134:   mudarSistema() - POST /api/ambiente {sistema}
+Linha 139-166:  atualizarOpcoesAmbiente() - Desabilita opções não suportadas
+
+PROBLEMA: Nao armazena sistema em localStorage!
+
+
+8. FRONTEND - CARREGAMENTO DE AVISOS (PROBLEMA!)
+================================================================================
+
+Arquivo: C:\Users\david\mni\frontend\js\avisos.js
+
+Linha 28-30:    addEventListener('load', carregarTodosAvisos)
+Linha 35-96:    carregarTodosAvisos() - AQUI ESTA O PROBLEMA!
+
+Linha 46-49:    Verifica idRepresentado do localStorage (bom)
+Linha 51-53:    PROBLEMA: Sempre usa /api/avisos (MNI 2.2)!
+                NÃO detecta se sistema = EXEC_FISCAL
+                
+SOLUCAO NECESSARIA (linhas 51-53):
+  const sistema = localStorage.getItem('mni_sistema_atual') || '1G_CIVIL';
+  const baseUrl = (sistema === '1G_EXEC_FISCAL') 
+      ? '/api/avisos-v3' 
+      : '/api/avisos';
+
+
+9. CLIENTES SOAP
+================================================================================
+
+Arquivo: C:\Users\david\mni\backend\services\mniClient.js
+
+Linha 1-7:      Imports SOAP (MNI 2.2)
+Linha 8:        Obtem endpoints de ambienteManager.getEndpoints2_2()
+Linha 33-55:    reloadEndpoints() - Recarrega endpoints
+
+Arquivo: C:\Users\david\mni\backend\services\mni3Client.js
+
+Linha 1-3:      Imports SOAP (MNI 3.0)
+Linha 42:       Obtem endpoints de ambienteManager.getEndpoints3_0()
+Linha 70-89:    reloadEndpoints() - Recarrega endpoints
+
+
+10. SERVIDOR EXPRESS
+================================================================================
+
+Arquivo: C:\Users\david\mni\backend\server.js
+
+Linha 8-16:     Imports de todas as rotas
+Linha 31-38:    app.use() registra todas as rotas
+
+
+11. DOCUMENTACAO E ANALISE
+================================================================================
+
+Arquivo criado: C:\Users\david\mni\ANALISE_SISTEMA_MNI.txt
+  Contém análise completa do sistema
+
+
+================================================================================
+RESUMO DE MUDANCAS NECESSARIAS
+================================================================================
+
+ARQUIVO: frontend/js/ambiente.js
+FUNCAO: mudarSistema() - Linha 91-134
+ADICIONAR: localStorage.setItem('mni_sistema_atual', novoSistema)
+ONDE: Dentro do if (data.success) na linha 109
+
+ARQUIVO: frontend/js/avisos.js
+FUNCAO: carregarTodosAvisos() - Linha 35-96
+MODIFICAR: Linhas 51-53
+DE:
+  let urlAguardando = '/api/avisos?status=aguardando';
+  let urlAbertos = '/api/avisos?status=abertos';
+  
+PARA:
+  const sistema = localStorage.getItem('mni_sistema_atual') || '1G_CIVIL';
+  const baseUrl = (sistema === '1G_EXEC_FISCAL') 
+      ? '/api/avisos-v3' 
+      : '/api/avisos';
+  let urlAguardando = baseUrl + '?status=aguardando';
+  let urlAbertos = baseUrl + '?status=abertos';

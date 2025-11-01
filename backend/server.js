@@ -7,6 +7,7 @@ const path = require('path');
 // Importar rotas
 const authRoutes = require('./routes/auth');
 const avisosRoutes = require('./routes/avisos');
+const avisosV3Routes = require('./routes/avisos-v3'); // MNI 3.0 para avisos
 const processosRoutes = require('./routes/processos');
 const tabelasRoutes = require('./routes/tabelas');
 const peticionamentoRoutes = require('./routes/peticionamento');
@@ -28,6 +29,7 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 // Rotas da API
 app.use('/api/auth', authRoutes);
 app.use('/api/avisos', avisosRoutes);
+app.use('/api/avisos-v3', avisosV3Routes); // MNI 3.0 para avisos (alternativa)
 app.use('/api/processos', processosRoutes);
 app.use('/api/tabelas', tabelasRoutes);
 app.use('/api/mni3', mni3Routes); // MNI 3.0

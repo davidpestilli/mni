@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const mniClient = require('../services/mniClient');
 const { gerarSenhaHashMNI } = require('../services/hashUtils');
+const { middlewareMNI2_2Validation } = require('../config/ambiente');
 
 /**
  * Middleware para extrair credenciais do token
@@ -46,11 +47,13 @@ function extractCredentials(req, res, next) {
  *   - status=aguardando (padrão): Retorna apenas avisos com prazo aguardando abertura
  *   - status=abertos: Retorna apenas avisos com prazo aberto
  *   - status=todos: Retorna avisos aguardando abertura E abertos
+ *   - idRepresentado (opcional): CPF ou CNPJ para filtrar avisos de um representado específico
  */
-router.get('/', extractCredentials, async (req, res) => {
+router.get('/', middlewareMNI2_2Validation, extractCredentials, async (req, res) => {
     try {
         const { idConsultante, senhaConsultante } = req.credentials;
         const status = req.query.status || 'aguardando';
+        const idRepresentado = req.query.idRepresentado || null;
 
         // Gerar hash SHA256 da senha com data
         const senhaHash = gerarSenhaHashMNI(senhaConsultante);
@@ -62,7 +65,13 @@ router.get('/', extractCredentials, async (req, res) => {
             opcoes.informacoesDetalhadas = true;
         }
 
-        const avisos = await mniClient.consultarAvisosPendentes(idConsultante, senhaHash, opcoes);
+        // Passar idRepresentado se foi fornecido na query string
+        const avisos = await mniClient.consultarAvisosPendentes(
+            idConsultante,
+            senhaHash,
+            opcoes,
+            idRepresentado
+        );
 
         // Filtrar avisos conforme status solicitado
         let avisosFiltrados = avisos;
@@ -73,14 +82,11 @@ router.get('/', extractCredentials, async (req, res) => {
         }
         // Se status === 'todos', retorna todos
 
-        if (req.query.debug) {
-            console.log(`[AVISOS] Status: ${status}, Totais: ${avisos.length}, Filtrados: ${avisosFiltrados.length}`);
-        }
-
         res.json({
             success: true,
             count: avisosFiltrados.length,
-            data: avisosFiltrados
+            data: avisosFiltrados,
+            ...(idRepresentado && { filteredBy: idRepresentado })
         });
 
     } catch (error) {
@@ -96,7 +102,7 @@ router.get('/', extractCredentials, async (req, res) => {
  * GET /api/avisos/:numeroProcesso/:identificadorMovimento
  * Consultar teor da comunicação
  */
-router.get('/:numeroProcesso/:identificadorMovimento', extractCredentials, async (req, res) => {
+router.get('/:numeroProcesso/:identificadorMovimento', middlewareMNI2_2Validation, extractCredentials, async (req, res) => {
     try {
         const { numeroProcesso, identificadorMovimento } = req.params;
         const { idConsultante, senhaConsultante } = req.credentials;

@@ -139,8 +139,9 @@ class MNIClient {
      * @param {object} opcoes - Opções adicionais
      *   - todosPrazos: boolean (padrão: false) - Incluir prazos abertos além dos aguardando abertura
      *   - informacoesDetalhadas: boolean (padrão: false) - Retornar informações detalhadas (movimento, prazo, status)
+     * @param {string} idRepresentado - CPF ou CNPJ do representado para filtrar avisos (opcional)
      */
-    async consultarAvisosPendentes(idConsultante, senhaConsultante, opcoes = {}) {
+    async consultarAvisosPendentes(idConsultante, senhaConsultante, opcoes = {}, idRepresentado = null) {
         try {
             await this.initialize();
 
@@ -148,6 +149,14 @@ class MNIClient {
                 idConsultante,
                 senhaConsultante
             };
+
+            // Adicionar idRepresentado se foi informado
+            if (idRepresentado) {
+                args.idRepresentado = idRepresentado;
+                if (this.config.debugMode) {
+                    console.log('[MNI] Filtrando avisos por representado:', idRepresentado);
+                }
+            }
 
             // Adicionar parâmetros adicionais se especificados
             if (opcoes.todosPrazos || opcoes.informacoesDetalhadas) {

@@ -1,0 +1,222 @@
+========================================================================
+ANALISE: COMO O SISTEMA IDENTIFICA VERSAO MNI (2.2 vs 3.0)
+========================================================================
+
+1. IDENTIFICACAO DA VERSAO MNI
+========================================================================
+
+Arquivo Central: C:\Users\david\mni\backend\config\ambiente.js
+
+Estado Global:
+  - let ambienteAtual = 'HML' (ou 'PROD')
+  - let sistemaAtual = '1G_CIVIL' (ou '1G_EXEC_FISCAL')
+
+Funcoes:
+  - getEndpoints2_2() : Retorna endpoints MNI 2.2
+  - getEndpoints3_0() : Retorna endpoints MNI 3.0
+  - suportaMNI2_2() : Valida se sistema suporta MNI 2.2
+  - setSistema() : Muda o sistema global
+  - setAmbiente() : Muda o ambiente global
+
+Fluxo:
+  Frontend (dropdown) 
+    -> POST /api/ambiente {sistema}
+    -> Backend routes/ambiente.js
+    -> ambienteManager.setSistema()
+    -> config/ambiente.js atualiza estado
+    -> mniClient.reloadEndpoints()
+    -> mni3Client.reloadEndpoints()
+    -> Proximas requisicoes usam novos endpoints
+
+========================================================================
+2. EXECUCAO FISCAL USA MNI 3.0
+========================================================================
+
+Definido em: backend/config/ambiente.js
+
+Linhas 18-21: SISTEMAS_DISPONIVEIS
+  '1G_EXEC_FISCAL': {
+      nome: 'Primeiro Grau Execução Fiscal',
+      ambientesDisponiveis: ['HML']  // Apenas HML
+  }
+
+Linhas 57-65: getEndpoints3_0()
+  if (sistema === '1G_EXEC_FISCAL') {
+      // Carrega endpoints EXEC_FISCAL_HML/PROD do .env
+      endpoint = process.env.MNI_3_0_EXEC_FISCAL_HML_ENDPOINT;
+      wsdlUrl = process.env.MNI_3_0_EXEC_FISCAL_HML_WSDL_URL;
+  }
+
+Linhas 205-214: suportaMNI2_2()
+  if (sistema === '1G_EXEC_FISCAL') {
+      return false;  // Bloqueia MNI 2.2 para Execução Fiscal
+  }
+
+.env (Linhas 40-48):
+  MNI_3_0_EXEC_FISCAL_HML_ENDPOINT=https://execucao-fiscal-1g-sp-hml...
+  MNI_3_0_EXEC_FISCAL_HML_WSDL_URL=https://execucao-fiscal-1g-sp-hml...
+  MNI_3_0_EXEC_FISCAL_PROD_ENDPOINT=    (vazio - nao disponivel)
+  MNI_3_0_EXEC_FISCAL_PROD_WSDL_URL=    (vazio - nao disponivel)
+
+========================================================================
+3. ROTEAMENTO QUANDO SELECIONA "EXECUCAO FISCAL"
+========================================================================
+
+Passo 1: Frontend (index.html:20)
+  <select id="select-sistema">
+      <option value="1G_EXEC_FISCAL">Execução Fiscal</option>
+  </select>
+
+Passo 2: JavaScript (js/ambiente.js:43-46)
+  selectSistema.addEventListener('change', async (e) => {
+      await mudarSistema(e.target.value);
+  });
+
+Passo 3: Backend POST (routes/ambiente.js:33-87)
+  resultado = ambienteManager.setSistema(novoSistema);
+  mniClient.reloadEndpoints();
+  mni3Client.reloadEndpoints();
+
+Passo 4: Gerenciador (config/ambiente.js:155-187)
+  sistemaAtual = '1G_EXEC_FISCAL';
+  // Força HML se ambiente atual nao suportado
+  if (!ambientesDisponiveis.includes(ambienteAtual)) {
+      ambienteAtual = 'HML';
+  }
+
+Passo 5: Requisicoes posteriores
+  GET /api/avisos -> ERRO 403 (middleware bloqueia)
+  GET /api/avisos-v3 -> OK (MNI 3.0)
+
+========================================================================
+4. DIFERENCA: AVISOS PENDENTES vs EXECUCAO FISCAL
+========================================================================
+
+AVISOS PENDENTES (MNI 2.2):
+  Arquivo: backend/routes/avisos.js
+  Sistema: 1G_CIVIL
+  Rota: GET /api/avisos?status=aguardando|abertos
+  Client: mniClient (MNI 2.2)
+  Middleware: middlewareMNI2_2Validation
+  Suporta: idRepresentado (parâmetro para filtrar)
+  Bloqueado para: EXEC_FISCAL (retorna 403)
+
+EXECUCAO FISCAL (MNI 3.0):
+  Arquivo: backend/routes/avisos-v3.js
+  Sistema: 1G_EXEC_FISCAL
+  Rota: GET /api/avisos-v3?status=aguardando|abertos
+  Client: mni3Client (MNI 3.0)
+  Middleware: Nenhum (sempre usa 3.0)
+  NÃO suporta: idRepresentado (bug conhecido, linha 63-68)
+  Suporta: tipoPendencia (PC, PR, AM)
+
+========================================================================
+5. REFERENCIAS NO CODEBASE
+========================================================================
+
+"Execução Fiscal":
+  frontend/index.html:20
+  backend/config/ambiente.js:18-19
+  backend/config/ambiente.js:57, 209
+  frontend/js/ambiente.js:16
+  backend/.env:11-13
+
+"MNI 2.2":
+  backend/.env:16-25
+  backend/config/ambiente.js:27-45
+  backend/config/ambiente.js:205-214
+  backend/routes/avisos.js:52
+  backend/services/mniClient.js
+
+"MNI 3.0":
+  backend/.env:28-48
+  backend/config/ambiente.js:50-84
+  backend/routes/avisos-v3.js:50
+  backend/routes/mni3.js
+  backend/services/mni3Client.js
+
+========================================================================
+6. PROBLEMA IDENTIFICADO
+========================================================================
+
+PROBLEMA: Frontend nao muda rota dinamicamente para EXEC_FISCAL
+
+Codigo problemático em frontend/js/avisos.js (linhas 52-59):
+  // SEMPRE usa /api/avisos (MNI 2.2)
+  let urlAguardando = '/api/avisos?status=aguardando';
+  let urlAbertos = '/api/avisos?status=abertos';
+
+O que acontece:
+  1. Usuário seleciona "Execução Fiscal"
+  2. Sistema muda para 1G_EXEC_FISCAL
+  3. Usuário clica em "Avisos Pendentes"
+  4. Frontend tenta GET /api/avisos?status=aguardando
+  5. Backend middlewareMNI2_2Validation verifica suportaMNI2_2()
+  6. suportaMNI2_2() retorna FALSE (porque sistema = EXEC_FISCAL)
+  7. Retorna: Error 403 Forbidden
+  8. Usuario nao consegue ver avisos
+
+PORQUE ACONTECE:
+  - Frontend nao armazena o sistema atual
+  - Frontend nao verifica qual rota usar
+  - Frontend sempre tenta MNI 2.2 (/api/avisos)
+
+SOLUCAO:
+  1. Frontend armazenar sistema em localStorage
+  2. Frontend verificar sistema ao fazer requisicoes
+  3. Frontend usar /api/avisos-v3 quando sistema = 1G_EXEC_FISCAL
+  4. Backend ja esta pronto, so falta ajuste no frontend
+
+========================================================================
+7. COMO DEVERIA FUNCIONAR
+========================================================================
+
+Quando usuario seleciona EXEC_FISCAL:
+
+Frontend (armazena estado):
+  localStorage.setItem('mni_sistema_atual', 'EXEC_FISCAL');
+
+Frontend (ao carregar avisos):
+  const sistema = localStorage.getItem('mni_sistema_atual') || '1G_CIVIL';
+  const baseUrl = (sistema === '1G_EXEC_FISCAL') 
+                  ? '/api/avisos-v3' 
+                  : '/api/avisos';
+  fetch(baseUrl + '?status=aguardando');
+
+Backend (rota avisos-v3):
+  GET /api/avisos-v3?status=aguardando
+  -> mni3Client.consultarAvisosPendentes()
+  -> Endpoint: MNI_3_0_EXEC_FISCAL_HML_ENDPOINT
+  -> Retorna avisos de Execução Fiscal
+
+========================================================================
+8. RESUMO EXECUTIVO
+========================================================================
+
+COMO IDENTIFICA VERSAO:
+  - Estado global em config/ambiente.js (sistemaAtual, ambienteAtual)
+  - Cada rota MNI 2.2 tem middleware que verifica suportaMNI2_2()
+  - Rotas MNI 3.0 nao tem middleware (sempre usam 3.0)
+
+AONDE ESTA DEFINIDO "EXEC_FISCAL = MNI 3.0":
+  - config/ambiente.js linhas 18-21 (SISTEMAS_DISPONIVEIS)
+  - config/ambiente.js linhas 57-65 (getEndpoints3_0 com if EXEC_FISCAL)
+  - config/ambiente.js linhas 205-214 (suportaMNI2_2 retorna false)
+  - .env linhas 40-48 (endpoints especificos)
+
+ROTEAMENTO ESPERADO:
+  1. Dropdown em frontend -> POST /api/ambiente
+  2. Backend atualiza estado global
+  3. Proximas requisicoes usam endpoints corretos
+
+PROBLEMA PRINCIPAL:
+  Frontend nao muda de rota quando sistema muda
+  -> Sempre tenta /api/avisos (MNI 2.2)
+  -> Erro 403 quando EXEC_FISCAL ativo
+
+SOLUCAO:
+  Frontend verificar sistema antes de fazer requisicoes
+  -> Usar /api/avisos-v3 se EXEC_FISCAL
+  -> Usar /api/avisos se CIVIL
+  -> Armazenar em localStorage para persistir apos reload
+

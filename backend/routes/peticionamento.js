@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const mniClient = require('../services/mniClient');
 const { gerarSenhaHashMNI } = require('../services/hashUtils');
+const { middlewareMNI2_2Validation } = require('../config/ambiente');
 
 /**
  * Função auxiliar: Extrair credenciais do header Authorization
@@ -165,7 +166,7 @@ router.post('/inicial', async (req, res) => {
  * POST /api/peticionamento/intermediario
  * Realizar peticionamento intermediário (manifestação em processo existente)
  */
-router.post('/intermediario', async (req, res) => {
+router.post('/intermediario', middlewareMNI2_2Validation, async (req, res) => {
     try {
         const {
             cpfSigla,
@@ -244,7 +245,7 @@ router.post('/intermediario', async (req, res) => {
  * GET /api/peticionamento/tipos-documento
  * Listar tipos de documento para peticionamento
  */
-router.get('/tipos-documento', async (req, res) => {
+router.get('/tipos-documento', middlewareMNI2_2Validation, async (req, res) => {
     try {
         const tabelaClient = require('../services/tabelaClient');
         const tipos = await tabelaClient.consultarTiposDocumento();
