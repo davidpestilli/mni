@@ -92,7 +92,7 @@
                         <small>Classes válidas para o contexto selecionado (Ex: Execução Fiscal, Procedimento Comum)</small>
                     </div>
 
-                    <!-- PASSO 4: Assunto -->
+                    <!-- PASSO 4: Assunto Principal -->
                     <div class="form-group">
                         <label for="assunto">
                             <span style="background: #764ba2; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-right: 5px;">PASSO 4</span>
@@ -101,7 +101,61 @@
                         <select id="assunto" disabled>
                             <option value="">📍 Selecione uma classe primeiro</option>
                         </select>
-                        <small>Assuntos válidos para a classe selecionada (opcional)</small>
+                        <small>⭐ Apenas assuntos que podem ser principais (conforme MNI 3.0)</small>
+                    </div>
+
+                    <!-- PASSO 5: Assuntos Secundários/Complementares -->
+                    <div class="form-group">
+                        <label>
+                            <span style="background: #9333ea; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-right: 5px;">OPCIONAL</span>
+                            Assuntos Secundários/Complementares
+                        </label>
+                        
+                        <div id="assuntosSecundariosContainer">
+                            <!-- Os selects de assuntos secundários serão adicionados aqui dinamicamente -->
+                        </div>
+                        
+                        <button type="button" id="btnAdicionarAssuntoSecundario" class="btn btn-secondary" onclick="adicionarAssuntoSecundario()" disabled style="margin-top: 10px; opacity: 0.5;">
+                            + Adicionar Assunto Secundário
+                        </button>
+                        
+                        <small style="display: block; margin-top: 8px;">📎 Assuntos complementares (não podem ser assunto principal). Clique no botão para adicionar.</small>
+                    </div>
+
+                    <!-- Campos Específicos para Execução Fiscal (CDA) -->
+                    <div id="camposExecucaoFiscal" style="display: none; background: #fef3c7; border: 2px solid #f59e0b; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                        <h4 style="margin: 0 0 15px 0; color: #92400e;">
+                            ⚖️ Dados da CDA (Certidão de Dívida Ativa)
+                        </h4>
+                        <p style="margin: 0 0 15px 0; font-size: 13px; color: #78350f;">
+                            <strong>Obrigatório para Execução Fiscal:</strong> Informe os dados da Certidão de Dívida Ativa
+                        </p>
+
+                        <div class="form-group">
+                            <label for="numeroCDA" class="required">Número da CDA</label>
+                            <input type="text" id="numeroCDA" placeholder="Ex: 2020/1">
+                            <small>📄 Número da Certidão de Dívida Ativa</small>
+                        </div>
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="codigoTributoFiscal" class="required">Código do Tributo Fiscal</label>
+                                <input type="text" id="codigoTributoFiscal" placeholder="Ex: 10005">
+                                <small>🏛️ Código que identifica o tipo de tributo</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="valorCDA" class="required">Valor da CDA (R$)</label>
+                                <input type="number" id="valorCDA" step="0.01" min="0" placeholder="0.00">
+                                <small>💰 Valor total da dívida ativa</small>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="dataApuracaoCDA" class="required">Data de Apuração do Valor</label>
+                            <input type="date" id="dataApuracaoCDA">
+                            <small>📅 Data em que o valor da CDA foi apurado</small>
+                        </div>
                     </div>
 
                     <div class="form-grid">
@@ -123,10 +177,15 @@
 
                 <!-- Info sobre assuntos complementares -->
                 <div class="info-box" style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; margin-bottom: 20px;">
-                    <p style="margin: 0; font-size: 13px;">
+                    <p style="margin: 0 0 8px 0; font-size: 13px;">
                         <strong>📌 Assuntos Principal e Complementares:</strong>
-                        O assunto selecionado acima será o <strong>principal</strong>.
-                        Se precisar adicionar assuntos complementares, isso poderá ser feito após a criação do processo.
+                    </p>
+                    <p style="margin: 0 0 8px 0; font-size: 13px;">
+                        • <strong>Assunto Principal:</strong> Obrigatório. Deve ser um assunto marcado como "principal=true" pelo MNI.<br>
+                        • <strong>Assuntos Secundários:</strong> Opcionais. São assuntos marcados como "principal=false" que complementam o assunto principal.
+                    </p>
+                    <p style="margin: 0; font-size: 12px; opacity: 0.9;">
+                        💡 A separação é feita automaticamente com base na resposta SOAP do tribunal.
                     </p>
                 </div>
 
@@ -147,6 +206,16 @@
                 <!-- Polo Ativo (Autores) -->
                 <fieldset>
                     <legend>👤 Polo Ativo (Autor/Autores)</legend>
+
+                    <div style="margin-bottom: 15px;">
+                        <button type="button" class="btn btn-secondary" onclick="preencherDadosTeste()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;">
+                            <span>🚀</span>
+                            <span>Preencher Dados de Teste</span>
+                        </button>
+                        <small style="display: block; margin-top: 8px; color: #666;">
+                            ⚡ Clique para preencher automaticamente os dados de autor e réu para testes
+                        </small>
+                    </div>
 
                     <div id="poloAtivoContainer">
                         <div class="parte-item" data-polo="ativo">

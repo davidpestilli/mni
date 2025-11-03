@@ -22,6 +22,36 @@ const config = require('../config/mni.config');
  */
 
 /**
+ * Middleware para extrair credenciais do token e adicionar aos headers
+ * O token é um Base64 de "usuario:senha"
+ */
+router.use((req, res, next) => {
+    const authHeader = req.headers.authorization;
+
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7);
+
+        try {
+            // Decodificar token Base64
+            const decoded = Buffer.from(token, 'base64').toString('utf-8');
+            const [usuario, senha] = decoded.split(':');
+
+            if (usuario && senha) {
+                // Adicionar aos headers para que as rotas possam usar
+                req.headers['x-usuario'] = usuario;
+                req.headers['x-senha'] = senha;
+
+                console.log('[MNI 3.0 MIDDLEWARE] Credenciais extraídas do token para usuário:', usuario);
+            }
+        } catch (error) {
+            console.error('[MNI 3.0 MIDDLEWARE] Erro ao decodificar token:', error.message);
+        }
+    }
+
+    next();
+});
+
+/**
  * GET /api/mni3/localidades
  * Consultar localidades (comarcas) de um estado
  */
@@ -233,6 +263,8 @@ router.get('/assuntos/:codigoLocalidade/:codigoClasse', async (req, res) => {
         const assuntos = await mni3Client.consultarAssuntos(codigoLocalidade, codigoClasse, codigoCompetencia);
 
         // Log detalhado do retorno bruto
+        console.log('[DEBUG MNI3] Total de assuntos retornados:', assuntos.length);
+        console.log('[DEBUG MNI3] Primeiros 3 assuntos (estrutura completa):', JSON.stringify(assuntos.slice(0, 3), null, 2));
         console.log('[DEBUG MNI3] Assuntos brutos retornados:', JSON.stringify(assuntos, null, 2));
 
         // Enriquecer os assuntos com descrições locais
@@ -364,12 +396,23 @@ router.get('/processo/:numeroProcesso', async (req, res) => {
             incluirDocumentos: req.query.incluirDocumentos === 'true'
         };
 
+        // Adicionar dataInicial e dataFinal se fornecidas
+        // Formato esperado: AAAAMMDDHHMMSS (ex: 20251031000000)
+        if (req.query.dataInicial) {
+            console.log('[MNI 3.0 ROUTE] Adicionando dataInicial:', req.query.dataInicial);
+            options.dataInicial = req.query.dataInicial;
+        }
+        if (req.query.dataFinal) {
+            console.log('[MNI 3.0 ROUTE] Adicionando dataFinal:', req.query.dataFinal);
+            options.dataFinal = req.query.dataFinal;
+        }
+
         // Adicionar chave de consulta se fornecida
         // Formato: <tip:parametros nome="chave" valor="..."/>
         if (req.query.chave) {
             console.log('[MNI 3.0 ROUTE] Adicionando chave:', req.query.chave);
             options.parametros = {
-                $attributes: {
+                attributes: {
                     nome: 'chave',
                     valor: req.query.chave
                 }
@@ -395,6 +438,8 @@ router.get('/processo/:numeroProcesso', async (req, res) => {
 
         if (resultado && resultado.recibo && sucesso) {
             console.log('[MNI 3.0 ROUTE] Consulta bem sucedida!');
+            console.log('[MNI 3.0 ROUTE] Enviando estrutura RAW MNI 3.0 para o frontend');
+
             res.json({
                 success: true,
                 versao: '3.0',
@@ -527,6 +572,30 @@ router.get('/info', (req, res) => {
 });
 
 /**
+ * GET /api/mni3/info/rotas-peticionamento
+ * Informações sobre qual rota usar para peticionamento intermediário
+ * 
+ * Útil para frontend determinar automaticamente qual versão usar baseado no sistema
+ */
+router.get('/info/rotas-peticionamento', (req, res) => {
+    try {
+        const { getInfoRotasPeticionamento } = require('../services/peticionamentoAuto');
+        const info = getInfoRotasPeticionamento();
+        
+        res.json({
+            success: true,
+            ...info
+        });
+    } catch (error) {
+        console.error('[MNI 3.0] Erro ao obter informações de rotas:', error.message);
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Erro ao obter informações de rotas'
+        });
+    }
+});
+
+/**
  * GET /api/mni3/descricao-classe/:codigo
  * Buscar descrição de uma classe processual por código
  */
@@ -578,7 +647,83 @@ router.get('/descricao-assunto/:codigo', async (req, res) => {
     }
 });
 
-module.exports = router;
+/**
+ * GET /api/mni3/processo/:numeroProcesso/documentos/:idDocumento
+ * Consultar conteúdo de documento específico (MNI 3.0)
+ */
+router.get('/processo/:numeroProcesso/documentos/:idDocumento', async (req, res) => {
+    try {
+        const { numeroProcesso, idDocumento } = req.params;
+
+        // Extrair credenciais dos headers (middleware já extraiu do token)
+        const usuario = req.headers['x-usuario'];
+        const senha = req.headers['x-senha'];
+
+        console.log('[MNI 3.0 ROUTE] ========================================');
+        console.log('[MNI 3.0 ROUTE] Requisição para documento:', idDocumento);
+        console.log('[MNI 3.0 ROUTE] Processo:', numeroProcesso);
+        console.log('[MNI 3.0 ROUTE] Usuario:', usuario);
+        console.log('[MNI 3.0 ROUTE] ========================================');
+
+        // Validações
+        if (!usuario || !senha) {
+            console.error('[MNI 3.0 ROUTE] Credenciais não fornecidas');
+            return res.status(401).json({
+                success: false,
+                versao: '3.0',
+                message: 'Credenciais não fornecidas. Token inválido ou ausente.'
+            });
+        }
+
+        if (!/^\d{20}$/.test(numeroProcesso)) {
+            return res.status(400).json({
+                success: false,
+                versao: '3.0',
+                message: 'Número do processo inválido. Deve conter 20 dígitos.'
+            });
+        }
+
+        if (!idDocumento || idDocumento.trim() === '') {
+            return res.status(400).json({
+                success: false,
+                versao: '3.0',
+                message: 'ID do documento não fornecido.'
+            });
+        }
+
+        // Consultar documento
+        const documento = await mni3Client.consultarConteudoDocumento(
+            usuario,
+            senha,
+            numeroProcesso,
+            idDocumento
+        );
+
+        console.log('[MNI 3.0 ROUTE] Documento consultado com sucesso');
+        console.log('[MNI 3.0 ROUTE] Mimetype:', documento.mimetype);
+        console.log('[MNI 3.0 ROUTE] Tamanho do conteúdo:', documento.conteudo?.length || 0);
+
+        // Retornar o documento
+        res.json({
+            success: true,
+            versao: '3.0',
+            data: {
+                conteudo: documento.conteudo,
+                mimetype: documento.mimetype
+            }
+        });
+
+    } catch (error) {
+        console.error('[MNI 3.0 ROUTE] Erro ao consultar documento:', error.message);
+        console.error('[MNI 3.0 ROUTE] Stack:', error.stack);
+
+        res.status(500).json({
+            success: false,
+            versao: '3.0',
+            message: error.message || 'Erro ao consultar documento'
+        });
+    }
+});
 
 /**
  * POST /api/mni3/refresh-classes
@@ -598,3 +743,139 @@ router.post('/refresh-classes', async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 });
+
+/**
+ * POST /api/mni3/peticao
+ * Realizar peticionamento intermediário (manifestação em processo existente) - MNI 3.0
+ *
+ * IMPORTANTE: Diferenças entre MNI 2.2 e 3.0:
+ * - MNI 2.2: entregarManifestacaoProcessual (rota /api/peticionamento/intermediario)
+ * - MNI 3.0: entregarPeticao (esta rota)
+ * - MNI 3.0: conteúdo deve ser SHA-256 do documento (calculado automaticamente)
+ * - MNI 3.0: estrutura de namespaces diferente
+ *
+ * Body esperado:
+ * {
+ *   "numeroProcesso": "60261559420258260960",
+ *   "codigoTipoDocumento": "82400092",
+ *   "documento": "<base64-do-pdf>",
+ *   "nomeDocumento": "Petição.pdf",
+ *   "mimetype": "application/pdf",
+ *   "descricaoDocumento": "Descrição opcional",
+ *   "cpfProcurador": "37450364840" (opcional)
+ * }
+ *
+ * Requer autenticação via headers:
+ * - X-Usuario: CPF/Sigla (extraído do token pelo middleware)
+ * - X-Senha: Senha do usuário (extraída do token pelo middleware)
+ */
+router.post('/peticao', async (req, res) => {
+    try {
+        const {
+            numeroProcesso,
+            codigoTipoDocumento,
+            documento,
+            nomeDocumento,
+            mimetype,
+            descricaoDocumento,
+            cpfProcurador
+        } = req.body;
+
+        // Extrair credenciais dos headers (middleware já extraiu do token)
+        const usuario = req.headers['x-usuario'];
+        const senha = req.headers['x-senha'];
+
+        console.log('[MNI 3.0 ROUTE] ========================================');
+        console.log('[MNI 3.0 ROUTE] Requisição de peticionamento intermediário');
+        console.log('[MNI 3.0 ROUTE] Processo:', numeroProcesso);
+        console.log('[MNI 3.0 ROUTE] Tipo documento:', codigoTipoDocumento);
+        console.log('[MNI 3.0 ROUTE] Usuario:', usuario);
+        console.log('[MNI 3.0 ROUTE] ========================================');
+
+        // Validações
+        if (!usuario || !senha) {
+            console.error('[MNI 3.0 ROUTE] Credenciais não fornecidas');
+            return res.status(401).json({
+                success: false,
+                versao: '3.0',
+                message: 'Credenciais não fornecidas. Token inválido ou ausente.'
+            });
+        }
+
+        if (!numeroProcesso || !/^\d{20}$/.test(numeroProcesso)) {
+            return res.status(400).json({
+                success: false,
+                versao: '3.0',
+                message: 'Número do processo inválido. Deve conter 20 dígitos.'
+            });
+        }
+
+        if (!codigoTipoDocumento) {
+            return res.status(400).json({
+                success: false,
+                versao: '3.0',
+                message: 'Código do tipo de documento é obrigatório.'
+            });
+        }
+
+        if (!documento || documento.trim() === '') {
+            return res.status(400).json({
+                success: false,
+                versao: '3.0',
+                message: 'Documento (Base64) é obrigatório.'
+            });
+        }
+
+        // Montar objeto da petição
+        const peticao = {
+            codigoTipoDocumento: codigoTipoDocumento,
+            documento: documento,
+            nomeDocumento: nomeDocumento || 'Petição.pdf',
+            mimetype: mimetype || 'application/pdf',
+            descricaoDocumento: descricaoDocumento || '',
+            cpfProcurador: cpfProcurador || null
+        };
+
+        // Entregar petição via MNI 3.0
+        const resultado = await mni3Client.entregarPeticao(
+            usuario,
+            senha,
+            numeroProcesso,
+            peticao
+        );
+
+        console.log('[MNI 3.0 ROUTE] Petição entregue com sucesso!');
+        console.log('[MNI 3.0 ROUTE] Protocolo:', resultado.numeroProtocolo);
+
+        // Retornar resultado
+        res.json({
+            success: true,
+            versao: '3.0',
+            message: resultado.mensagem,
+            data: {
+                numeroProtocolo: resultado.numeroProtocolo,
+                dataOperacao: resultado.dataOperacao,
+                documentoComprovante: resultado.documentoComprovante
+            }
+        });
+
+    } catch (error) {
+        console.error('[MNI 3.0 ROUTE] Erro ao entregar petição:', error.message);
+        console.error('[MNI 3.0 ROUTE] Stack:', error.stack);
+
+        // Obter XMLs para debug
+        const xmls = mni3Client.getLastXMLs();
+
+        res.status(500).json({
+            success: false,
+            versao: '3.0',
+            message: error.message || 'Erro ao entregar petição',
+            debug: {
+                xmlRequest: xmls.request,
+                xmlResponse: xmls.response
+            }
+        });
+    }
+});
+
+module.exports = router;

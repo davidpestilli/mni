@@ -487,6 +487,30 @@ select {
     padding-right: 36px;
 }
 
+/* Container de Assuntos Secundários */
+#assuntosSecundariosContainer {
+    margin-bottom: 10px;
+}
+
+#assuntosSecundariosContainer:empty {
+    margin-bottom: 0;
+}
+
+.assunto-secundario-item {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 /* Required Field Indicator */
 .form-group label.required::after {
     content: ' *';

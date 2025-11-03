@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                  xmlns:v300="http://www.cnj.jus.br/mni/v300/"
+                  xmlns:tip="http://www.cnj.jus.br/mni/v300/tipos-servico-intercomunicacao"
+                  xmlns:int="http://www.cnj.jus.br/mni/v300/intercomunicacao">
+    <soapenv:Header/>
+    <soapenv:Body>
+        <v300:requisicaoEntregarPeticaoInicial>
+            <tip:manifestante>
+                <int:autenticacaoSimples>
+                    <int:usuario>12345678900</int:usuario>
+                    <int:senha>a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a7b8c9d0e1f2</int:senha>
+                </int:autenticacaoSimples>
+            </tip:manifestante>
+            <tip:dadosBasicos>
+                <int:dadosBasicos>
+                    <int:numero>00000000000000000000</int:numero>
+                    <int:classeProcessual>1116</int:classeProcessual>
+                </int:dadosBasicos>
+                <int:competencia>156</int:competencia>
+                <int:classeProcessual>1116</int:classeProcessual>
+                <int:codigoLocalidade>0014</int:codigoLocalidade>
+                <int:nivelSigilo>0</int:nivelSigilo>
+                <int:polo polo="AT">
+                    <int:parte>
+                        <int:pessoa>
+                            <int:dadosBasicos>
+                                <int:nome>FAZENDA PÚBLICA DO ESTADO DE SÃO PAULO</int:nome>
+                                <int:qualificacaoPessoa>JUR</int:qualificacaoPessoa>
+                                <int:numeroDocumentoPrincipal>46377222000135</int:numeroDocumentoPrincipal>
+                            </int:dadosBasicos>
+                            <int:documento codigoDocumento="46377222000135" emissorDocumento="RFB" tipoDocumento="CMF"/>
+                            <int:endereco>
+                                <int:logradouro>Rua Pamplona</int:logradouro>
+                                <int:numero>227</int:numero>
+                                <int:complemento>17º andar</int:complemento>
+                                <int:bairro>Bela Vista</int:bairro>
+                                <int:cidade>
+                                    <int:municipio>São Paulo</int:municipio>
+                                    <int:unidadeFederacao>SP</int:unidadeFederacao>
+                                    <int:codigoIBGE>3550308</int:codigoIBGE>
+                                </int:cidade>
+                                <int:unidadeFederacao>SP</int:unidadeFederacao>
+                                <int:pais>BR</int:pais>
+                                <int:cep>01405902</int:cep>
+                            </int:endereco>
+                        </int:pessoa>
+                    </int:parte>
+                </int:polo>
+                <int:polo polo="PA">
+                    <int:parte>
+                        <int:pessoa>
+                            <int:dadosBasicos>
+                                <int:nome>EMPRESA EXEMPLO LTDA</int:nome>
+                                <int:qualificacaoPessoa>JUR</int:qualificacaoPessoa>
+                                <int:numeroDocumentoPrincipal>12345678000190</int:numeroDocumentoPrincipal>
+                            </int:dadosBasicos>
+                            <int:documento codigoDocumento="12345678000190" emissorDocumento="RFB" tipoDocumento="CMF"/>
+                            <int:endereco>
+                                <int:logradouro>Avenida Paulista</int:logradouro>
+                                <int:numero>1000</int:numero>
+                                <int:bairro>Bela Vista</int:bairro>
+                                <int:cidade>
+                                    <int:municipio>São Paulo</int:municipio>
+                                    <int:unidadeFederacao>SP</int:unidadeFederacao>
+                                    <int:codigoIBGE>3550308</int:codigoIBGE>
+                                </int:cidade>
+                                <int:unidadeFederacao>SP</int:unidadeFederacao>
+                                <int:pais>BR</int:pais>
+                                <int:cep>01310100</int:cep>
+                            </int:endereco>
+                        </int:pessoa>
+                    </int:parte>
+                </int:polo>
+                <int:assunto principal="true">
+                    <int:codigoNacional>5946</int:codigoNacional>
+                </int:assunto>
+                <int:valorCausa>50000.0</int:valorCausa>
+                <int:outroParametro nome="ListaCDA" valor="&lt;ListaCDA&gt;&lt;CDA&gt;&lt;NumeroCDA&gt;2025/123456&lt;/NumeroCDA&gt;&lt;CodigoTributoFiscal&gt;10005&lt;/CodigoTributoFiscal&gt;&lt;ValorCda&gt;50000.00&lt;/ValorCda&gt;&lt;DataApuracaoValorCDA&gt;20250102120000&lt;/DataApuracaoValorCDA&gt;&lt;/CDA&gt;&lt;/ListaCDA&gt;"/>
+            </tip:dadosBasicos>
+            <tip:documentos>
+                <int:codigoTipoDocumento>1</int:codigoTipoDocumento>
+                <int:dataHora>2025-11-02T12:00:00-03:00</int:dataHora>
+                <int:conteudo>
+                    <int:mimetype>application/pdf</int:mimetype>
+                    <int:conteudo>JVBERi0xLjQKJeLjz9MKMyAwIG9iago8PC9UeXBlL1BhZ2UvUGFyZW50IDIgMCBSL1Jlc291cmNlczw8L0ZvbnQ8PC9GMSA1IDAgUj4+Pj4vTWVkaWFCb3hbMCAwIDYxMiA3OTJdL0NvbnRlbnRzIDQgMCBSPj4KZW5kb2JqCjQgMCBvYmoKPDwvTGVuZ3RoIDQ0Pj4Kc3RyZWFtCkJUCi9GMSAxMiBUZgoxMDAgNzAwIFRkCihQZXRpw6fDo28gSW5pY2lhbCBkZSBFeGVjdcOnw6NvIEZpc2NhbCkgVGoKRVQKZW5kc3RyZWFtCmVuZG9iago1IDAgb2JqCjw8L1R5cGUvRm9udC9TdWJ0eXBlL1R5cGUxL0Jhc2VGb250L0hlbHZldGljYT4+CmVuZG9iagoyIDAgb2JqCjw8L1R5cGUvUGFnZXMvQ291bnQgMS9LaWRzWzMgMCBSXT4+CmVuZG9iagoxIDAgb2JqCjw8L1R5cGUvQ2F0YWxvZy9QYWdlcyAyIDAgUj4+CmVuZG9iagp0cmFpbGVyCjw8L1NpemUgNi9Sb290IDEgMCBSPj4Kc3RhcnR4cmVmCjU1NgolJUVPRgo=</int:conteudo>
+                    <int:assinatura>
+                        <int:signatarioLogin>
+                            <int:identificador>12345678900</int:identificador>
+                            <int:dataHora>2025-11-02T12:00:00-03:00</int:dataHora>
+                        </int:signatarioLogin>
+                    </int:assinatura>
+                </int:conteudo>
+            </tip:documentos>
+            <tip:parametros nome="identProcuradorRepresentacao" valor="12345678900"/>
+            <tip:parametros nome="tipoIdentProcuradorRepresentacao" valor="CPF"/>
+        </v300:requisicaoEntregarPeticaoInicial>
+    </soapenv:Body>
+</soapenv:Envelope>

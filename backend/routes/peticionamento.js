@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const mniClient = require('../services/mniClient');
+const mni3Client = require('../services/mni3Client');
 const { gerarSenhaHashMNI } = require('../services/hashUtils');
 const { middlewareMNI2_2Validation } = require('../config/ambiente');
 
@@ -65,13 +66,15 @@ router.post('/inicial', async (req, res) => {
             codigoLocalidade,
             classeProcessual,
             assunto,
+            assuntosSecundarios,
             valorCausa,
             competencia,
             nivelSigilo,
             poloAtivo,
             poloPassivo,
             signatario,
-            documentos
+            documentos,
+            dadosCDA
         } = req.body;
 
         // Validar campos obrigatórios
@@ -110,7 +113,7 @@ router.post('/inicial', async (req, res) => {
             });
         }
 
-        // Gerar hash SHA256 da senha
+        // Gerar hash SHA256 da senha no formato d-m-ySenha (padrão MNI)
         const senhaHash = gerarSenhaHashMNI(senha);
 
         console.log(`[PETICIONAMENTO] Processando petição inicial para: ${cpfSigla}`);
@@ -127,18 +130,23 @@ router.post('/inicial', async (req, res) => {
             codigoLocalidade,
             classeProcessual,
             assunto,
+            assuntosSecundarios: assuntosSecundarios || null,
             valorCausa,
             competencia,
             nivelSigilo: nivelSigilo || 0,
             poloAtivo,
             poloPassivo,
-            documentos: documentosComSignatario
+            documentos: documentosComSignatario,
+            dadosCDA: dadosCDA || null  // Adicionar dados de CDA
         };
 
-        // Realizar peticionamento inicial
-        const resultado = await mniClient.peticionamentoInicial(
+        // ⚠️ IMPORTANTE: Usar MNI 3.0 (entregarPeticaoInicial) para Execução Fiscal
+        // MNI 2.2.2 (entregarManifestacaoProcessual) cria processo no Cível 1ª Instância
+        // MNI 3.0 (requisicaoEntregarPeticaoInicial) cria processo na competência correta
+        console.log(`[PETICIONAMENTO] 🔄 Usando MNI 3.0 para peticionamento inicial`);
+        const resultado = await mni3Client.peticionamentoInicial(
             cpfSigla,
-            senhaHash,
+            senha,  // Passar senha original, o mni3Client irá gerar o hash
             dadosIniciais
         );
 
@@ -274,7 +282,21 @@ router.get('/tipos-documento', middlewareMNI2_2Validation, async (req, res) => {
  */
 router.get('/debug/last-soap', async (req, res) => {
     try {
-        const soapTransaction = mniClient.getLastSoapTransaction();
+        // Tentar obter do MNI 3.0 primeiro, depois fallback para MNI 2.2
+        let soapTransaction;
+        
+        if (mni3Client.lastRequestXML && mni3Client.lastResponseXML) {
+            // MNI 3.0 tem dados mais recentes
+            soapTransaction = {
+                request: mni3Client.lastRequestXML,
+                response: mni3Client.lastResponseXML
+            };
+            console.log('[DEBUG] Retornando SOAP do MNI 3.0');
+        } else {
+            // Fallback para MNI 2.2
+            soapTransaction = mniClient.getLastSoapTransaction();
+            console.log('[DEBUG] Retornando SOAP do MNI 2.2');
+        }
 
         res.json({
             success: true,
@@ -312,6 +334,30 @@ router.get('/debug/soap-logs', async (req, res) => {
         res.status(500).json({
             success: false,
             message: error.message || 'Erro ao obter histórico SOAP'
+        });
+    }
+});
+
+/**
+ * GET /api/peticionamento/info/rotas
+ * Retorna informações sobre qual rota usar para peticionamento intermediário
+ * 
+ * Útil para frontend determinar automaticamente qual versão usar
+ */
+router.get('/info/rotas', (req, res) => {
+    try {
+        const { getInfoRotasPeticionamento } = require('../services/peticionamentoAuto');
+        const info = getInfoRotasPeticionamento();
+        
+        res.json({
+            success: true,
+            ...info
+        });
+    } catch (error) {
+        console.error('[PETICIONAMENTO] Erro ao obter informações de rotas:', error.message);
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Erro ao obter informações de rotas'
         });
     }
 });

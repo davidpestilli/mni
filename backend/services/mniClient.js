@@ -423,10 +423,10 @@ class MNIClient {
                 dadosBasicos.polo = polos;
             }
 
-            // Adicionar assunto
+            // Adicionar assunto principal
             if (dadosIniciais.assunto) {
                 if (this.config.debugMode) {
-                    console.log('[MNI] Código do assunto:', dadosIniciais.assunto, '(tipo:', typeof dadosIniciais.assunto, ')');
+                    console.log('[MNI] Código do assunto principal:', dadosIniciais.assunto, '(tipo:', typeof dadosIniciais.assunto, ')');
                 }
 
                 dadosBasicos.assunto = {
@@ -435,6 +435,31 @@ class MNIClient {
                     },
                     codigoNacional: dadosIniciais.assunto
                 };
+            }
+
+            // Adicionar assuntos secundários/complementares
+            if (dadosIniciais.assuntosSecundarios && Array.isArray(dadosIniciais.assuntosSecundarios) && dadosIniciais.assuntosSecundarios.length > 0) {
+                if (this.config.debugMode) {
+                    console.log('[MNI] Assuntos secundários:', dadosIniciais.assuntosSecundarios);
+                }
+
+                // Se já existe um assunto principal, converter para array
+                if (dadosBasicos.assunto) {
+                    const assuntoPrincipal = dadosBasicos.assunto;
+                    dadosBasicos.assunto = [assuntoPrincipal];
+                } else {
+                    dadosBasicos.assunto = [];
+                }
+
+                // Adicionar cada assunto secundário
+                dadosIniciais.assuntosSecundarios.forEach(codigoAssuntoSecundario => {
+                    dadosBasicos.assunto.push({
+                        attributes: {
+                            principal: false
+                        },
+                        codigoNacional: codigoAssuntoSecundario
+                    });
+                });
             }
 
             // Adicionar valor da causa
@@ -447,12 +472,51 @@ class MNIClient {
                 dadosBasicos.attributes.competencia = dadosIniciais.competencia;
             }
 
+            // Adicionar dados de CDA para Execução Fiscal (classe 1116)
+            if (dadosIniciais.dadosCDA) {
+                const cda = dadosIniciais.dadosCDA;
+                
+                // Construir XML da ListaCDA
+                const listaCDAXml = `<ListaCDA><CDA><NumeroCDA>${cda.numeroCDA}</NumeroCDA><CodigoTributoFiscal>${cda.codigoTributoFiscal}</CodigoTributoFiscal><ValorCda>${cda.valorCDA}</ValorCda><DataApuracaoValorCDA>${cda.dataApuracaoCDA}</DataApuracaoValorCDA></CDA></ListaCDA>`;
+                
+                // Adicionar outroParametro ao dadosBasicos
+                if (!dadosBasicos.outroParametro) {
+                    dadosBasicos.outroParametro = [];
+                }
+                
+                dadosBasicos.outroParametro.push({
+                    attributes: {
+                        nome: 'ListaCDA',
+                        valor: listaCDAXml
+                    }
+                });
+
+                // Também adicionar o número da CDA como parâmetro separado
+                dadosBasicos.outroParametro.push({
+                    attributes: {
+                        nome: 'CDA',
+                        valor: cda.numeroCDA
+                    }
+                });
+
+                if (this.config.debugMode) {
+                    console.log('[MNI] Dados de CDA adicionados para Execução Fiscal');
+                    console.log('[MNI] ListaCDA XML:', listaCDAXml);
+                }
+            }
+
             // Montar args completo
             const args = {
                 idManifestante,
                 senhaManifestante,
                 dadosBasicos
             };
+
+            // Log detalhado dos polos para debug
+            if (this.config.debugMode) {
+                console.log('[MNI DEBUG] Número de polos:', polos.length);
+                console.log('[MNI DEBUG] Estrutura dos polos:', JSON.stringify(polos, null, 2));
+            }
 
             // Adicionar documentos
             if (dadosIniciais.documentos && dadosIniciais.documentos.length > 0) {
@@ -486,7 +550,12 @@ class MNIClient {
             }
 
             if (this.config.debugMode) {
-                console.log('[MNI] Args peticionamento inicial:', JSON.stringify(args, null, 2));
+                console.log('[MNI] ========================================');
+                console.log('[MNI] Args peticionamento inicial (COMPLETO):');
+                console.log(JSON.stringify(args, null, 2));
+                console.log('[MNI] ========================================');
+                console.log('[MNI] DadosBasicos.polo:', JSON.stringify(args.dadosBasicos.polo, null, 2));
+                console.log('[MNI] ========================================');
             }
 
             const [result] = await this.client.entregarManifestacaoProcessualAsync(args);
@@ -544,19 +613,61 @@ class MNIClient {
 
         // Pessoa física ou jurídica
         if (parte.tipoPessoa === 'fisica' || parte.cpf) {
+            // Validar dados obrigatórios
+            if (!parte.nome || !parte.cpf) {
+                console.error('[MNI] Erro: Parte sem nome ou CPF:', parte);
+                throw new Error('Parte deve ter nome e CPF');
+            }
+            
+            // Garantir que CPF está apenas com números
+            const cpfLimpo = String(parte.cpf).replace(/\D/g, '');
+            if (cpfLimpo.length !== 11) {
+                console.error('[MNI] Erro: CPF inválido:', parte.cpf);
+                throw new Error(`CPF inválido: ${parte.cpf} (deve ter 11 dígitos)`);
+            }
+            
             polo.parte.pessoa.attributes = {
                 nome: parte.nome,
                 sexo: parte.sexo || 'Masculino',
                 dataNascimento: parte.dataNascimento,
-                numeroDocumentoPrincipal: parte.cpf,
+                numeroDocumentoPrincipal: cpfLimpo,
                 tipoPessoa: 'fisica'
             };
+            
+            if (this.config.debugMode) {
+                console.log('[MNI] Parte física montada:', JSON.stringify(polo, null, 2));
+            }
         } else if (parte.tipoPessoa === 'juridica' || parte.cnpj) {
+            // Validar dados obrigatórios
+            if (!parte.nome && !parte.razaoSocial) {
+                console.error('[MNI] Erro: Parte jurídica sem razão social:', parte);
+                throw new Error('Parte jurídica deve ter razão social');
+            }
+            if (!parte.cnpj) {
+                console.error('[MNI] Erro: Parte jurídica sem CNPJ:', parte);
+                throw new Error('Parte jurídica deve ter CNPJ');
+            }
+            
+            // Garantir que CNPJ está apenas com números
+            const cnpjLimpo = String(parte.cnpj).replace(/\D/g, '');
+            if (cnpjLimpo.length !== 14) {
+                console.error('[MNI] Erro: CNPJ inválido:', parte.cnpj);
+                throw new Error(`CNPJ inválido: ${parte.cnpj} (deve ter 14 dígitos)`);
+            }
+            
             polo.parte.pessoa.attributes = {
+                nome: parte.razaoSocial || parte.nome,
                 razaoSocial: parte.razaoSocial || parte.nome,
-                numeroDocumentoPrincipal: parte.cnpj,
+                numeroDocumentoPrincipal: cnpjLimpo,
                 tipoPessoa: 'juridica'
             };
+            
+            if (this.config.debugMode) {
+                console.log('[MNI] Parte jurídica montada:', JSON.stringify(polo, null, 2));
+            }
+        } else {
+            console.error('[MNI] Erro: Tipo de pessoa não identificado:', parte);
+            throw new Error('Tipo de pessoa não identificado');
         }
 
         return polo;

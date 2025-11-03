@@ -410,6 +410,37 @@ function exibirIndicadorFiltroRepresentado(idRepresentado) {
 }
 
 /**
+ * Mostrar notificação toast na tela
+ */
+function mostrarNotificacao(mensagem, tipo = 'info') {
+    const notificacao = document.createElement('div');
+    notificacao.className = `toast toast-${tipo}`;
+    notificacao.textContent = mensagem;
+    notificacao.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${tipo === 'success' ? '#10b981' : tipo === 'error' ? '#ef4444' : '#3b82f6'};
+        color: white;
+        padding: 16px 24px;
+        border-radius: 8px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        z-index: 10000;
+        animation: slideInRight 0.3s ease-out;
+        font-weight: 500;
+    `;
+
+    document.body.appendChild(notificacao);
+
+    setTimeout(() => {
+        notificacao.style.animation = 'slideOutRight 0.3s ease-out';
+        setTimeout(() => {
+            notificacao.remove();
+        }, 300);
+    }, 3000);
+}
+
+/**
  * DEPRECATED: Manter para compatibilidade com código antigo
  */
 async function carregarAvisos() {

@@ -20,7 +20,8 @@ const API_MNI3 = `${API_BASE}/mni3`;
 let estadoAtual = {
     localidadeSelecionada: null,
     competenciaSelecionada: null,
-    classeSelecionada: null
+    classeSelecionada: null,
+    assuntosSecundariosDisponiveis: []  // Cache dos assuntos secundários disponíveis
 };
 
 // Carregar localidades ao iniciar
@@ -171,12 +172,17 @@ async function carregarClasses(codigoLocalidade, codigoCompetencia = null) {
 
 /**
  * PASSO 4: Carregar assuntos para classe/localidade
+ * Separa assuntos principais (principal=true) de secundários (principal=false)
  */
 async function carregarAssuntos(codigoLocalidade, codigoClasse, codigoCompetencia = null) {
     try {
-        const select = document.getElementById('assunto');
-        select.innerHTML = '<option value="">🔄 Carregando assuntos...</option>';
-        select.disabled = true;
+        const selectPrincipal = document.getElementById('assunto');
+        const btnAdicionarSecundario = document.getElementById('btnAdicionarAssuntoSecundario');
+        
+        selectPrincipal.innerHTML = '<option value="">🔄 Carregando assuntos...</option>';
+        selectPrincipal.disabled = true;
+        btnAdicionarSecundario.disabled = true;
+        btnAdicionarSecundario.style.opacity = '0.5';
 
         let url = `${API_MNI3}/assuntos/${codigoLocalidade}/${codigoClasse}`;
         if (codigoCompetencia) {
@@ -187,28 +193,55 @@ async function carregarAssuntos(codigoLocalidade, codigoClasse, codigoCompetenci
         const data = await response.json();
 
         if (data.success && Array.isArray(data.data) && data.data.length > 0) {
-            select.innerHTML = '<option value="">📑 Selecione um assunto (opcional)...</option>';
+            // Separar assuntos principais e secundários
+            const assuntosPrincipais = data.data.filter(a => a.principal === true);
+            const assuntosSecundarios = data.data.filter(a => a.principal === false);
 
-            // Exibir todos os assuntos em uma única lista
-            data.data.forEach(assunto => {
-                const option = document.createElement('option');
-                option.value = assunto.codigo;
-                option.textContent = `${assunto.codigo} - ${assunto.descricao}`;
-                select.appendChild(option);
-            });
+            // Armazenar assuntos secundários no estado
+            estadoAtual.assuntosSecundariosDisponiveis = assuntosSecundarios;
 
-            select.disabled = false;
-            console.log(`✅ [MNI 3.0] ${data.count} assuntos carregados (todos exibidos)`);
+            // Popular select de assuntos principais
+            if (assuntosPrincipais.length > 0) {
+                selectPrincipal.innerHTML = '<option value="">⭐ Selecione um assunto principal...</option>';
+                assuntosPrincipais.forEach(assunto => {
+                    const option = document.createElement('option');
+                    option.value = assunto.codigo;
+                    option.textContent = `${assunto.codigo} - ${assunto.descricao}`;
+                    selectPrincipal.appendChild(option);
+                });
+                selectPrincipal.disabled = false;
+                console.log(`✅ [MNI 3.0] ${assuntosPrincipais.length} assuntos principais carregados`);
+            } else {
+                selectPrincipal.innerHTML = '<option value="">⚠️ Nenhum assunto principal disponível</option>';
+                selectPrincipal.disabled = true;
+            }
+
+            // Habilitar botão de adicionar assunto secundário se houver assuntos disponíveis
+            if (assuntosSecundarios.length > 0) {
+                btnAdicionarSecundario.disabled = false;
+                btnAdicionarSecundario.style.opacity = '1';
+                console.log(`✅ [MNI 3.0] ${assuntosSecundarios.length} assuntos secundários disponíveis`);
+            } else {
+                btnAdicionarSecundario.disabled = true;
+                btnAdicionarSecundario.style.opacity = '0.5';
+            }
+
+            mostrarNotificacao(`✅ ${assuntosPrincipais.length} principais, ${assuntosSecundarios.length} secundários`, 'info');
         } else {
-            select.innerHTML = '<option value="">📑 Nenhum assunto disponível (opcional)</option>';
-            select.disabled = false;
+            selectPrincipal.innerHTML = '<option value="">📑 Nenhum assunto disponível</option>';
+            selectPrincipal.disabled = false;
+            btnAdicionarSecundario.disabled = true;
+            btnAdicionarSecundario.style.opacity = '0.5';
             console.warn('[MNI 3.0] Nenhum assunto retornado');
         }
     } catch (error) {
         console.error('[MNI 3.0] Erro ao carregar assuntos:', error);
-        const select = document.getElementById('assunto');
-        select.innerHTML = '<option value="">❌ Erro ao carregar assuntos</option>';
-        select.disabled = false;
+        const selectPrincipal = document.getElementById('assunto');
+        const btnAdicionarSecundario = document.getElementById('btnAdicionarAssuntoSecundario');
+        selectPrincipal.innerHTML = '<option value="">❌ Erro ao carregar assuntos</option>';
+        selectPrincipal.disabled = false;
+        btnAdicionarSecundario.disabled = true;
+        btnAdicionarSecundario.style.opacity = '0.5';
     }
 }
 
@@ -263,6 +296,16 @@ function configurarEventosCascata() {
         const codigoClasse = e.target.value;
         estadoAtual.classeSelecionada = codigoClasse;
 
+        // Mostrar/ocultar campos de CDA para Execução Fiscal (classe 1116)
+        const camposExecucaoFiscal = document.getElementById('camposExecucaoFiscal');
+        if (codigoClasse === '1116') {
+            camposExecucaoFiscal.style.display = 'block';
+            console.log('✅ Campos de CDA exibidos para Execução Fiscal');
+        } else {
+            camposExecucaoFiscal.style.display = 'none';
+            limparCamposCDA();
+        }
+
         if (codigoClasse && estadoAtual.localidadeSelecionada) {
             // Carregar assuntos
             carregarAssuntos(
@@ -274,6 +317,16 @@ function configurarEventosCascata() {
             resetarAssunto();
         }
     });
+}
+
+/**
+ * Limpar campos de CDA
+ */
+function limparCamposCDA() {
+    document.getElementById('numeroCDA').value = '';
+    document.getElementById('codigoTributoFiscal').value = '';
+    document.getElementById('valorCDA').value = '';
+    document.getElementById('dataApuracaoCDA').value = '';
 }
 
 /**
@@ -294,9 +347,92 @@ function resetarClasse() {
 }
 
 function resetarAssunto() {
-    const select = document.getElementById('assunto');
-    select.innerHTML = '<option value="">📍 Selecione uma classe primeiro</option>';
-    select.disabled = true;
+    const selectPrincipal = document.getElementById('assunto');
+    const container = document.getElementById('assuntosSecundariosContainer');
+    const btnAdicionarSecundario = document.getElementById('btnAdicionarAssuntoSecundario');
+    
+    selectPrincipal.innerHTML = '<option value="">📍 Selecione uma classe primeiro</option>';
+    selectPrincipal.disabled = true;
+    
+    // Limpar container de assuntos secundários
+    container.innerHTML = '';
+    
+    // Desabilitar botão
+    btnAdicionarSecundario.disabled = true;
+    btnAdicionarSecundario.style.opacity = '0.5';
+    
+    // Limpar cache
+    estadoAtual.assuntosSecundariosDisponiveis = [];
+}
+
+/**
+ * Adicionar um novo select de assunto secundário
+ */
+function adicionarAssuntoSecundario() {
+    const container = document.getElementById('assuntosSecundariosContainer');
+    const assuntosDisponiveis = estadoAtual.assuntosSecundariosDisponiveis;
+    
+    if (!assuntosDisponiveis || assuntosDisponiveis.length === 0) {
+        mostrarNotificacao('⚠️ Nenhum assunto secundário disponível', 'warning');
+        return;
+    }
+    
+    const index = container.children.length + 1;
+    
+    const divAssunto = document.createElement('div');
+    divAssunto.className = 'assunto-secundario-item';
+    divAssunto.style.cssText = 'display: flex; gap: 10px; align-items: center; margin-bottom: 10px;';
+    
+    const select = document.createElement('select');
+    select.className = 'assunto-secundario-select';
+    select.style.cssText = 'flex: 1;';
+    
+    // Adicionar opção padrão
+    const optionDefault = document.createElement('option');
+    optionDefault.value = '';
+    optionDefault.textContent = '� Selecione um assunto secundário...';
+    select.appendChild(optionDefault);
+    
+    // Adicionar assuntos disponíveis
+    assuntosDisponiveis.forEach(assunto => {
+        const option = document.createElement('option');
+        option.value = assunto.codigo;
+        option.textContent = `${assunto.codigo} - ${assunto.descricao}`;
+        select.appendChild(option);
+    });
+    
+    // Botão remover
+    const btnRemover = document.createElement('button');
+    btnRemover.type = 'button';
+    btnRemover.className = 'btn-remove';
+    btnRemover.textContent = '✕';
+    btnRemover.style.cssText = 'background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold;';
+    btnRemover.onclick = function() {
+        divAssunto.remove();
+    };
+    
+    divAssunto.appendChild(select);
+    divAssunto.appendChild(btnRemover);
+    container.appendChild(divAssunto);
+    
+    console.log(`✅ Assunto secundário ${index} adicionado`);
+}
+
+/**
+ * Obter todos os assuntos secundários selecionados
+ */
+function obterAssuntosSecundariosSelecionados() {
+    const container = document.getElementById('assuntosSecundariosContainer');
+    const selects = container.querySelectorAll('.assunto-secundario-select');
+    const assuntosSelecionados = [];
+    
+    selects.forEach(select => {
+        if (select.value && select.value.trim() !== '') {
+            assuntosSelecionados.push(select.value.trim());
+        }
+    });
+    
+    return assuntosSelecionados;
 }
 
 /**
@@ -311,6 +447,94 @@ function configurarFormulario() {
 
     // Configurar formatação automática de datas
     configurarEventosData();
+}
+
+/**
+ * ========================================
+ * PREENCHER DADOS DE TESTE
+ * ========================================
+ */
+
+/**
+ * Preenche automaticamente os dados de autor e réu para testes
+ * Dados baseados no arquivo pergunta.txt
+ */
+function preencherDadosTeste() {
+    try {
+        // Preencher CPF do Signatário (do pergunta.txt)
+        const signatarioInput = document.getElementById('signatario');
+        if (signatarioInput) {
+            signatarioInput.value = '37450364840';
+        }
+
+        // Dados do Polo Ativo (FAZENDA PÚBLICA DO ESTADO DE SÃO PAULO)
+        const poloAtivoContainer = document.getElementById('poloAtivoContainer');
+        const primeiraParteAtivo = poloAtivoContainer.querySelector('.parte-item');
+
+        if (primeiraParteAtivo) {
+            // Polo Ativo = Pessoa Jurídica (Fazenda)
+            const tipoPessoaAtivo = primeiraParteAtivo.querySelector('.tipoPessoa');
+            tipoPessoaAtivo.value = 'juridica';
+            toggleTipoPessoa(tipoPessoaAtivo);
+
+            // Dados reais do pergunta.txt
+            primeiraParteAtivo.querySelector('.razaoSocial').value = 'FAZENDA PÚBLICA DO ESTADO DE SÃO PAULO';
+            primeiraParteAtivo.querySelector('.cnpj').value = '46379400000150';
+        }
+
+        // Dados do Polo Passivo (MAYARA MENDES BARBOSA - Pessoa Física)
+        const poloPassivoContainer = document.getElementById('poloPassivoContainer');
+        const primeiraPartePassivo = poloPassivoContainer.querySelector('.parte-item');
+
+        if (primeiraPartePassivo) {
+            // Polo Passivo = Pessoa Física (Devedora)
+            const tipoPessoaPassivo = primeiraPartePassivo.querySelector('.tipoPessoa');
+            tipoPessoaPassivo.value = 'fisica';
+            toggleTipoPessoa(tipoPessoaPassivo);
+
+            // Dados reais do pergunta.txt
+            primeiraPartePassivo.querySelector('.nomeCompleto').value = 'MAYARA MENDES BARBOSA';
+            primeiraPartePassivo.querySelector('.cpf').value = '38569492839';
+            primeiraPartePassivo.querySelector('.dataNascimento').value = '17/02/1990';
+            primeiraPartePassivo.querySelector('.sexo').value = 'Feminino';
+        }
+        
+        // Preencher campos de CDA se estiverem visíveis (Execução Fiscal)
+        const camposCDA = document.getElementById('camposExecucaoFiscal');
+        if (camposCDA && camposCDA.style.display !== 'none') {
+            // Gerar número de CDA único baseado na data/hora atual
+            // Formato: ANO/MÊS/DIA/HORA/MINUTO/SEGUNDO
+            const agora = new Date();
+            const ano = agora.getFullYear();
+            const mes = String(agora.getMonth() + 1).padStart(2, '0');
+            const dia = String(agora.getDate()).padStart(2, '0');
+            const hora = String(agora.getHours()).padStart(2, '0');
+            const minuto = String(agora.getMinutes()).padStart(2, '0');
+            const segundo = String(agora.getSeconds()).padStart(2, '0');
+            
+            // Formato: 2025/110223145830 (ano/mêsdiahouraminutosegundo)
+            const numeroCDAUnico = `${ano}/${mes}${dia}${hora}${minuto}${segundo}`;
+            
+            document.getElementById('numeroCDA').value = numeroCDAUnico;
+            document.getElementById('codigoTributoFiscal').value = '10005';
+            document.getElementById('valorCDA').value = '1436.83';
+            
+            // Data de apuração: hoje
+            const hoje = `${ano}-${mes}-${dia}`;
+            document.getElementById('dataApuracaoCDA').value = hoje;
+            
+            console.log(`✅ CDA único gerado: ${numeroCDAUnico}`);
+        }
+        
+        // Mostrar notificação de sucesso
+        mostrarNotificacao('✅ Dados de teste preenchidos com sucesso! (Dados reais do pergunta.txt)', 'success');
+        
+        console.log('✅ Dados de teste preenchidos automaticamente com dados do pergunta.txt');
+        
+    } catch (error) {
+        console.error('Erro ao preencher dados de teste:', error);
+        mostrarNotificacao('❌ Erro ao preencher dados de teste', 'error');
+    }
 }
 
 /**
@@ -482,24 +706,54 @@ function extrairPartes(tipoPolo) {
     const container = document.getElementById(tipoPolo === 'ativo' ? 'poloAtivoContainer' : 'poloPassivoContainer');
     const partesItems = container.querySelectorAll('.parte-item');
     const partes = [];
+    const nomePoloPt = tipoPolo === 'ativo' ? 'Ativo (Autor)' : 'Passivo (Réu)';
 
-    partesItems.forEach(item => {
+    partesItems.forEach((item, index) => {
         const tipoPessoa = item.querySelector('.tipoPessoa').value;
+        const numeroParteExibicao = index + 1;
 
         if (tipoPessoa === 'fisica') {
+            const nome = item.querySelector('.nomeCompleto')?.value.trim() || '';
+            const cpf = item.querySelector('.cpf')?.value.trim().replace(/\D/g, '') || '';
+
+            // ✅ VALIDAÇÃO ADICIONADA
+            if (!nome) {
+                throw new Error(`Polo ${nomePoloPt}, Parte ${numeroParteExibicao}: Nome é obrigatório`);
+            }
+            if (!cpf) {
+                throw new Error(`Polo ${nomePoloPt}, Parte ${numeroParteExibicao}: CPF é obrigatório`);
+            }
+            if (cpf.length !== 11) {
+                throw new Error(`Polo ${nomePoloPt}, Parte ${numeroParteExibicao}: CPF inválido (deve ter 11 dígitos, recebido: ${cpf.length})`);
+            }
+
             partes.push({
                 tipoPessoa: 'fisica',
-                nome: item.querySelector('.nomeCompleto').value.trim(),
-                cpf: item.querySelector('.cpf').value.trim().replace(/\D/g, ''),
-                dataNascimento: item.querySelector('.dataNascimento').value.trim(),
-                sexo: item.querySelector('.sexo').value
+                nome: nome,
+                cpf: cpf,
+                dataNascimento: item.querySelector('.dataNascimento')?.value.trim() || '',
+                sexo: item.querySelector('.sexo')?.value || 'Masculino'
             });
         } else {
+            const nome = item.querySelector('.razaoSocial')?.value.trim() || '';
+            const cnpj = item.querySelector('.cnpj')?.value.trim().replace(/\D/g, '') || '';
+
+            // ✅ VALIDAÇÃO ADICIONADA
+            if (!nome) {
+                throw new Error(`Polo ${nomePoloPt}, Parte ${numeroParteExibicao}: Razão Social é obrigatória`);
+            }
+            if (!cnpj) {
+                throw new Error(`Polo ${nomePoloPt}, Parte ${numeroParteExibicao}: CNPJ é obrigatório`);
+            }
+            if (cnpj.length !== 14) {
+                throw new Error(`Polo ${nomePoloPt}, Parte ${numeroParteExibicao}: CNPJ inválido (deve ter 14 dígitos, recebido: ${cnpj.length})`);
+            }
+
             partes.push({
                 tipoPessoa: 'juridica',
-                nome: item.querySelector('.razaoSocial').value.trim(),
-                razaoSocial: item.querySelector('.razaoSocial').value.trim(),
-                cnpj: item.querySelector('.cnpj').value.trim().replace(/\D/g, '')
+                nome: nome,
+                razaoSocial: nome,
+                cnpj: cnpj
             });
         }
     });
@@ -559,6 +813,44 @@ async function handleSubmit(event) {
             throw new Error('Informe a classe processual');
         }
 
+        // Validar campos de CDA se for Execução Fiscal (classe 1116)
+        let dadosCDA = null;
+        if (classe === '1116') {
+            const numeroCDA = document.getElementById('numeroCDA').value.trim();
+            const codigoTributoFiscal = document.getElementById('codigoTributoFiscal').value.trim();
+            const valorCDA = document.getElementById('valorCDA').value;
+            const dataApuracaoCDA = document.getElementById('dataApuracaoCDA').value;
+
+            if (!numeroCDA) {
+                throw new Error('Informe o número da CDA para Execução Fiscal');
+            }
+            if (!codigoTributoFiscal) {
+                throw new Error('Informe o código do tributo fiscal');
+            }
+            if (!valorCDA || parseFloat(valorCDA) <= 0) {
+                throw new Error('Informe o valor da CDA');
+            }
+            if (!dataApuracaoCDA) {
+                throw new Error('Informe a data de apuração do valor da CDA');
+            }
+
+            // Converter data para formato YYYYMMDDHHMMSS
+            const dataObj = new Date(dataApuracaoCDA);
+            const dataFormatada = dataObj.getFullYear() +
+                String(dataObj.getMonth() + 1).padStart(2, '0') +
+                String(dataObj.getDate()).padStart(2, '0') +
+                '183109'; // Horário fixo como no exemplo
+
+            dadosCDA = {
+                numeroCDA: numeroCDA,
+                codigoTributoFiscal: codigoTributoFiscal,
+                valorCDA: parseFloat(valorCDA),
+                dataApuracaoCDA: dataFormatada
+            };
+
+            console.log('[CDA] Dados da CDA:', dadosCDA);
+        }
+
         if (!signatario || signatario.length !== 11) {
             throw new Error('Informe um CPF válido para o signatário');
         }
@@ -603,20 +895,27 @@ async function handleSubmit(event) {
             });
         }
 
+        // Obter assuntos secundários selecionados
+        const assuntosSecundarios = obterAssuntosSecundariosSelecionados();
+
         const payload = {
             codigoLocalidade: localidade,
             classeProcessual: classe,
             assunto: assunto || null,
+            assuntosSecundarios: assuntosSecundarios.length > 0 ? assuntosSecundarios : null,
             valorCausa: valorCausa ? parseFloat(valorCausa) : null,
             competencia: competencia || null,
             nivelSigilo: parseInt(nivelSigilo),
             poloAtivo,
             poloPassivo,
             signatario,
-            documentos
+            documentos,
+            dadosCDA: dadosCDA  // Adicionar dados de CDA se for Execução Fiscal
         };
 
         console.log('[MNI 3.0] Payload:', payload);
+        console.log('[MNI 3.0] Assunto principal:', payload.assunto);
+        console.log('[MNI 3.0] Assuntos secundários:', payload.assuntosSecundarios);
 
         const response = await fetch(`${API_BASE}/peticionamento/inicial`, {
             method: 'POST',

@@ -16,7 +16,8 @@
       "Bash(node -e:*)",
       "Bash(find:*)",
       "Bash(tasklist:*)",
-      "Bash(taskkill /PID 32828 /F)"
+      "Bash(taskkill /PID 32828 /F)",
+      "Bash(taskkill:*)"
     ],
     "deny": [],
     "ask": []

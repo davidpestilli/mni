@@ -121,23 +121,55 @@ async function consultarProcesso() {
         processoContainer.innerHTML = '';
         showLoading(processoLoading);
 
-        // Usar MNI 2.2 (endpoint original)
-        let url = `/api/processos/${numeroProcesso}`;
+        // Determinar qual versão MNI usar baseado no sistema atual
+        const sistema = localStorage.getItem('mni_sistema_atual') || '1G_CIVIL';
+        const usarMNI3 = (sistema === '1G_EXEC_FISCAL');
+
+        // Montar URL baseado na versão MNI
+        let url;
         const params = new URLSearchParams();
 
-        // Adicionar chave se fornecida
-        if (chaveConsulta) {
-            params.append('chave', chaveConsulta);
-        }
+        if (usarMNI3) {
+            // MNI 3.0: /api/mni3/processo/:numeroProcesso
+            url = `/api/mni3/processo/${numeroProcesso}`;
 
-        // Adicionar data de referência se fornecida
-        if (dataReferenciaMNI) {
-            params.append('dataReferencia', dataReferenciaMNI);
+            // Adicionar chave se fornecida
+            if (chaveConsulta) {
+                params.append('chave', chaveConsulta);
+            }
+
+            // MNI 3.0 usa dataInicial e dataFinal ao invés de dataReferencia
+            // Se apenas uma data for fornecida, usar como dataInicial
+            if (dataReferenciaMNI) {
+                params.append('dataInicial', dataReferenciaMNI);
+                // Opcional: definir dataFinal como data atual se necessário
+                // params.append('dataFinal', obterDataAtualMNI());
+            }
+
+            // Sempre incluir documentos no MNI 3.0
+            params.append('incluirDocumentos', 'true');
+        } else {
+            // MNI 2.2: /api/processos/:numeroProcesso
+            url = `/api/processos/${numeroProcesso}`;
+
+            // Adicionar chave se fornecida
+            if (chaveConsulta) {
+                params.append('chave', chaveConsulta);
+            }
+
+            // Adicionar data de referência se fornecida
+            if (dataReferenciaMNI) {
+                params.append('dataReferencia', dataReferenciaMNI);
+            }
         }
 
         if (params.toString()) {
             url += `?${params.toString()}`;
         }
+
+        console.log('[PROCESSOS] Sistema:', sistema);
+        console.log('[PROCESSOS] Usando MNI 3.0?', usarMNI3);
+        console.log('[PROCESSOS] URL:', url);
 
         const response = await apiRequest(url);
         const data = await response.json();
@@ -242,19 +274,35 @@ async function renderizarProcesso(processo) {
     const totalDocumentos = documentos.length;
 
     // Contar por tipo
-    const docsPDF = documentos.filter(d => d.attributes && d.attributes.mimetype === 'application/pdf').length;
-    const docsHTML = documentos.filter(d => d.attributes && d.attributes.mimetype === 'text/html').length;
-    const docsVideo = documentos.filter(d => d.attributes && d.attributes.mimetype && d.attributes.mimetype.startsWith('video/')).length;
-    const docsComSigilo = documentos.filter(d => d.attributes && parseInt(d.attributes.nivelSigilo || '0') > 0).length;
+    // MNI 2.2: d.attributes.mimetype
+    // MNI 3.0: d.conteudo.mimetype
+    const docsPDF = documentos.filter(d => {
+        const mime = d.attributes?.mimetype || d.conteudo?.mimetype;
+        return mime === 'application/pdf';
+    }).length;
+    const docsHTML = documentos.filter(d => {
+        const mime = d.attributes?.mimetype || d.conteudo?.mimetype;
+        return mime === 'text/html';
+    }).length;
+    const docsVideo = documentos.filter(d => {
+        const mime = d.attributes?.mimetype || d.conteudo?.mimetype;
+        return mime && mime.startsWith('video/');
+    }).length;
+    const docsComSigilo = documentos.filter(d => {
+        const sigilo = d.attributes?.nivelSigilo || d.nivelSigilo;
+        return parseInt(sigilo || '0') > 0;
+    }).length;
 
     // Extrair movimentos
     const movimentos = processo.movimento ? (Array.isArray(processo.movimento) ? processo.movimento : [processo.movimento]) : [];
     const totalMovimentos = movimentos.length;
 
     // Criar mapa movimento -> documentos para vincular
+    // MNI 2.2: doc.attributes.movimento
+    // MNI 3.0: doc.idMovimento (direto)
     const documentosPorMovimento = {};
     documentos.forEach(doc => {
-        const movimentoId = doc.attributes?.movimento;
+        const movimentoId = doc.attributes?.movimento || doc.idMovimento;
         if (movimentoId) {
             if (!documentosPorMovimento[movimentoId]) {
                 documentosPorMovimento[movimentoId] = [];
@@ -446,23 +494,42 @@ function criarCardPolo(polo) {
 
 function criarCardParte(parte) {
     const pessoa = parte.pessoa || {};
+
+    // MNI 2.2: pessoa.attributes
+    // MNI 3.0: pessoa.dadosBasicos
     const pessoaAttrs = pessoa.attributes || {};
+    const dadosBasicos = pessoa.dadosBasicos || {};
+
     const advogados = parte.advogado ? (Array.isArray(parte.advogado) ? parte.advogado : [parte.advogado]) : [];
     const endereco = pessoa.endereco ? (Array.isArray(pessoa.endereco) ? pessoa.endereco[0] : pessoa.endereco) : null;
 
-    const isPJ = pessoaAttrs.tipoPessoa === 'juridica';
+    // Determinar se é PJ: MNI 2.2 usa tipoPessoa, MNI 3.0 usa qualificacaoPessoa
+    const tipoPessoa = pessoaAttrs.tipoPessoa || pessoa.qualificacaoPessoa || '';
+    const isPJ = tipoPessoa === 'juridica' || tipoPessoa === 'JUR';
+
+    // Nome da pessoa: MNI 2.2 em attributes, MNI 3.0 em dadosBasicos ou direto
+    const nome = pessoaAttrs.nome || dadosBasicos.nome || 'N/A';
+
+    // Documento: pode estar em attributes, dadosBasicos ou direto na pessoa
+    const numeroDoc = pessoaAttrs.numeroDocumentoPrincipal ||
+                      dadosBasicos.numeroDocumentoPrincipal ||
+                      pessoa.numeroDocumentoPrincipal ||
+                      'N/A';
+
+    const dataNascimento = pessoaAttrs.dataNascimento || dadosBasicos.dataNascimento || null;
+
     const enderecoAttrs = endereco ? (endereco.attributes || {}) : {};
 
     return `
         <div>
             <div style="margin-bottom: 10px;">
                 <div style="font-weight: 600; font-size: 15px; color: #333;">
-                    ${isPJ ? '🏢' : '👤'} ${pessoaAttrs.nome || 'N/A'}
+                    ${isPJ ? '🏢' : '👤'} ${nome}
                 </div>
                 <div style="color: #666; font-size: 13px; margin-top: 4px;">
-                    ${isPJ ? 'CNPJ' : 'CPF'}: ${formatarDocumento(pessoaAttrs.numeroDocumentoPrincipal || 'N/A', isPJ)}
+                    ${isPJ ? 'CNPJ' : 'CPF'}: ${formatarDocumento(numeroDoc, isPJ)}
                 </div>
-                ${pessoaAttrs.dataNascimento ? `<div style="color: #666; font-size: 13px;">Nascimento: ${formatarDataMNI(pessoaAttrs.dataNascimento)}</div>` : ''}
+                ${dataNascimento ? `<div style="color: #666; font-size: 13px;">Nascimento: ${formatarDataMNI(dataNascimento)}</div>` : ''}
             </div>
 
             ${endereco ? `
@@ -498,7 +565,10 @@ function criarCardParte(parte) {
 
 function criarCardMovimento(movimento, documentosPorMovimento) {
     const movAttrs = movimento.attributes || {};
-    const movimentoId = movAttrs.identificadorMovimento || '';
+
+    // MNI 2.2: attributes.identificadorMovimento
+    // MNI 3.0: attributes.idMovimento
+    const movimentoId = movAttrs.identificadorMovimento || movAttrs.idMovimento || '';
     const dataHora = movAttrs.dataHora ? formatarDataHoraMNI(movAttrs.dataHora) : 'N/A';
 
     const movimentoLocal = movimento.movimentoLocal || {};
@@ -568,17 +638,29 @@ function criarCardMovimento(movimento, documentosPorMovimento) {
 }
 
 function criarCardDocumentoCompacto(doc) {
+    // MNI 2.2: doc.attributes
+    // MNI 3.0: campos diretos
     const docAttrs = doc.attributes || {};
+
     const outrosParams = doc.outroParametro || [];
     const rotuloParam = outrosParams.find(p => p.attributes && p.attributes.nome === 'rotulo');
     const tamanhoParam = outrosParams.find(p => p.attributes && p.attributes.nome === 'tamanho');
 
     const rotulo = rotuloParam ? rotuloParam.attributes.valor : '';
-    const tamanho = tamanhoParam ? formatarTamanhoBytes(parseInt(tamanhoParam.attributes.valor)) : '';
 
-    const isPDF = docAttrs.mimetype === 'application/pdf';
-    const isVideo = docAttrs.mimetype && docAttrs.mimetype.startsWith('video/');
-    const nivelSigilo = parseInt(docAttrs.nivelSigilo || '0');
+    // Tamanho: MNI 2.2 em outroParametro, MNI 3.0 em tamanhoConteudo
+    const tamanhoBytes = tamanhoParam ? parseInt(tamanhoParam.attributes.valor) :
+                         doc.tamanhoConteudo ? parseInt(doc.tamanhoConteudo) : 0;
+    const tamanho = tamanhoBytes ? formatarTamanhoBytes(tamanhoBytes) : '';
+
+    // Mimetype: MNI 2.2 em attributes, MNI 3.0 em conteudo.mimetype
+    const mimetype = docAttrs.mimetype || doc.conteudo?.mimetype || 'application/pdf';
+
+    const isPDF = mimetype === 'application/pdf';
+    const isVideo = mimetype && mimetype.startsWith('video/');
+
+    // Nível de sigilo: MNI 2.2 em attributes, MNI 3.0 direto
+    const nivelSigilo = parseInt(docAttrs.nivelSigilo || doc.nivelSigilo || '0');
     const temSigilo = nivelSigilo > 0;
 
     // Ícone baseado no tipo
@@ -591,9 +673,11 @@ function criarCardDocumentoCompacto(doc) {
     if (isPDF) tipoArquivo = 'PDF';
     if (isVideo) tipoArquivo = 'MP4';
 
-    const idDocumento = docAttrs.idDocumento || '';
-    const descricao = docAttrs.descricao || 'Documento';
-    const mimetype = docAttrs.mimetype || 'application/pdf';
+    // ID do documento: MNI 2.2 em attributes, MNI 3.0 direto
+    const idDocumento = docAttrs.idDocumento || doc.idDocumento || '';
+
+    // Descrição: MNI 2.2 em attributes, MNI 3.0 direto
+    const descricao = docAttrs.descricao || doc.descricao || 'Documento';
 
     return `
         <div style="background: #f8f9fa; padding: 10px; border-radius: 5px;">
@@ -701,9 +785,28 @@ function formatarCEP(cep) {
 function formatarDataHoraMNI(dataHora) {
     if (!dataHora) return 'N/A';
     const str = dataHora.toString();
+
+    // MNI 3.0: formato ISO 8601 (2025-10-31T16:34:20-03:00)
+    if (str.includes('T')) {
+        try {
+            const date = new Date(str);
+            const dia = String(date.getDate()).padStart(2, '0');
+            const mes = String(date.getMonth() + 1).padStart(2, '0');
+            const ano = date.getFullYear();
+            const hora = String(date.getHours()).padStart(2, '0');
+            const minuto = String(date.getMinutes()).padStart(2, '0');
+            return `${dia}/${mes}/${ano} ${hora}:${minuto}`;
+        } catch (e) {
+            console.error('Erro ao formatar data ISO:', e);
+            return str;
+        }
+    }
+
+    // MNI 2.2: formato AAAAMMDDHHMMSS
     if (str.length === 14) {
         return `${str.substr(6, 2)}/${str.substr(4, 2)}/${str.substr(0, 4)} ${str.substr(8, 2)}:${str.substr(10, 2)}`;
     }
+
     return formatarDataMNI(dataHora);
 }
 
@@ -716,12 +819,28 @@ function formatarTamanhoBytes(bytes) {
 }
 
 function formatarDataMNI(dataMNI) {
-    // Formato: AAAAMMDDHHMMSS -> DD/MM/AAAA HH:MM
     if (!dataMNI) return 'N/A';
     const str = dataMNI.toString();
+
+    // MNI 3.0: formato ISO 8601 (2025-10-31T16:34:20-03:00) ou (2025-10-31)
+    if (str.includes('T') || str.includes('-')) {
+        try {
+            const date = new Date(str);
+            const dia = String(date.getDate()).padStart(2, '0');
+            const mes = String(date.getMonth() + 1).padStart(2, '0');
+            const ano = date.getFullYear();
+            return `${dia}/${mes}/${ano}`;
+        } catch (e) {
+            console.error('Erro ao formatar data ISO:', e);
+            return str;
+        }
+    }
+
+    // MNI 2.2: formato AAAAMMDDHHMMSS ou AAAAMMDD
     if (str.length >= 8) {
         return `${str.substr(6, 2)}/${str.substr(4, 2)}/${str.substr(0, 4)}`;
     }
+
     return dataMNI;
 }
 
@@ -826,8 +945,21 @@ async function visualizarDocumento(numeroProcesso, idDocumento, descricao, mimet
         // Criar modal de loading
         mostrarModalLoading(descricao);
 
+        // Detectar qual sistema está sendo usado
+        const sistema = localStorage.getItem('mni_sistema_atual') || '1G_CIVIL';
+        const usarMNI3 = (sistema === '1G_EXEC_FISCAL');
+
+        // Determinar a URL correta baseado no sistema
+        const url = usarMNI3
+            ? `/api/mni3/processo/${numeroProcesso}/documentos/${idDocumento}`
+            : `/api/processos/${numeroProcesso}/documentos/${idDocumento}`;
+
+        console.log('[VISUALIZAR DOCUMENTO] Sistema:', sistema);
+        console.log('[VISUALIZAR DOCUMENTO] Usando MNI 3.0:', usarMNI3);
+        console.log('[VISUALIZAR DOCUMENTO] URL:', url);
+
         // Fazer requisição para obter o conteúdo do documento
-        const response = await apiRequest(`/api/processos/${numeroProcesso}/documentos/${idDocumento}`);
+        const response = await apiRequest(url);
         const data = await response.json();
 
         if (!data.success || !data.data) {
