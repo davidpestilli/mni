@@ -140,7 +140,7 @@ loginForm.addEventListener('submit', async (e) => {
         showAlert('Erro ao conectar com o servidor. Verifique se o backend está rodando.', 'error');
     } finally {
         btnLogin.disabled = false;
-        btnLogin.textContent = 'Entrar';
+        btnLogin.textContent = 'Entrar no Sistema';
     }
 });
 
@@ -156,3 +156,4 @@ function showAlert(message, type = 'info') {
         alertContainer.innerHTML = '';
     }, 5000);
 }
+

@@ -6,118 +6,476 @@
     <title>Login - MNI Web App</title>
     <link rel="stylesheet" href="css/style.css">
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            padding: 10px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', sans-serif;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
         }
 
-        #alert-container {
-            margin-bottom: 12px;
+        /* Animated background effect */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: moveBackground 20s linear infinite;
+            opacity: 0.3;
+            pointer-events: none;
         }
 
-        #alert-container .alert {
-            margin-bottom: 0;
-            padding: 10px;
-            font-size: 13px;
+        @keyframes moveBackground {
+            0% { background-position: 0 0; }
+            100% { background-position: 50px 50px; }
         }
 
-        .login-footer {
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px solid #eee;
+        .login-wrapper {
+            width: 100%;
+            max-width: 520px;
+            animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            z-index: 1;
+            margin: auto;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .login-container {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow:
+                0 20px 60px rgba(0, 0, 0, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+            padding: 32px 36px;
+            position: relative;
+        }
+
+        /* Logo / Header */
+        .login-header {
             text-align: center;
-            font-size: 11px;
-            color: #999;
+            margin-bottom: 24px;
+        }
+
+        .logo {
+            width: 52px;
+            height: 52px;
+            margin: 0 auto 14px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border-radius: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .logo svg {
+            width: 30px;
+            height: 30px;
+            color: white;
+        }
+
+        .login-header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 6px;
+            letter-spacing: -0.5px;
+        }
+
+        .login-header .subtitle {
+            color: #64748b;
+            font-size: 13px;
+            font-weight: 400;
             line-height: 1.4;
         }
 
+        /* Environment Selector */
+        .ambiente-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 14px;
+            background: #f8fafc;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .selector-group {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        .selector-group label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .selector-group select {
+            padding: 9px 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 9px;
+            font-size: 13px;
+            font-weight: 500;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #1e293b;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L2 4h8z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 36px;
+        }
+
+        .selector-group select:hover {
+            border-color: #6366f1;
+            background-color: #fafbff;
+        }
+
+        .selector-group select:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        /* Alerts */
+        #alert-container {
+            margin-bottom: 16px;
+        }
+
+        #alert-container .alert {
+            padding: 12px 14px;
+            border-radius: 10px;
+            font-size: 13px;
+            line-height: 1.5;
+            animation: slideIn 0.3s ease-out;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert::before {
+            content: '';
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+            background-size: contain;
+        }
+
+        .alert-error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+        }
+
+        .alert-error::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23dc2626'%3E%3Cpath fill-rule='evenodd' d='M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z'/%3E%3C/svg%3E");
+        }
+
+        .alert-success {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+        }
+
+        .alert-success::before {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%2316a34a'%3E%3Cpath fill-rule='evenodd' d='M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z'/%3E%3C/svg%3E");
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Form */
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 11px 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 9px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            background: #fafbfc;
+            color: #1e293b;
+        }
+
+        .form-group input::placeholder {
+            color: #94a3b8;
+        }
+
+        .form-group input:hover {
+            background: white;
+            border-color: #cbd5e1;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #6366f1;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .form-group small {
+            font-size: 12px;
+            color: #64748b;
+            line-height: 1.4;
+        }
+
+        /* Button */
+        .btn-primary {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+            border: none;
+            border-radius: 9px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+            margin-top: 2px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.5);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Footer */
+        .login-footer {
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid #e2e8f0;
+            text-align: center;
+        }
+
+        .login-footer .warning {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: #fef3c7;
+            border-radius: 7px;
+            color: #92400e;
+            font-weight: 500;
+            font-size: 11px;
+            margin-bottom: 8px;
+        }
+
+        .login-footer .warning::before {
+            content: '';
+            width: 14px;
+            height: 14px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23f59e0b'%3E%3Cpath fill-rule='evenodd' d='M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z'/%3E%3C/svg%3E");
+        }
+
         .login-footer p {
-            margin: 2px 0;
+            font-size: 11px;
+            color: #94a3b8;
+            line-height: 1.4;
+            margin: 3px 0;
+        }
+
+        .login-footer .version {
+            color: #cbd5e1;
+            font-size: 10px;
+            margin-top: 6px;
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .login-container {
+                padding: 28px 24px;
+            }
+
+            .login-header h1 {
+                font-size: 22px;
+            }
+
+            .ambiente-selector {
+                grid-template-columns: 1fr;
+                gap: 10px;
+                padding: 14px;
+            }
+        }
+
+        @media (max-height: 800px) {
+            body {
+                padding: 15px;
+            }
+
+            .login-container {
+                padding: 28px 32px;
+            }
+
+            .login-header {
+                margin-bottom: 20px;
+            }
+
+            .ambiente-selector {
+                margin-bottom: 18px;
+            }
+
+            .login-form {
+                gap: 12px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="login-container">
-        <h1>MNI Web App</h1>
-        <p class="subtitle">Sistema de Teste de Integração MNI</p>
-
-        <!-- Seletores de Sistema e Ambiente -->
-        <div id="ambiente-selector-login" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; padding: 12px; background: #f9f9f9; border-radius: 8px; border: 1px solid #e0e0e0;">
-            <!-- Seletor de Sistema -->
-            <div style="display: flex; flex-direction: column; gap: 4px;">
-                <label style="font-size: 11px; color: #666; font-weight: 600;">Sistema</label>
-                <select id="select-sistema-login" style="padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 12px; width: 100%;">
-                    <option value="1G_CIVIL" selected>⚖️ Civil</option>
-                    <option value="1G_EXEC_FISCAL">💰 Execução Fiscal</option>
-                </select>
+    <div class="login-wrapper">
+        <div class="login-container">
+            <!-- Logo & Header -->
+            <div class="login-header">
+                <div class="logo">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+                    </svg>
+                </div>
+                <h1>MNI Web App</h1>
+                <p class="subtitle">Sistema de Integração com o Modelo Nacional de Interoperabilidade</p>
             </div>
 
-            <!-- Seletor de Ambiente -->
-            <div style="display: flex; flex-direction: column; gap: 4px;">
-                <label style="font-size: 11px; color: #666; font-weight: 600;">Ambiente</label>
-                <select id="select-ambiente-login" style="padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 12px; width: 100%;">
-                    <option value="HML" selected>🏢 Homologação</option>
-                    <option value="PROD">🚀 Produção</option>
-                </select>
+            <!-- Environment Selector -->
+            <div class="ambiente-selector">
+                <div class="selector-group">
+                    <label>Sistema</label>
+                    <select id="select-sistema-login">
+                        <option value="1G_CIVIL" selected>Civil 1ª Instância</option>
+                        <option value="1G_EXEC_FISCAL">Execução Fiscal</option>
+                    </select>
+                </div>
+
+                <div class="selector-group">
+                    <label>Ambiente</label>
+                    <select id="select-ambiente-login">
+                        <option value="HML" selected>Homologação</option>
+                        <option value="PROD">Produção</option>
+                    </select>
+                </div>
             </div>
 
-            <!-- Status (ocupa as duas colunas) -->
-            <div style="grid-column: 1 / -1; display: flex; justify-content: center; padding-top: 4px; border-top: 1px solid #ddd;">
-                <span id="ambiente-status-login" style="font-size: 12px; color: #666; padding: 4px 12px; background: #f0f0f0; border-radius: 4px; text-align: center;">⚖️ HML</span>
+            <!-- Alerts -->
+            <div id="alert-container"></div>
+
+            <!-- Login Form -->
+            <form id="login-form" class="login-form">
+                <div class="form-group">
+                    <label for="idConsultante">CPF / Sigla do Manifestante</label>
+                    <input
+                        type="text"
+                        id="idConsultante"
+                        name="idConsultante"
+                        placeholder="Digite seu CPF ou sigla"
+                        required
+                        autocomplete="username"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="senhaConsultante">Senha</label>
+                    <input
+                        type="password"
+                        id="senhaConsultante"
+                        name="senhaConsultante"
+                        placeholder="Digite sua senha"
+                        required
+                        autocomplete="current-password"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="idRepresentado">ID Representado (Opcional)</label>
+                    <input
+                        type="text"
+                        id="idRepresentado"
+                        name="idRepresentado"
+                        placeholder="CPF ou CNPJ do representado"
+                        autocomplete="off"
+                    >
+                    <small>
+                        Deixe em branco para visualizar todos os avisos disponíveis
+                    </small>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="btn-login">
+                    Entrar no Sistema
+                </button>
+            </form>
+
+            <!-- Footer -->
+            <div class="login-footer">
+                <div class="warning">
+                    Ambiente de Testes e Homologação
+                </div>
+                <p>Sistema desenvolvido para fins de aprendizagem e suporte técnico</p>
+                <p class="version">MNI v2.2.2 e v3.0 · TJSP</p>
             </div>
-        </div>
-
-        <div id="alert-container"></div>
-
-        <form id="login-form">
-            <div class="form-group">
-                <label for="idConsultante">CPF / Sigla</label>
-                <input
-                    type="text"
-                    id="idConsultante"
-                    name="idConsultante"
-                    placeholder="Digite seu CPF (11 dígitos) ou sigla"
-                    required
-                    autocomplete="username"
-                >
-            </div>
-
-            <div class="form-group">
-                <label for="senhaConsultante">Senha</label>
-                <input
-                    type="password"
-                    id="senhaConsultante"
-                    name="senhaConsultante"
-                    placeholder="Digite sua senha"
-                    required
-                    autocomplete="current-password"
-                >
-            </div>
-
-            <div class="form-group">
-                <label for="idRepresentado">
-                    ID Representado (Opcional)
-                    <span style="font-size: 11px; color: #999;">ℹ️ CPF ou CNPJ</span>
-                </label>
-                <input
-                    type="text"
-                    id="idRepresentado"
-                    name="idRepresentado"
-                    placeholder="Ex: 29.979.036/0001-40 (opcional)"
-                    autocomplete="off"
-                >
-                <small style="display: block; color: #666;">
-                    Deixe em branco para ver todos os avisos
-                </small>
-            </div>
-
-            <button type="submit" class="btn btn-primary" id="btn-login">
-                Entrar
-            </button>
-        </form>
-
-        <div class="login-footer">
-            <p>⚠️ Ambiente de testes/homologação</p>
-            <p>Fins de aprendizagem e suporte técnico</p>
         </div>
     </div>
 
