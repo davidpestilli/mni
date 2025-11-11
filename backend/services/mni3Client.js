@@ -45,6 +45,7 @@ class MNI3Client {
         this.wsdlUrl = endpoints.wsdlUrl;
         this.endpoint = endpoints.endpoint;
         this.ambiente = endpoints.ambiente;
+        this.sistema = endpoints.sistema;
         this.client = null;
 
         // Namespaces MNI 3.0
@@ -61,6 +62,10 @@ class MNI3Client {
         // Armazenar último request/response para debug
         this.lastRequestXML = null;
         this.lastResponseXML = null;
+        
+        console.log('🔧 MNI 3.0 Client inicializado');
+        console.log('   Sistema:', this.sistema);
+        console.log('   Ambiente:', this.ambiente);
     }
 
     /**
@@ -75,15 +80,21 @@ class MNI3Client {
             this.wsdlUrl = endpoints.wsdlUrl;
             this.endpoint = endpoints.endpoint;
             this.ambiente = endpoints.ambiente;
+            this.sistema = endpoints.sistema;
             this.client = null; // Forçar reinicialização na próxima chamada
 
-            console.log('[MNI 3.0] Endpoints recarregados');
-            console.log('[MNI 3.0] Novo ambiente:', this.ambiente);
-            console.log('[MNI 3.0] Novo endpoint:', this.endpoint);
+            console.log('════════════════════════════════════════════════════════════');
+            console.log('🔄 MNI 3.0 CLIENT - ENDPOINTS RECARREGADOS');
+            console.log('════════════════════════════════════════════════════════════');
+            console.log('Sistema:', this.sistema);
+            console.log('Ambiente:', this.ambiente);
+            console.log('Endpoint:', this.endpoint);
+            console.log('WSDL:', this.wsdlUrl);
+            console.log('═══════════════════════════════════════════════════════════');
 
-            return { sucesso: true, ambiente: this.ambiente, endpoint: this.endpoint };
+            return { sucesso: true, ambiente: this.ambiente, endpoint: this.endpoint, sistema: this.sistema };
         } catch (error) {
-            console.error('[MNI 3.0] Erro ao recarregar endpoints:', error.message);
+            console.error('❌ [MNI 3.0] Erro ao recarregar endpoints:', error.message);
             throw error;
         }
     }

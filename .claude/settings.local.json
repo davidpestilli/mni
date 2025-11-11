@@ -17,7 +17,9 @@
       "Bash(find:*)",
       "Bash(tasklist:*)",
       "Bash(taskkill /PID 32828 /F)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(node test-tipoparte.js:*)",
+      "Bash(node test-modalidade-vinculacao.js:*)"
     ],
     "deny": [],
     "ask": []

@@ -18,6 +18,10 @@ const SISTEMAS_DISPONÍVEIS = {
     '1G_EXEC_FISCAL': {
         nome: 'Primeiro Grau Execução Fiscal',
         ambientesDisponiveis: ['HML'] // Por enquanto, apenas HML está disponível
+    },
+    '2G_CIVIL': {
+        nome: 'Segundo Grau Civil (Instância Recursal)',
+        ambientesDisponiveis: ['HML'] // Por enquanto, apenas HML está disponível
     }
 };
 
@@ -62,6 +66,15 @@ function getEndpoints3_0() {
         } else {
             endpoint = process.env.MNI_3_0_EXEC_FISCAL_HML_ENDPOINT;
             wsdlUrl = process.env.MNI_3_0_EXEC_FISCAL_HML_WSDL_URL;
+        }
+    } else if (sistema === '2G_CIVIL') {
+        // Sistema Civil 2º Grau (Instância Recursal)
+        if (ambiente === 'PROD') {
+            endpoint = process.env.MNI_3_0_CIVIL_2G_PROD_ENDPOINT;
+            wsdlUrl = process.env.MNI_3_0_CIVIL_2G_PROD_WSDL_URL;
+        } else {
+            endpoint = process.env.MNI_3_0_CIVIL_2G_HML_ENDPOINT;
+            wsdlUrl = process.env.MNI_3_0_CIVIL_2G_HML_WSDL_URL;
         }
     } else {
         // Sistema 1G Civil (padrão)

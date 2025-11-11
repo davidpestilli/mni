@@ -16,6 +16,10 @@ const SISTEMAS_CONFIG = {
     '1G_EXEC_FISCAL': {
         nome: 'Primeiro Grau Execução Fiscal',
         ambientesDisponiveis: ['HML']
+    },
+    '2G_CIVIL': {
+        nome: 'Segundo Grau Civil (Instância Recursal)',
+        ambientesDisponiveis: ['HML']
     }
 };
 
@@ -235,9 +239,17 @@ function atualizarStatusAmbiente(ambiente, sistema = null) {
     let emojiSistema = '⚖️'; // Civil por padrão
     if (sistema === '1G_EXEC_FISCAL') {
         emojiSistema = '💰';
+    } else if (sistema === '2G_CIVIL') {
+        emojiSistema = '🏛️';
     } else if (selectSistema && !sistema) {
         const sistemaSelecionado = selectSistema.value;
-        emojiSistema = (sistemaSelecionado === '1G_EXEC_FISCAL') ? '💰' : '⚖️';
+        if (sistemaSelecionado === '1G_EXEC_FISCAL') {
+            emojiSistema = '💰';
+        } else if (sistemaSelecionado === '2G_CIVIL') {
+            emojiSistema = '🏛️';
+        } else {
+            emojiSistema = '⚖️';
+        }
     }
 
     if (ambiente === 'HOMOLOGAÇÃO') {

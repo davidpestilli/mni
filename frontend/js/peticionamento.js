@@ -258,15 +258,13 @@ async function enviarPeticao() {
         showInfo(peticaoResultado, 'Enviando petição ao servidor...');
 
         // Detectar qual rota usar baseado no sistema
-        const infoResponse = await apiRequest('/api/mni3/info/rotas-peticionamento');
-        const infoData = await infoResponse.json();
+        const sistema = localStorage.getItem('mni_sistema_atual') || '1G_CIVIL';
+        const usarMNI3 = (sistema === '1G_EXEC_FISCAL' || sistema === '2G_CIVIL');
         
-        console.log('[PETICIONAMENTO] Info de rotas:', infoData);
+        console.log('[PETICIONAMENTO] Sistema:', sistema);
+        console.log('[PETICIONAMENTO] Usar MNI 3.0:', usarMNI3);
         
         let response, data;
-        
-        // Determinar se deve usar MNI 3.0 ou MNI 2.2
-        const usarMNI3 = infoData.rotaRecomendada === '/api/mni3/peticao';
         
         if (usarMNI3) {
             // Usar MNI 3.0 (Execução Fiscal)

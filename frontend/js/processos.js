@@ -123,7 +123,10 @@ async function consultarProcesso() {
 
         // Determinar qual versão MNI usar baseado no sistema atual
         const sistema = localStorage.getItem('mni_sistema_atual') || '1G_CIVIL';
-        const usarMNI3 = (sistema === '1G_EXEC_FISCAL');
+        const usarMNI3 = (sistema === '1G_EXEC_FISCAL' || sistema === '2G_CIVIL');
+
+        console.log('[PROCESSOS] Sistema:', sistema);
+        console.log('[PROCESSOS] Usar MNI 3.0:', usarMNI3);
 
         // Montar URL baseado na versão MNI
         let url;
@@ -167,9 +170,7 @@ async function consultarProcesso() {
             url += `?${params.toString()}`;
         }
 
-        console.log('[PROCESSOS] Sistema:', sistema);
-        console.log('[PROCESSOS] Usando MNI 3.0?', usarMNI3);
-        console.log('[PROCESSOS] URL:', url);
+        console.log('[PROCESSOS] URL final:', url);
 
         const response = await apiRequest(url);
         const data = await response.json();
@@ -947,7 +948,7 @@ async function visualizarDocumento(numeroProcesso, idDocumento, descricao, mimet
 
         // Detectar qual sistema está sendo usado
         const sistema = localStorage.getItem('mni_sistema_atual') || '1G_CIVIL';
-        const usarMNI3 = (sistema === '1G_EXEC_FISCAL');
+        const usarMNI3 = (sistema === '1G_EXEC_FISCAL' || sistema === '2G_CIVIL');
 
         // Determinar a URL correta baseado no sistema
         const url = usarMNI3
@@ -955,7 +956,7 @@ async function visualizarDocumento(numeroProcesso, idDocumento, descricao, mimet
             : `/api/processos/${numeroProcesso}/documentos/${idDocumento}`;
 
         console.log('[VISUALIZAR DOCUMENTO] Sistema:', sistema);
-        console.log('[VISUALIZAR DOCUMENTO] Usando MNI 3.0:', usarMNI3);
+        console.log('[VISUALIZAR DOCUMENTO] Usar MNI 3.0:', usarMNI3);
         console.log('[VISUALIZAR DOCUMENTO] URL:', url);
 
         // Fazer requisição para obter o conteúdo do documento

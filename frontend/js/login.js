@@ -57,6 +57,13 @@ loginForm.addEventListener('submit', async (e) => {
 
         // Salvar sistema selecionado no localStorage
         localStorage.setItem('mni_sistema_selecionado', sistemaSelecionado);
+        
+        console.log('════════════════════════════════════════════════════════════');
+        console.log('🔐 LOGIN - SISTEMA SELECIONADO');
+        console.log('════════════════════════════════════════════════════════════');
+        console.log('Sistema selecionado:', sistemaSelecionado);
+        console.log('Usuário:', idConsultante);
+        console.log('═══════════════════════════════════════════════════════════');
 
         // ⚠️ IMPORTANTE: Usar Civil para autenticação
         // (Execução Fiscal não suporta MNI 2.2, necessário para autenticação)
@@ -108,24 +115,36 @@ loginForm.addEventListener('submit', async (e) => {
 
             // Trocar para o sistema selecionado na tela de login (se não for Civil)
             const sistemaSelecionado = localStorage.getItem('mni_sistema_selecionado') || '1G_CIVIL';
+            console.log('════════════════════════════════════════════════════════════');
+            console.log('🔄 PÓS-LOGIN - TROCAR PARA SISTEMA SELECIONADO');
+            console.log('════════════════════════════════════════════════════════════');
+            console.log('Sistema a ser ativado:', sistemaSelecionado);
+            
             if (sistemaSelecionado !== '1G_CIVIL') {
                 try {
-                    await fetch('/api/ambiente', {
+                    const ambienteResponse = await fetch('/api/ambiente', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({ sistema: sistemaSelecionado })
                     });
+                    const ambienteData = await ambienteResponse.json();
+                    console.log('Resposta do backend:', ambienteData);
+                    
                     // Salvar no localStorage para que o dashboard saiba qual sistema usar
                     localStorage.setItem('mni_sistema_atual', sistemaSelecionado);
+                    console.log('✅ Sistema ativado:', sistemaSelecionado);
+                    console.log('Endpoints MNI 3.0:', ambienteData.data?.endpoints?.mni3_0);
                 } catch (error) {
-                    console.warn('[LOGIN] Aviso ao trocar para sistema selecionado:', error.message);
+                    console.error('❌ Erro ao trocar sistema:', error.message);
                 }
             } else {
                 // Se for Civil, salvar também
                 localStorage.setItem('mni_sistema_atual', '1G_CIVIL');
+                console.log('✅ Sistema Civil mantido (padrão)');
             }
+            console.log('═══════════════════════════════════════════════════════════');
 
             // Redirecionar para dashboard
             setTimeout(() => {

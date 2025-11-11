@@ -6,6 +6,42 @@ if (!getToken()) {
 // Mostrar nome do usuário
 document.getElementById('user-name').textContent = getUserId();
 
+// Mostrar logs de ambiente ao carregar dashboard
+async function mostrarAmbienteAtivo() {
+    try {
+        const response = await fetch('/api/ambiente');
+        const data = await response.json();
+        
+        if (data.success) {
+            console.log('════════════════════════════════════════════════════════════');
+            console.log('🏠 DASHBOARD CARREGADO - AMBIENTE ATIVO');
+            console.log('════════════════════════════════════════════════════════════');
+            console.log('Usuário:', getUserId());
+            console.log('Sistema:', data.data.sistema.nome);
+            console.log('Sistema ID:', data.data.sistema.sistema);
+            console.log('Ambiente:', data.data.ambiente);
+            console.log('');
+            console.log('📡 Endpoints MNI 2.2:');
+            console.log('  URL:', data.data.mni2_2.endpoint);
+            console.log('  Ambiente:', data.data.mni2_2.ambiente);
+            console.log('');
+            console.log('📡 Endpoints MNI 3.0:');
+            console.log('  URL:', data.data.mni3_0.endpoint);
+            console.log('  Ambiente:', data.data.mni3_0.ambiente);
+            console.log('  Sistema:', data.data.mni3_0.sistema);
+            console.log('═══════════════════════════════════════════════════════════');
+            
+            // Salvar sistema atual no localStorage
+            localStorage.setItem('mni_sistema_atual', data.data.sistema.sistema);
+        }
+    } catch (error) {
+        console.error('❌ Erro ao carregar ambiente:', error);
+    }
+}
+
+// Chamar ao carregar a página
+mostrarAmbienteAtivo();
+
 // Gerenciar tabs
 const tabs = document.querySelectorAll('.tab');
 const tabContents = document.querySelectorAll('.tab-content');

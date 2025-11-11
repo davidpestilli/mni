@@ -45,8 +45,13 @@ router.post('/login', async (req, res) => {
         // Gerar hash SHA256 da senha com data (formato MNI)
         const senhaHash = gerarSenhaHashMNI(senhaConsultante);
 
-        console.log('[AUTH] Autenticando para:', idConsultante);
-        console.log('[AUTH] Senha com hash SHA256:', senhaHash);
+        console.log('════════════════════════════════════════════════════════════');
+        console.log('🔐 AUTENTICAÇÃO BACKEND');
+        console.log('════════════════════════════════════════════════════════════');
+        console.log('Usuário:', idConsultante);
+        console.log('Hash senha:', senhaHash);
+        console.log('ID Representado:', idRepresentado || 'Não informado');
+        console.log('═══════════════════════════════════════════════════════════');
 
         // Tentar autenticar fazendo uma consulta simples de avisos
         const avisos = await mniClient.consultarAvisosPendentes(

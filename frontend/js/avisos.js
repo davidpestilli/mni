@@ -50,13 +50,25 @@ async function carregarTodosAvisos() {
 
         // Determinar qual versão MNI usar baseado no sistema atual
         const sistema = localStorage.getItem('mni_sistema_atual') || '1G_CIVIL';
-        const baseUrl = (sistema === '1G_EXEC_FISCAL') ? '/api/avisos-v3' : '/api/avisos';
+        
+        // Usar MNI 3.0 (avisos-v3) para sistemas que usam apenas MNI 3.0
+        // Usar MNI 2.2 (avisos) para 1G_CIVIL que suporta ambas as versões
+        const usarMNI3 = (sistema === '1G_EXEC_FISCAL' || sistema === '2G_CIVIL');
+        const baseUrl = usarMNI3 ? '/api/avisos-v3' : '/api/avisos';
+        
+        console.log('════════════════════════════════════════════════════════════');
+        console.log('📬 CARREGANDO AVISOS - FRONTEND');
+        console.log('════════════════════════════════════════════════════════════');
+        console.log('Sistema atual:', sistema);
+        console.log('Usar MNI 3.0:', usarMNI3);
+        console.log('URL base:', baseUrl);
+        console.log('═══════════════════════════════════════════════════════════');
 
         let urlAguardando = baseUrl + '?status=aguardando';
         let urlAbertos = baseUrl + '?status=abertos';
 
         // Adicionar idRepresentado à URL se foi armazenado (apenas para MNI 2.2)
-        if (idRepresentado && sistema !== '1G_EXEC_FISCAL') {
+        if (idRepresentado && !usarMNI3) {
             urlAguardando += `&idRepresentado=${encodeURIComponent(idRepresentado)}`;
             urlAbertos += `&idRepresentado=${encodeURIComponent(idRepresentado)}`;
         }
@@ -299,7 +311,10 @@ async function abrirPrazo(numeroProcesso, identificadorMovimento) {
 
         // Determinar qual versão MNI usar baseado no sistema atual
         const sistema = localStorage.getItem('mni_sistema_atual') || '1G_CIVIL';
-        const baseUrl = (sistema === '1G_EXEC_FISCAL') ? '/api/avisos-v3' : '/api/avisos';
+        const usarMNI3 = (sistema === '1G_EXEC_FISCAL' || sistema === '2G_CIVIL');
+        const baseUrl = usarMNI3 ? '/api/avisos-v3' : '/api/avisos';
+        
+        console.log('📂 Abrindo prazo - Sistema:', sistema, '| URL:', baseUrl);
 
         // Consultar teor da comunicação
         const response = await apiRequest(`${baseUrl}/${numeroProcesso}/${identificadorMovimento}`);

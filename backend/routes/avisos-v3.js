@@ -53,9 +53,23 @@ router.get('/', extractCredentials, async (req, res) => {
         const status = req.query.status || 'aguardando';
         const idRepresentado = req.query.idRepresentado || null;
 
-        console.log('[AVISOS V3] Consultando avisos com MNI 3.0');
-        console.log('[AVISOS V3] idConsultante:', idConsultante);
-        console.log('[AVISOS V3] idRepresentado:', idRepresentado);
+        // Obter endpoint ativo para log
+        const ambienteManager = require('../config/ambiente');
+        const endpointsAtivos = ambienteManager.getEndpointsAtivos();
+        
+        console.log('════════════════════════════════════════════════════════════');
+        console.log('📬 CONSULTANDO AVISOS - MNI 3.0');
+        console.log('════════════════════════════════════════════════════════════');
+        console.log('Sistema:', endpointsAtivos.sistema.nome);
+        console.log('Sistema ID:', endpointsAtivos.sistema.sistema);
+        console.log('Ambiente:', endpointsAtivos.ambiente);
+        console.log('Endpoint:', endpointsAtivos.mni3_0.endpoint);
+        console.log('Versão MNI:', endpointsAtivos.mni3_0.versao);
+        console.log('');
+        console.log('Usuário:', idConsultante);
+        console.log('ID Representado:', idRepresentado || 'Não informado');
+        console.log('Status filtro:', status);
+        console.log('═══════════════════════════════════════════════════════════');
 
         // Preparar opções para MNI 3.0
         // IMPORTANTE: Testando requisição simplificada (sem tipoPendencia e outroParametro)
@@ -140,12 +154,53 @@ router.get('/', extractCredentials, async (req, res) => {
 
         console.log('[AVISOS V3] Total de avisos normalizados:', avisosNormalizados.length);
 
+        // FILTRAR AVISOS BASEADO NO STATUS SOLICITADO
+        // MNI 3.0 retorna todos os avisos, precisamos filtrar manualmente
+        let avisosFiltrados = avisosNormalizados;
+
+        if (status === 'aguardando') {
+            // Avisos aguardando abertura: tipoPrazo vazio/null E prazo vazio/null
+            avisosFiltrados = avisosNormalizados.filter(aviso => {
+                const temPrazo = aviso.prazo && aviso.prazo !== 'null' && aviso.prazo !== '';
+                const temTipoPrazo = aviso.tipoPrazo && aviso.tipoPrazo !== 'null' && aviso.tipoPrazo !== '';
+                
+                // Aguardando = NÃO tem prazo definido ainda
+                const aguardando = !temPrazo && !temTipoPrazo;
+                
+                if (aguardando) {
+                    console.log(`[AVISOS V3] ✓ Aviso ${aviso.idAviso} AGUARDANDO (sem prazo)`);
+                }
+                
+                return aguardando;
+            });
+        } else if (status === 'abertos') {
+            // Avisos com prazo aberto: tipoPrazo E prazo preenchidos
+            avisosFiltrados = avisosNormalizados.filter(aviso => {
+                const temPrazo = aviso.prazo && aviso.prazo !== 'null' && aviso.prazo !== '';
+                const temTipoPrazo = aviso.tipoPrazo && aviso.tipoPrazo !== 'null' && aviso.tipoPrazo !== '';
+                
+                // Aberto = TEM prazo definido
+                const aberto = temPrazo || temTipoPrazo;
+                
+                if (aberto) {
+                    console.log(`[AVISOS V3] ✓ Aviso ${aviso.idAviso} ABERTO (prazo: ${aviso.prazo}, tipo: ${aviso.tipoPrazo})`);
+                }
+                
+                return aberto;
+            });
+        }
+        // Se status === 'todos', não filtra (mantém avisosFiltrados = avisosNormalizados)
+
+        console.log('[AVISOS V3] Status solicitado:', status);
+        console.log('[AVISOS V3] Total após filtrar por status:', avisosFiltrados.length);
+
         // Responder ao cliente
         res.json({
             success: true,
-            count: avisosNormalizados.length,
-            data: avisosNormalizados,
+            count: avisosFiltrados.length,
+            data: avisosFiltrados,
             version: 'MNI 3.0',
+            status: status,
             ...(idRepresentado && { filteredBy: idRepresentado })
         });
 
@@ -274,11 +329,13 @@ function normalizarAvisoMNI3(aviso) {
         };
 
         // Campos de prazo (MNI 3.0 retorna direto no aviso)
-        if (aviso.prazo) {
+        // Verificar se o prazo existe e não é vazio/null
+        if (aviso.prazo && String(aviso.prazo).trim() !== '' && aviso.prazo !== null) {
             avisoNormalizado.prazo = String(aviso.prazo);
         }
 
-        if (aviso.tipoPrazo) {
+        // Verificar se tipoPrazo existe e não é vazio/null
+        if (aviso.tipoPrazo && String(aviso.tipoPrazo).trim() !== '' && aviso.tipoPrazo !== null) {
             avisoNormalizado.tipoPrazo = aviso.tipoPrazo;
         }
 
