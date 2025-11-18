@@ -65,6 +65,8 @@ router.post('/inicial', async (req, res) => {
         const {
             codigoLocalidade,
             classeProcessual,
+            processoOriginario,
+            seqEventoAgravado,
             assunto,
             assuntosSecundarios,
             valorCausa,
@@ -118,6 +120,13 @@ router.post('/inicial', async (req, res) => {
 
         console.log(`[PETICIONAMENTO] Processando petição inicial para: ${cpfSigla}`);
         console.log(`[PETICIONAMENTO] Signatário: ${signatario}`);
+        console.log(`[PETICIONAMENTO] Classe: ${classeProcessual}`);
+        if (processoOriginario) {
+            console.log(`[PETICIONAMENTO] ✅ Processo Originário: ${processoOriginario}`);
+        }
+        if (seqEventoAgravado) {
+            console.log(`[PETICIONAMENTO] ✅ Evento Agravado: ${seqEventoAgravado}`);
+        }
 
         // Adicionar signatario a todos os documentos
         const documentosComSignatario = documentos.map(doc => ({
@@ -129,6 +138,8 @@ router.post('/inicial', async (req, res) => {
         const dadosIniciais = {
             codigoLocalidade,
             classeProcessual,
+            processoOriginario: processoOriginario || null,
+            seqEventoAgravado: seqEventoAgravado || null,
             assunto,
             assuntosSecundarios: assuntosSecundarios || null,
             valorCausa,
@@ -282,24 +293,38 @@ router.get('/tipos-documento', middlewareMNI2_2Validation, async (req, res) => {
  */
 router.get('/debug/last-soap', async (req, res) => {
     try {
+        console.log('[DEBUG SOAP] ========================================');
+        console.log('[DEBUG SOAP] Verificando XMLs disponíveis...');
+        console.log('[DEBUG SOAP] MNI 3.0 - lastRequestXML existe?', !!mni3Client.lastRequestXML);
+        console.log('[DEBUG SOAP] MNI 3.0 - lastResponseXML existe?', !!mni3Client.lastResponseXML);
+
         // Tentar obter do MNI 3.0 primeiro, depois fallback para MNI 2.2
         let soapTransaction;
-        
-        if (mni3Client.lastRequestXML && mni3Client.lastResponseXML) {
-            // MNI 3.0 tem dados mais recentes
+        let versao = '';
+
+        if (mni3Client.lastRequestXML || mni3Client.lastResponseXML) {
+            // MNI 3.0 tem dados (mesmo que um deles seja null)
             soapTransaction = {
                 request: mni3Client.lastRequestXML,
                 response: mni3Client.lastResponseXML
             };
-            console.log('[DEBUG] Retornando SOAP do MNI 3.0');
+            versao = 'MNI 3.0';
+            console.log('[DEBUG SOAP] ✅ Retornando SOAP do MNI 3.0');
         } else {
             // Fallback para MNI 2.2
             soapTransaction = mniClient.getLastSoapTransaction();
-            console.log('[DEBUG] Retornando SOAP do MNI 2.2');
+            versao = 'MNI 2.2';
+            console.log('[DEBUG SOAP] ✅ Retornando SOAP do MNI 2.2 (fallback)');
         }
+
+        console.log('[DEBUG SOAP] Versão:', versao);
+        console.log('[DEBUG SOAP] Request length:', soapTransaction.request?.length || 0);
+        console.log('[DEBUG SOAP] Response length:', soapTransaction.response?.length || 0);
+        console.log('[DEBUG SOAP] ========================================');
 
         res.json({
             success: true,
+            versao,
             data: {
                 request: soapTransaction.request || 'Nenhuma requisição SOAP ainda',
                 response: soapTransaction.response || 'Nenhuma resposta SOAP ainda'

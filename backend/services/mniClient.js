@@ -337,6 +337,13 @@ class MNIClient {
                         nivelSigilo: manifestacao.nivelSigilo || 0
                     },
                     conteudo: manifestacao.documento, // Base64
+                    assinatura: manifestacao.signatario ? {
+                        signatarioLogin: {
+                            attributes: {
+                                identificador: manifestacao.signatario
+                            }
+                        }
+                    } : undefined,
                     outroParametro: [
                         {
                             attributes: {

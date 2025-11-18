@@ -24,7 +24,18 @@ app.use(bodyParser.json({ limit: '50mb' })); // Aumentar limite para upload de P
 app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
 
 // Servir arquivos estáticos do frontend
-app.use(express.static(path.join(__dirname, '../frontend')));
+// Prioridade: frontend-react/dist (build Vite) > frontend (vanilla)
+const fs = require('fs');
+const reactBuildPath = path.join(__dirname, '../frontend-react/dist');
+const vanillaFrontendPath = path.join(__dirname, '../frontend');
+
+if (fs.existsSync(reactBuildPath)) {
+    console.log('📦 Servindo frontend React (Vite build)');
+    app.use(express.static(reactBuildPath));
+} else {
+    console.log('📦 Servindo frontend vanilla (legado)');
+    app.use(express.static(vanillaFrontendPath));
+}
 
 // Rotas da API
 app.use('/api/auth', authRoutes);
@@ -42,13 +53,24 @@ app.get('/api/health', (req, res) => {
     res.json({
         success: true,
         message: 'MNI Web App Backend está rodando',
-        version: '1.0.0'
+        version: '1.0.0',
+        frontend: fs.existsSync(reactBuildPath) ? 'React (Vite)' : 'Vanilla'
     });
 });
 
-// Rota raiz - redirecionar para o frontend
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend', 'index.html'));
+// Rota raiz - redirecionar para o frontend (SPA support)
+app.get('*', (req, res, next) => {
+    // Ignorar rotas da API
+    if (req.path.startsWith('/api')) {
+        return next();
+    }
+
+    // Servir index.html do React build ou vanilla
+    if (fs.existsSync(reactBuildPath)) {
+        res.sendFile(path.join(reactBuildPath, 'index.html'));
+    } else {
+        res.sendFile(path.join(vanillaFrontendPath, 'index.html'));
+    }
 });
 
 // Tratamento de erro 404

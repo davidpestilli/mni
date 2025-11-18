@@ -156,9 +156,12 @@ router.get('/classes/:codigoLocalidade', async (req, res) => {
         }
 
         // Extrair apenas os códigos retornados pelo MNI 3.0
-        const codigosValidos = codigosMNI3.map(c => c.codigo.toString());
+        const codigosBrutos = codigosMNI3.map(c => c.codigo.toString());
 
-        console.log(`[MNI 3.0 HÍBRIDO] ${codigosValidos.length} códigos válidos retornados:`, codigosValidos.slice(0, 10));
+        // REMOVER DUPLICATAS: O MNI 3.0 pode retornar o mesmo código múltiplas vezes
+        const codigosValidos = [...new Set(codigosBrutos)];
+
+        console.log(`[MNI 3.0 HÍBRIDO] ${codigosBrutos.length} códigos retornados (${codigosValidos.length} únicos):`, codigosValidos.slice(0, 10));
 
         // ============================================================
         // IMPORTANTE: LIMITAÇÃO DO MNI 3.0
@@ -181,16 +184,16 @@ router.get('/classes/:codigoLocalidade', async (req, res) => {
             const enriched = await pjeTabelaClient.enriquecerLista(codigosValidos);
 
             // Montar estrutura final mesclando informação original com descrição local
-            const classesFormatadas = codigosMNI3.map(classe => {
-                const codigoStr = String(classe.codigo);
+            // Usar apenas códigos únicos (codigosValidos) para evitar duplicatas
+            const classesFormatadas = codigosValidos.map(codigoStr => {
                 const found = enriched.find(e => e.codigo === codigoStr);
                 return {
-                    codigo: classe.codigo,
-                    descricao: found ? found.descricao : `Classe Processual (Código Nacional ${classe.codigo})`,
-                    descricaoCurta: found ? found.descricao : `Classe ${classe.codigo}`,
+                    codigo: codigoStr,
+                    descricao: found ? found.descricao : `Classe Processual (Código Nacional ${codigoStr})`,
+                    descricaoCurta: found ? found.descricao : `Classe ${codigoStr}`,
                     ativo: true,
                     permitePeticionamentoInicial: true,
-                    codigoNacional: classe.codigo,
+                    codigoNacional: codigoStr,
                     fonte: found ? 'PJe (arquivo local)' : 'MNI 3.0 (sem descrição local)'
                 };
             });
@@ -209,13 +212,14 @@ router.get('/classes/:codigoLocalidade', async (req, res) => {
         } catch (err) {
             console.error('[MNI 3.0] Erro ao enriquecer classes com PJe local:', err.message);
             // Fallback para resposta genérica
-            const classesFormatadas = codigosMNI3.map(classe => ({
-                codigo: classe.codigo,
-                descricao: `Classe Processual (Código Nacional ${classe.codigo})`,
-                descricaoCurta: `Classe ${classe.codigo}`,
+            // Usar apenas códigos únicos (codigosValidos) para evitar duplicatas
+            const classesFormatadas = codigosValidos.map(codigoStr => ({
+                codigo: codigoStr,
+                descricao: `Classe Processual (Código Nacional ${codigoStr})`,
+                descricaoCurta: `Classe ${codigoStr}`,
                 ativo: true,
                 permitePeticionamentoInicial: true,
-                codigoNacional: classe.codigo,
+                codigoNacional: codigoStr,
                 fonte: 'MNI 3.0 (apenas códigos nacionais - descrições localizadas indisponíveis)'
             }));
 
@@ -260,20 +264,29 @@ router.get('/assuntos/:codigoLocalidade/:codigoClasse', async (req, res) => {
             });
         }
 
-        const assuntos = await mni3Client.consultarAssuntos(codigoLocalidade, codigoClasse, codigoCompetencia);
+        const assuntosBrutos = await mni3Client.consultarAssuntos(codigoLocalidade, codigoClasse, codigoCompetencia);
 
         // Log detalhado do retorno bruto
-        console.log('[DEBUG MNI3] Total de assuntos retornados:', assuntos.length);
-        console.log('[DEBUG MNI3] Primeiros 3 assuntos (estrutura completa):', JSON.stringify(assuntos.slice(0, 3), null, 2));
-        console.log('[DEBUG MNI3] Assuntos brutos retornados:', JSON.stringify(assuntos, null, 2));
+        console.log('[DEBUG MNI3] Total de assuntos retornados:', assuntosBrutos.length);
+        console.log('[DEBUG MNI3] Primeiros 3 assuntos (estrutura completa):', JSON.stringify(assuntosBrutos.slice(0, 3), null, 2));
+
+        // REMOVER DUPLICATAS: O MNI 3.0 pode retornar o mesmo assunto múltiplas vezes
+        const assuntosUnicos = Array.from(
+            new Map(assuntosBrutos.map(a => {
+                const codigo = a.codigo || a.codigoNacional || '';
+                return [codigo, a];
+            })).values()
+        );
+
+        console.log('[DEBUG MNI3] Assuntos após remoção de duplicatas:', assuntosUnicos.length, '(original:', assuntosBrutos.length, ')');
 
         // Enriquecer os assuntos com descrições locais
         await pjeAssuntoClient.init();
 
         // Exibir todos os assuntos, sem filtrar por principal
         let assuntosFormatados = [];
-        if (Array.isArray(assuntos)) {
-            assuntosFormatados = await Promise.all(assuntos.map(async a => {
+        if (Array.isArray(assuntosUnicos)) {
+            assuntosFormatados = await Promise.all(assuntosUnicos.map(async a => {
                 const codigo = a.codigo || a.codigoNacional || '';
                 const descricaoEnriquecida = await pjeAssuntoClient.getDescricao(codigo);
                 return {

@@ -1619,6 +1619,9 @@ class MNI3Client {
             <int:conteudo>
                <int:mimetype>${peticao.mimetype || 'application/pdf'}</int:mimetype>
                <int:conteudo>${documentoSha256}</int:conteudo>
+               ${peticao.cpfProcurador ? `<int:assinatura>
+                  <int:signatarioLogin identificador="${peticao.cpfProcurador}"/>
+               </int:assinatura>` : ''}
             </int:conteudo>
             <int:documentoVinculado/>
             <int:outroParametro nome="NomeDocumentoUsuario" valor="${peticao.nomeDocumento || 'Petição.pdf'}"/>
@@ -1912,7 +1915,6 @@ class MNI3Client {
                     ${doc.signatario ? `<int:assinatura>
                         <int:signatarioLogin>
                             <int:identificador>${doc.signatario}</int:identificador>
-                            <int:dataHora>${dataHora}</int:dataHora>
                         </int:signatarioLogin>
                     </int:assinatura>` : ''}
                 </int:conteudo>
@@ -1939,10 +1941,13 @@ class MNI3Client {
                 </int:autenticacaoSimples>
             </tip:manifestante>
             <tip:dadosBasicos>
-                <int:dadosBasicos>
+                ${dadosIniciais.processoOriginario ? `<int:dadosBasicos>
+                    <int:numero>${dadosIniciais.processoOriginario}</int:numero>
+                </int:dadosBasicos>
+                ` : `<int:dadosBasicos>
                     <int:numero>00000000000000000000</int:numero>
                     <int:classeProcessual>${dadosIniciais.classeProcessual}</int:classeProcessual>
-                </int:dadosBasicos>
+                </int:dadosBasicos>`}
                 ${dadosIniciais.competencia ? `<int:competencia>${dadosIniciais.competencia}</int:competencia>` : ''}
                 <int:classeProcessual>${dadosIniciais.classeProcessual}</int:classeProcessual>
                 <int:codigoLocalidade>${dadosIniciais.codigoLocalidade}</int:codigoLocalidade>
@@ -2162,22 +2167,33 @@ class MNI3Client {
             console.log('[MNI 3.0] ⚠️ Nenhum documento disponível para extrair CPF');
         }
 
-        // Se temos CPF, enviar os parâmetros
+        // Construir parâmetros XML
+        let parametrosXML = '';
+
+        // Se temos CPF, adicionar parâmetros de identificação
         if (cpfProcurador) {
-            const parametrosXML = `<tip:parametros nome="identProcuradorRepresentacao" valor="${cpfProcurador}"/>
+            parametrosXML = `<tip:parametros nome="identProcuradorRepresentacao" valor="${cpfProcurador}"/>
             <tip:parametros nome="tipoIdentProcuradorRepresentacao" valor="CPF"/>`;
-            
-            console.log('[MNI 3.0] ✅ Parâmetros de identificação gerados:');
-            console.log(parametrosXML);
-            console.log('[MNI 3.0] ========================================');
-            
-            return parametrosXML;
+
+            console.log('[MNI 3.0] ✅ Parâmetros de identificação do procurador adicionados');
+        } else {
+            console.log('[MNI 3.0] ⚠️ AVISO: Parâmetros de identificação do procurador NÃO serão enviados (CPF não disponível)');
         }
 
-        // Se não tem CPF, não enviar os parâmetros (são opcionais)
-        console.log('[MNI 3.0] ⚠️ AVISO: Parâmetros de identificação do procurador NÃO serão enviados (CPF não disponível)');
+        // Para Agravo de Instrumento (classe 202), adicionar seqEventoAgravado
+        if (dadosIniciais.seqEventoAgravado) {
+            parametrosXML += `
+            <tip:parametros nome="seqEventoAgravado" valor="${dadosIniciais.seqEventoAgravado}"/>`;
+            console.log('[MNI 3.0] ✅ Parâmetro seqEventoAgravado adicionado:', dadosIniciais.seqEventoAgravado);
+        }
+
+        if (parametrosXML) {
+            console.log('[MNI 3.0] Parâmetros finais gerados:');
+            console.log(parametrosXML);
+        }
+
         console.log('[MNI 3.0] ========================================');
-        return '';
+        return parametrosXML;
     }
 
     /**
