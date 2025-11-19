@@ -61,12 +61,23 @@ function PeticionamentoInicial() {
         assuntosSecundarios: [],
         valorCausa: '',
         nivelSigilo: '0',
+        prioridades: [], // Array de prioridades selecionadas
         // CDA (Execução Fiscal)
         numeroCDA: '',
         codigoTributoFiscal: '',
         valorCDA: '',
         dataApuracaoCDA: ''
     });
+
+    // Opções de prioridades
+    const OPCOES_PRIORIDADE = [
+        { valor: 'TUTELA_REQUERIDA', label: '⚡ Tutela Requerida', icon: '⚡' },
+        { valor: 'MENOR', label: '👶 Menor', icon: '👶' },
+        { valor: 'PCD', label: '♿ Pessoa com Deficiência', icon: '♿' },
+        { valor: 'SEM_CONCILIACAO', label: '⚖️ Sem Conciliação', icon: '⚖️' },
+        { valor: 'PERECIMENTO', label: '⏰ Perecimento', icon: '⏰' },
+        { valor: 'IDOSO', label: '👴 Idoso', icon: '👴' }
+    ];
 
     // Dados das cascatas
     const [localidades, setLocalidades] = useState([]);
@@ -285,6 +296,15 @@ function PeticionamentoInicial() {
         });
     };
 
+    const handlePrioridadeChange = (valor) => {
+        setFormData(prev => ({
+            ...prev,
+            prioridades: prev.prioridades.includes(valor)
+                ? prev.prioridades.filter(p => p !== valor)
+                : [...prev.prioridades, valor]
+        }));
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -369,6 +389,7 @@ function PeticionamentoInicial() {
                 assuntosSecundarios: assuntosSecundariosSelecionados.length > 0 ? assuntosSecundariosSelecionados : null,
                 valorCausa: formData.valorCausa ? parseFloat(formData.valorCausa) : null,
                 nivelSigilo: parseInt(formData.nivelSigilo),
+                prioridades: formData.prioridades.length > 0 ? formData.prioridades : null,
                 poloAtivo: poloAtivo.map(p => ({
                     tipoPessoa: p.tipoPessoa,
                     ...(p.tipoPessoa === 'fisica' ? {
@@ -1050,6 +1071,37 @@ function PeticionamentoInicial() {
                                 </div>
                             </div>
                         </div>
+                    </div>
+
+                    {/* Prioridades */}
+                    <div className="card">
+                        <h3 className="text-xl font-semibold mb-4">⭐ Prioridades</h3>
+                        <p className="text-sm text-gray-600 mb-4">Selecione as prioridades aplicáveis ao processo (pode selecionar múltiplas):</p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {OPCOES_PRIORIDADE.map((opcao) => (
+                                <label key={opcao.valor} className="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition">
+                                    <input
+                                        type="checkbox"
+                                        checked={formData.prioridades.includes(opcao.valor)}
+                                        onChange={() => handlePrioridadeChange(opcao.valor)}
+                                        className="w-4 h-4 text-blue-600"
+                                    />
+                                    <span className="ml-3">
+                                        <span className="text-lg mr-2">{opcao.icon}</span>
+                                        <span className="font-medium text-gray-700">{opcao.label}</span>
+                                    </span>
+                                </label>
+                            ))}
+                        </div>
+
+                        {formData.prioridades.length > 0 && (
+                            <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                                <p className="text-sm text-blue-800">
+                                    <strong>Prioridades selecionadas:</strong> {formData.prioridades.join(', ')}
+                                </p>
+                            </div>
+                        )}
                     </div>
 
                     {/* Polo Ativo */}

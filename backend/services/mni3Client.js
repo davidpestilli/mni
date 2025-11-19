@@ -1952,6 +1952,9 @@ class MNI3Client {
                 <int:classeProcessual>${dadosIniciais.classeProcessual}</int:classeProcessual>
                 <int:codigoLocalidade>${dadosIniciais.codigoLocalidade}</int:codigoLocalidade>
                 <int:nivelSigilo>${dadosIniciais.nivelSigilo || 0}</int:nivelSigilo>
+                ${dadosIniciais.prioridades && dadosIniciais.prioridades.length > 0 ?
+                    dadosIniciais.prioridades.map(p => `<int:prioridade>${p}</int:prioridade>`).join('\n                ')
+                : ''}
                 ${polosXML}
                 ${assuntosXML}
                 ${valorCausaXML}
