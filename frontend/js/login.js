@@ -51,17 +51,21 @@ loginForm.addEventListener('submit', async (e) => {
         btnLogin.disabled = true;
         btnLogin.textContent = 'Autenticando...';
 
-        // Obter o sistema selecionado na tela de login
+        // Obter o sistema e ambiente selecionados na tela de login
         const selectSistemaLogin = document.getElementById('select-sistema-login');
+        const selectAmbienteLogin = document.getElementById('select-ambiente-login');
         const sistemaSelecionado = selectSistemaLogin ? selectSistemaLogin.value : '1G_CIVIL';
+        const ambienteSelecionado = selectAmbienteLogin ? selectAmbienteLogin.value : 'HML';
 
-        // Salvar sistema selecionado no localStorage
+        // Salvar sistema e ambiente selecionados no localStorage
         localStorage.setItem('mni_sistema_selecionado', sistemaSelecionado);
-        
+        localStorage.setItem('mni_ambiente_selecionado', ambienteSelecionado);
+
         console.log('════════════════════════════════════════════════════════════');
-        console.log('🔐 LOGIN - SISTEMA SELECIONADO');
+        console.log('🔐 LOGIN - SISTEMA E AMBIENTE SELECIONADOS');
         console.log('════════════════════════════════════════════════════════════');
         console.log('Sistema selecionado:', sistemaSelecionado);
+        console.log('Ambiente selecionado:', ambienteSelecionado);
         console.log('Usuário:', idConsultante);
         console.log('═══════════════════════════════════════════════════════════');
 
@@ -113,36 +117,42 @@ loginForm.addEventListener('submit', async (e) => {
 
             showAlert('Login realizado com sucesso!', 'success');
 
-            // Trocar para o sistema selecionado na tela de login (se não for Civil)
+            // Trocar para o sistema e ambiente selecionados na tela de login
             const sistemaSelecionado = localStorage.getItem('mni_sistema_selecionado') || '1G_CIVIL';
+            const ambienteSelecionado = localStorage.getItem('mni_ambiente_selecionado') || 'HML';
+
             console.log('════════════════════════════════════════════════════════════');
-            console.log('🔄 PÓS-LOGIN - TROCAR PARA SISTEMA SELECIONADO');
+            console.log('🔄 PÓS-LOGIN - CONFIGURAR SISTEMA E AMBIENTE');
             console.log('════════════════════════════════════════════════════════════');
             console.log('Sistema a ser ativado:', sistemaSelecionado);
-            
-            if (sistemaSelecionado !== '1G_CIVIL') {
-                try {
-                    const ambienteResponse = await fetch('/api/ambiente', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ sistema: sistemaSelecionado })
-                    });
-                    const ambienteData = await ambienteResponse.json();
-                    console.log('Resposta do backend:', ambienteData);
-                    
-                    // Salvar no localStorage para que o dashboard saiba qual sistema usar
-                    localStorage.setItem('mni_sistema_atual', sistemaSelecionado);
-                    console.log('✅ Sistema ativado:', sistemaSelecionado);
-                    console.log('Endpoints MNI 3.0:', ambienteData.data?.endpoints?.mni3_0);
-                } catch (error) {
-                    console.error('❌ Erro ao trocar sistema:', error.message);
-                }
-            } else {
-                // Se for Civil, salvar também
-                localStorage.setItem('mni_sistema_atual', '1G_CIVIL');
-                console.log('✅ Sistema Civil mantido (padrão)');
+            console.log('Ambiente a ser ativado:', ambienteSelecionado);
+
+            try {
+                // Preparar corpo da requisição com sistema e ambiente
+                const ambienteRequestBody = {
+                    sistema: sistemaSelecionado,
+                    ambiente: ambienteSelecionado
+                };
+
+                const ambienteResponse = await fetch('/api/ambiente', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(ambienteRequestBody)
+                });
+                const ambienteData = await ambienteResponse.json();
+                console.log('Resposta do backend:', ambienteData);
+
+                // Salvar no localStorage para que o dashboard saiba qual sistema e ambiente usar
+                localStorage.setItem('mni_sistema_atual', sistemaSelecionado);
+                localStorage.setItem('mni_ambiente_atual', ambienteSelecionado);
+
+                console.log('✅ Sistema ativado:', sistemaSelecionado);
+                console.log('✅ Ambiente ativado:', ambienteSelecionado);
+                console.log('Endpoints MNI 3.0:', ambienteData.data?.endpoints?.mni3_0);
+            } catch (error) {
+                console.error('❌ Erro ao configurar sistema/ambiente:', error.message);
             }
             console.log('═══════════════════════════════════════════════════════════');
 

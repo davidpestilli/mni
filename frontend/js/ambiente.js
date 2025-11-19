@@ -72,6 +72,8 @@ if (selectAmbiente && ambienteStatus) {
      */
     selectAmbiente.addEventListener('change', async (e) => {
         const novoAmbiente = e.target.value;
+        // Salvar a seleção no localStorage
+        localStorage.setItem('mni_ambiente_selecionado', novoAmbiente);
         await mudarAmbiente(novoAmbiente);
     });
 }
@@ -117,14 +119,19 @@ async function mudarSistema(novoSistema) {
         selectSistema.disabled = true;
         selectAmbiente.disabled = true;
 
+        // Preparar corpo com sistema e ambiente atual
+        const ambienteAtual = selectAmbiente.value;
+        const requestBody = {
+            sistema: novoSistema,
+            ambiente: ambienteAtual
+        };
+
         const response = await fetch('/api/ambiente', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                sistema: novoSistema
-            })
+            body: JSON.stringify(requestBody)
         });
 
         const data = await response.json();
@@ -133,9 +140,11 @@ async function mudarSistema(novoSistema) {
             const sistema = data.data.sistema;
             const ambiente = data.data.ambiente;
 
-            // Salvar sistema no localStorage para que avisos.js possa usar a URL correta
+            // Salvar sistema e ambiente no localStorage
             localStorage.setItem('mni_sistema_atual', novoSistema);
             localStorage.setItem('mni_sistema_selecionado', novoSistema);
+            localStorage.setItem('mni_ambiente_selecionado', ambienteAtual);
+            localStorage.setItem('mni_ambiente_atual', ambiente);
 
             // Atualizar seleções
             atualizarOpcoesAmbiente(novoSistema);
@@ -215,6 +224,10 @@ async function mudarAmbiente(novoAmbiente) {
         if (data.success) {
             const ambiente = data.data.ambiente;
             const sistema = data.data.sistema ? data.data.sistema.sistema : null;
+
+            // Salvar ambiente no localStorage
+            localStorage.setItem('mni_ambiente_atual', ambiente);
+
             atualizarStatusAmbiente(ambiente, sistema);
             notificarAmbiente(`✅ Ambiente alterado para ${ambiente}`, 'success');
             console.log('[AMBIENTE] Endpoints atualizados:', data.data.endpoints);
