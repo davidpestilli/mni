@@ -165,13 +165,48 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="nivelSigilo">Nível de Sigilo</label>
+                            <label for="nivelSigilo">Nível de Sigilo (0-5)</label>
                             <select id="nivelSigilo">
-                                <option value="0" selected>🌐 Público (Padrão)</option>
-                                <option value="1">🔒 Segredo de Justiça</option>
-                                <option value="2">🔐 Sigilo</option>
+                                <option value="0" selected>🌐 Nível 0 - Público (Padrão)</option>
+                                <option value="1">🔒 Nível 1 - Segredo de Justiça</option>
+                                <option value="2">🔐 Nível 2 - Sigilo</option>
+                                <option value="3">🔏 Nível 3 - Sigilo Especial</option>
+                                <option value="4">🛡️ Nível 4 - Sigilo Reforçado</option>
+                                <option value="5">⚠️ Nível 5 - Máximo Sigilo</option>
                             </select>
                         </div>
+                    </div>
+
+                    <!-- Prioridades -->
+                    <div class="form-group">
+                        <label>⭐ Prioridades (Múltiplas opções permitidas)</label>
+                        <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                            <label style="display: flex; align-items: center; cursor: pointer; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: white; transition: all 0.3s;">
+                                <input type="checkbox" name="prioridade" value="TUTELA_REQUERIDA" style="margin-right: 8px;">
+                                <span>⚡ Tutela Requerida</span>
+                            </label>
+                            <label style="display: flex; align-items: center; cursor: pointer; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: white; transition: all 0.3s;">
+                                <input type="checkbox" name="prioridade" value="MENOR" style="margin-right: 8px;">
+                                <span>👶 Menor</span>
+                            </label>
+                            <label style="display: flex; align-items: center; cursor: pointer; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: white; transition: all 0.3s;">
+                                <input type="checkbox" name="prioridade" value="PCD" style="margin-right: 8px;">
+                                <span>♿ Pessoa com Deficiência</span>
+                            </label>
+                            <label style="display: flex; align-items: center; cursor: pointer; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: white; transition: all 0.3s;">
+                                <input type="checkbox" name="prioridade" value="SEM_CONCILIACAO" style="margin-right: 8px;">
+                                <span>⚖️ Sem Conciliação</span>
+                            </label>
+                            <label style="display: flex; align-items: center; cursor: pointer; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: white; transition: all 0.3s;">
+                                <input type="checkbox" name="prioridade" value="PERECIMENTO" style="margin-right: 8px;">
+                                <span>⏰ Perecimento</span>
+                            </label>
+                            <label style="display: flex; align-items: center; cursor: pointer; padding: 8px; border: 1px solid #ddd; border-radius: 4px; background: white; transition: all 0.3s;">
+                                <input type="checkbox" name="prioridade" value="IDOSO" style="margin-right: 8px;">
+                                <span>👴 Idoso</span>
+                            </label>
+                        </div>
+                        <small style="display: block; margin-top: 8px; color: #666;">Selecione as prioridades aplicáveis ao processo (opcional)</small>
                     </div>
                 </fieldset>
 
@@ -188,20 +223,6 @@
                         💡 A separação é feita automaticamente com base na resposta SOAP do tribunal.
                     </p>
                 </div>
-
-                <!-- Remover o campo de sigilo duplicado abaixo -->
-                <fieldset style="display: none;">
-                    <legend>Deprecated - Campo movido acima</legend>
-
-                    <div class="form-group">
-                        <label for="nivelSigilo">Nível de Sigilo</label>
-                        <select id="nivelSigilo">
-                            <option value="0" selected>🌐 Público (Padrão)</option>
-                            <option value="1">🔒 Segredo de Justiça</option>
-                            <option value="2">🔐 Sigilo</option>
-                        </select>
-                    </div>
-                </fieldset>
 
                 <!-- Polo Ativo (Autores) -->
                 <fieldset>

@@ -803,6 +803,11 @@ async function handleSubmit(event) {
         const valorCausa = document.getElementById('valorCausa').value;
         const competencia = document.getElementById('competencia').value.trim();
         const nivelSigilo = document.getElementById('nivelSigilo').value;
+
+        // Capturar prioridades selecionadas
+        const prioridadesCheckboxes = document.querySelectorAll('input[name="prioridade"]:checked');
+        const prioridades = Array.from(prioridadesCheckboxes).map(checkbox => checkbox.value);
+
         const signatario = document.getElementById('signatario').value.trim().replace(/\D/g, '');
 
         if (!localidade) {
@@ -906,6 +911,7 @@ async function handleSubmit(event) {
             valorCausa: valorCausa ? parseFloat(valorCausa) : null,
             competencia: competencia || null,
             nivelSigilo: parseInt(nivelSigilo),
+            prioridades: prioridades.length > 0 ? prioridades : null,
             poloAtivo,
             poloPassivo,
             signatario,

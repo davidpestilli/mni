@@ -1064,9 +1064,12 @@ function PeticionamentoInicial() {
                                         onChange={handleInputChange}
                                         className="select"
                                     >
-                                        <option value="0">🌐 Público (Padrão)</option>
-                                        <option value="1">🔒 Segredo de Justiça</option>
-                                        <option value="2">🔐 Sigilo</option>
+                                        <option value="0">🌐 Nível 0 - Público (Padrão)</option>
+                                        <option value="1">🔒 Nível 1 - Segredo de Justiça</option>
+                                        <option value="2">🔐 Nível 2 - Sigilo</option>
+                                        <option value="3">🔏 Nível 3 - Sigilo Especial</option>
+                                        <option value="4">🛡️ Nível 4 - Sigilo Reforçado</option>
+                                        <option value="5">⚠️ Nível 5 - Máximo Sigilo</option>
                                     </select>
                                 </div>
                             </div>
