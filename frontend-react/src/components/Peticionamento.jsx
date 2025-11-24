@@ -100,11 +100,12 @@ function Peticionamento() {
             const conteudoBase64 = await fileToBase64(arquivo);
             const signatario = cpfSignatario.replace(/\D/g, '') || '';
 
-            // Detectar qual sistema está ativo
-            const sistemaResponse = await apiRequest('/api/ambiente/info');
-            const sistemaData = await sistemaResponse.json();
-            const sistema = sistemaData.data?.sistema || 'CIVIL_1G';
+            // Detectar qual sistema está ativo (usar localStorage como em Processos.jsx)
+            const sistema = localStorage.getItem('mni_sistema_atual') || '1G_CIVIL';
             const usarMNI3 = (sistema === '1G_EXEC_FISCAL' || sistema === '2G_CIVIL');
+
+            console.log('[PETICIONAMENTO] Sistema atual:', sistema);
+            console.log('[PETICIONAMENTO] Usar MNI 3.0:', usarMNI3);
 
             let response, data;
 
@@ -154,8 +155,18 @@ function Peticionamento() {
                 setSucesso('✅ Manifestação enviada com sucesso!');
                 setError(null);
 
-                // Buscar XMLs SOAP para debug
-                await carregarSoapDebug();
+                // Usar XMLs da resposta se disponíveis, senão buscar
+                if (data.debug && data.debug.xmlRequest && data.debug.xmlResponse) {
+                    console.log('[PETICIONAMENTO] Usando XMLs da resposta do peticionamento');
+                    setSoapDebug({
+                        request: formatarXML(data.debug.xmlRequest),
+                        response: formatarXML(data.debug.xmlResponse)
+                    });
+                } else {
+                    // Fallback: buscar XMLs SOAP para debug (pode não ser do peticionamento)
+                    console.log('[PETICIONAMENTO] Buscando XMLs via /api/peticionamento/debug/last-soap (fallback)');
+                    await carregarSoapDebug();
+                }
 
                 // Scroll para o resultado
                 setTimeout(() => {
@@ -261,28 +272,27 @@ function Peticionamento() {
     };
 
     return (
-        <div className="space-y-6">
-            <div>
-                <h2 className="text-2xl font-bold text-gray-900">Peticionamento</h2>
-                <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                    <h3 className="font-semibold mb-3">📋 Tipos de Peticionamento</h3>
-                    <div className="flex gap-4">
+        <div className="min-h-screen bg-gray-50 py-8">
+            <div className="max-w-5xl mx-auto px-4">
+                {/* Header */}
+                <div className="card bg-gradient-to-r from-purple-600 to-pink-600 text-white mb-6">
+                    <h1 className="text-3xl font-bold mb-2">📨 Peticionamento Intermediário</h1>
+                    <p className="opacity-90">Enviar manifestações em processos já existentes</p>
+                </div>
+
+                <div className="card bg-blue-50 border-l-4 border-blue-600 mb-6">
+                    <p className="text-sm">
+                        <strong>💡 Dica:</strong> Para criar um novo processo, use o{' '}
                         <Link
                             to="/peticionamento-inicial"
-                            className="btn btn-primary"
+                            className="text-blue-600 hover:text-blue-800 underline font-semibold"
                         >
-                            📝 Peticionamento Inicial (Novo Processo)
+                            📝 Peticionamento Inicial
                         </Link>
-                        <span className="text-gray-600 self-center">ou</span>
-                        <span className="text-gray-600 self-center">↓ Peticionamento Intermediário abaixo</span>
-                    </div>
+                    </p>
                 </div>
-            </div>
 
-            <div className="card max-w-2xl">
-                <h3 className="text-xl font-semibold mb-4">Peticionamento Intermediário</h3>
-                <p className="text-gray-600 mb-6">Enviar manifestação em processo já existente</p>
-
+                <div className="card">
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
                         <label className="label">Número do Processo (20 dígitos)</label>
@@ -407,6 +417,7 @@ function Peticionamento() {
                         {sucesso}
                     </div>
                 )}
+                </div>
 
                 {/* Resultado do Peticionamento */}
                 {resultado && (

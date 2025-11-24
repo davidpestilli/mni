@@ -197,6 +197,7 @@ function getDataHoraMNI() {
 const mapeamentoCache = {
     classes: new Map(),
     assuntos: new Map(),
+    competencias: new Map(),
     classesCarregado: false,
     assuntosCarregado: false
 };
@@ -258,6 +259,39 @@ async function buscarDescricaoAssunto(codigo) {
         }
     } catch (error) {
         console.error('[CACHE] Erro ao buscar descrição de assunto:', error);
+    }
+
+    return codigoStr;
+}
+
+/**
+ * Buscar descrição de competência
+ * Retorna o código se não encontrar descrição
+ * Requer codigoLocalidade pois competências variam por localidade
+ */
+async function buscarDescricaoCompetencia(codigo, codigoLocalidade) {
+    if (!codigo || !codigoLocalidade) return codigo || '';
+
+    const codigoStr = String(codigo);
+    const cacheKey = `${codigoLocalidade}_${codigoStr}`;
+
+    // Retornar do cache se já carregado
+    if (mapeamentoCache.competencias.has(cacheKey)) {
+        return mapeamentoCache.competencias.get(cacheKey);
+    }
+
+    // Buscar do backend
+    try {
+        const response = await fetch(`/api/mni3/descricao-competencia/${codigoLocalidade}/${codigoStr}`);
+        const data = await response.json();
+
+        if (data.success && data.descricao) {
+            // Adicionar ao cache
+            mapeamentoCache.competencias.set(cacheKey, data.descricao);
+            return data.descricao;
+        }
+    } catch (error) {
+        console.error('[CACHE] Erro ao buscar descrição de competência:', error);
     }
 
     return codigoStr;

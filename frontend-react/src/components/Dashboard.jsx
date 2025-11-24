@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { getUserId } from '../utils/utils';
 import Avisos from './Avisos';
 import Processos from './Processos';
+import PeticionamentoInicial from './PeticionamentoInicial';
 import Peticionamento from './Peticionamento';
 import DebugSOAP from './DebugSOAP';
 
@@ -60,14 +61,15 @@ function Dashboard() {
     const tabs = [
         { id: 'avisos', label: 'Avisos Pendentes', icon: '📬' },
         { id: 'processos', label: 'Consultar Processo', icon: '🔍' },
-        { id: 'peticionamento', label: 'Peticionamento', icon: '📝' },
+        { id: 'peticionamento-inicial', label: 'Peticionamento Inicial', icon: '📄' },
+        { id: 'peticionamento-intermediario', label: 'Peticionamento Intermediário', icon: '📝' },
         { id: 'debug', label: 'Debug SOAP', icon: '🐛' }
     ];
 
     return (
         <div className="min-h-screen bg-gray-50">
             {/* Header */}
-            <div className="bg-white shadow-sm border-b border-gray-200">
+            <div className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center py-4">
                         <div>
@@ -109,10 +111,21 @@ function Dashboard() {
 
             {/* Content */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                {activeTab === 'avisos' && <Avisos />}
-                {activeTab === 'processos' && <Processos />}
-                {activeTab === 'peticionamento' && <Peticionamento />}
-                {activeTab === 'debug' && <DebugSOAP />}
+                <div style={{ display: activeTab === 'avisos' ? 'block' : 'none' }}>
+                    <Avisos />
+                </div>
+                <div style={{ display: activeTab === 'processos' ? 'block' : 'none' }}>
+                    <Processos />
+                </div>
+                <div style={{ display: activeTab === 'peticionamento-inicial' ? 'block' : 'none' }}>
+                    <PeticionamentoInicial />
+                </div>
+                <div style={{ display: activeTab === 'peticionamento-intermediario' ? 'block' : 'none' }}>
+                    <Peticionamento />
+                </div>
+                <div style={{ display: activeTab === 'debug' ? 'block' : 'none' }}>
+                    <DebugSOAP />
+                </div>
             </div>
         </div>
     );

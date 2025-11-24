@@ -256,6 +256,12 @@ async function renderizarProcesso(processo) {
     const numeroFormatado = formatarNumeroProcesso(attributes.numero || numeroProcessoInput.value);
     const codigoClasse = dadosBasicosRaiz.classeProcessual || attributes.classeProcessual || '';
     const classeProcessual = codigoClasse ? await buscarDescricaoClasse(codigoClasse) : 'N/A';
+
+    // Buscar descrição da competência
+    const codigoCompetencia = dadosBasicosRaiz.competencia || attributes.competencia || '';
+    const codigoLocalidade = dadosBasicosRaiz.codigoLocalidade || attributes.codigoLocalidade || '0000';
+    const competencia = codigoCompetencia ? await buscarDescricaoCompetencia(codigoCompetencia, codigoLocalidade) : 'N/A';
+
     const nomeOrgao = orgaoAttrs.nome || orgaoAttrs.nomeOrgao || 'N/A';
     const valorCausa = dadosBasicosRaiz.valorCausa ? `R$ ${parseFloat(dadosBasicosRaiz.valorCausa).toLocaleString('pt-BR', {minimumFractionDigits: 2})}` : 'R$ 0,00';
     const nivelSigilo = dadosBasicosRaiz.nivelSigilo || attributes.nivelSigilo || 'N/A';
@@ -351,6 +357,10 @@ async function renderizarProcesso(processo) {
                 <div>
                     <div style="opacity: 0.9; font-size: 12px;">Classe Processual</div>
                     <div style="font-weight: 600; font-size: 16px;">${classeProcessual}</div>
+                </div>
+                <div>
+                    <div style="opacity: 0.9; font-size: 12px;">Competência</div>
+                    <div style="font-weight: 600; font-size: 16px;">${competencia}</div>
                 </div>
                 <div>
                     <div style="opacity: 0.9; font-size: 12px;">Rito</div>
@@ -823,22 +833,37 @@ function formatarDataMNI(dataMNI) {
     if (!dataMNI) return 'N/A';
     const str = dataMNI.toString();
 
-    // MNI 3.0: formato ISO 8601 (2025-10-31T16:34:20-03:00) ou (2025-10-31)
-    if (str.includes('T') || str.includes('-')) {
+    // MNI 3.0: formato ISO 8601 (2025-11-23T08:11:02-03:00) ou (2025-11-23)
+    if (str.includes('T') || (str.includes('-') && str.length >= 10)) {
         try {
+            // Parse manual da data ISO para evitar problemas com timezone
+            // Formato: YYYY-MM-DDTHH:MM:SS ou YYYY-MM-DD
+            let datePart = str;
+            if (str.includes('T')) {
+                datePart = str.split('T')[0];
+            }
+
+            const [ano, mes, dia] = datePart.split('-');
+
+            if (ano && mes && dia) {
+                return `${dia.padStart(2, '0')}/${mes.padStart(2, '0')}/${ano}`;
+            }
+
+            // Fallback: tentar usar Date()
             const date = new Date(str);
-            const dia = String(date.getDate()).padStart(2, '0');
-            const mes = String(date.getMonth() + 1).padStart(2, '0');
-            const ano = date.getFullYear();
-            return `${dia}/${mes}/${ano}`;
+            if (!isNaN(date.getTime())) {
+                const dia = String(date.getDate()).padStart(2, '0');
+                const mes = String(date.getMonth() + 1).padStart(2, '0');
+                const ano = date.getFullYear();
+                return `${dia}/${mes}/${ano}`;
+            }
         } catch (e) {
             console.error('Erro ao formatar data ISO:', e);
-            return str;
         }
     }
 
     // MNI 2.2: formato AAAAMMDDHHMMSS ou AAAAMMDD
-    if (str.length >= 8) {
+    if (str.length >= 8 && !str.includes('-')) {
         return `${str.substr(6, 2)}/${str.substr(4, 2)}/${str.substr(0, 4)}`;
     }
 

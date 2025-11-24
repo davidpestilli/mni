@@ -453,6 +453,17 @@ router.get('/processo/:numeroProcesso', async (req, res) => {
             console.log('[MNI 3.0 ROUTE] Consulta bem sucedida!');
             console.log('[MNI 3.0 ROUTE] Enviando estrutura RAW MNI 3.0 para o frontend');
 
+            // DEBUG: Verificar documentos
+            const processo = resultado.processo || resultado;
+            const documentos = processo.documento ? (Array.isArray(processo.documento) ? processo.documento : [processo.documento]) : [];
+            console.log('[MNI 3.0 ROUTE] Total de documentos no processo:', documentos.length);
+            if (documentos.length > 0) {
+                console.log('[MNI 3.0 ROUTE] Primeiro documento:', JSON.stringify(documentos[0], null, 2));
+            } else {
+                console.log('[MNI 3.0 ROUTE] ATENÇÃO: Nenhum documento retornado pelo MNI 3.0!');
+                console.log('[MNI 3.0 ROUTE] Estrutura processo.documento:', processo.documento);
+            }
+
             res.json({
                 success: true,
                 versao: '3.0',
@@ -661,6 +672,45 @@ router.get('/descricao-assunto/:codigo', async (req, res) => {
 });
 
 /**
+ * GET /api/mni3/descricao-competencia/:codigoLocalidade/:codigo
+ * Buscar descrição de uma competência por código e localidade
+ * Como as competências variam por localidade, precisamos de ambos os parâmetros
+ */
+router.get('/descricao-competencia/:codigoLocalidade/:codigo', async (req, res) => {
+    try {
+        const { codigoLocalidade, codigo } = req.params;
+
+        // Consultar todas as competências da localidade
+        const competencias = await mni3Client.consultarCompetencias(codigoLocalidade);
+
+        // Buscar a competência específica
+        const competencia = competencias.find(c => String(c.codigo) === String(codigo));
+
+        if (competencia && competencia.descricao) {
+            res.json({
+                success: true,
+                codigo: codigo,
+                descricao: competencia.descricao,
+                encontrado: true
+            });
+        } else {
+            res.json({
+                success: true,
+                codigo: codigo,
+                descricao: codigo,
+                encontrado: false
+            });
+        }
+    } catch (error) {
+        console.error('[MNI 3.0 API] Erro ao buscar descrição de competência:', error.message);
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
+
+/**
  * GET /api/mni3/processo/:numeroProcesso/documentos/:idDocumento
  * Consultar conteúdo de documento específico (MNI 3.0)
  */
@@ -860,6 +910,9 @@ router.post('/peticao', async (req, res) => {
         console.log('[MNI 3.0 ROUTE] Petição entregue com sucesso!');
         console.log('[MNI 3.0 ROUTE] Protocolo:', resultado.numeroProtocolo);
 
+        // Obter XMLs para debug
+        const xmls = mni3Client.getLastXMLs();
+
         // Retornar resultado
         res.json({
             success: true,
@@ -869,6 +922,10 @@ router.post('/peticao', async (req, res) => {
                 numeroProtocolo: resultado.numeroProtocolo,
                 dataOperacao: resultado.dataOperacao,
                 documentoComprovante: resultado.documentoComprovante
+            },
+            debug: {
+                xmlRequest: xmls.request,
+                xmlResponse: xmls.response
             }
         });
 

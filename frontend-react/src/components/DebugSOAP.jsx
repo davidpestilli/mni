@@ -6,6 +6,52 @@ function DebugSOAP() {
     const [loading, setLoading] = useState(false);
     const [selectedLog, setSelectedLog] = useState(null);
 
+    // Função para formatar XML (indentação)
+    const formatarXML = (xml) => {
+        if (!xml || typeof xml !== 'string') {
+            return xml;
+        }
+
+        try {
+            // Adicionar quebras de linha entre tags
+            const reg = /(>)(<)(\/*)/g;
+            let formatted = xml.replace(reg, '$1\n$2$3');
+            let pad = 0;
+            const lines = formatted.split('\n');
+
+            // Adicionar indentação
+            formatted = lines.map(line => {
+                let indent = 0;
+
+                // Tag auto-fechada ou tag com conteúdo na mesma linha
+                if (line.match(/.+<\/\w[^>]*>$/)) {
+                    indent = 0;
+                }
+                // Tag de fechamento
+                else if (line.match(/^<\/\w/)) {
+                    if (pad !== 0) {
+                        pad -= 1;
+                    }
+                }
+                // Tag de abertura
+                else if (line.match(/^<\w([^>]*[^\/])?>.*$/)) {
+                    indent = 1;
+                } else {
+                    indent = 0;
+                }
+
+                const padding = '  '.repeat(pad);
+                pad += indent;
+                return padding + line;
+            }).join('\n');
+
+            return formatted;
+        } catch (e) {
+            console.error('Erro ao formatar XML:', e);
+            return xml;
+        }
+    };
+
     useEffect(() => {
         carregarLogs();
     }, []);
@@ -13,11 +59,17 @@ function DebugSOAP() {
     const carregarLogs = async () => {
         try {
             setLoading(true);
-            const response = await apiRequest('/api/debug/logs');
+            const response = await apiRequest('/api/debug/soap/logs');
             const data = await response.json();
 
             if (data.success) {
-                setLogs(data.data || []);
+                // Formatar XMLs antes de armazenar
+                const logsFormatados = (data.data || []).map(log => ({
+                    ...log,
+                    request: formatarXML(log.request),
+                    response: formatarXML(log.response)
+                }));
+                setLogs(logsFormatados);
             }
         } catch (error) {
             console.error('Erro ao carregar logs:', error);
@@ -30,7 +82,7 @@ function DebugSOAP() {
         if (!confirm('Deseja realmente limpar todos os logs?')) return;
 
         try {
-            const response = await apiRequest('/api/debug/logs', { method: 'DELETE' });
+            const response = await apiRequest('/api/debug/soap/logs', { method: 'DELETE' });
             const data = await response.json();
 
             if (data.success) {
@@ -40,6 +92,35 @@ function DebugSOAP() {
         } catch (error) {
             console.error('Erro ao limpar logs:', error);
         }
+    };
+
+    // Função para copiar XML
+    const copiarXML = async (tipo) => {
+        try {
+            const xml = tipo === 'request' ? selectedLog.request : selectedLog.response;
+            await navigator.clipboard.writeText(xml);
+            alert(`✅ XML ${tipo === 'request' ? 'de requisição' : 'de resposta'} copiado!`);
+        } catch (error) {
+            console.error('Erro ao copiar XML:', error);
+            alert('Erro ao copiar XML');
+        }
+    };
+
+    // Função para baixar XML
+    const baixarXML = (tipo) => {
+        const xml = tipo === 'request' ? selectedLog.request : selectedLog.response;
+        const operacao = selectedLog.operacao || 'operacao';
+        const nomeArquivo = operacao.toLowerCase().replace(/\s+/g, '-');
+
+        const blob = new Blob([xml], { type: 'text/xml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${nomeArquivo}-${tipo}-${new Date().toISOString().slice(0, 10)}.xml`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     };
 
     return (
@@ -95,39 +176,107 @@ function DebugSOAP() {
                     {/* Detalhes do Log */}
                     <div className="lg:col-span-2">
                         {selectedLog ? (
-                            <div className="card">
-                                <h3 className="font-semibold mb-4">
-                                    {selectedLog.operacao || 'Detalhes'}
-                                </h3>
+                            <div className="space-y-4">
+                                {/* Header com informações do log */}
+                                <div className="card">
+                                    <h3 className="text-lg font-bold text-gray-900 mb-2">
+                                        {selectedLog.operacao || 'Detalhes da Operação'}
+                                    </h3>
+                                    <div className="text-sm text-gray-600">
+                                        <span className="font-medium">Timestamp:</span> {new Date(selectedLog.timestamp).toLocaleString('pt-BR')}
+                                    </div>
+                                    {selectedLog.erro && (
+                                        <div className="mt-2 px-3 py-2 bg-red-100 text-red-800 rounded text-sm font-medium">
+                                            ❌ Esta operação resultou em erro
+                                        </div>
+                                    )}
+                                </div>
 
+                                {/* Requisição SOAP */}
                                 {selectedLog.request && (
-                                    <div className="mb-4">
-                                        <h4 className="font-medium text-sm text-gray-700 mb-2">📤 Request</h4>
-                                        <pre className="bg-gray-100 p-3 rounded text-xs overflow-x-auto max-h-64">
-                                            {selectedLog.request}
-                                        </pre>
+                                    <div className="border-2 border-gray-300 rounded-lg overflow-hidden">
+                                        <div className="bg-gray-100 p-4 flex items-center justify-between">
+                                            <h4 className="text-md font-bold text-gray-700">
+                                                📤 Requisição SOAP Enviada
+                                            </h4>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => copiarXML('request')}
+                                                    className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm transition-colors"
+                                                >
+                                                    📋 Copiar
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => baixarXML('request')}
+                                                    className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm transition-colors"
+                                                >
+                                                    💾 Baixar
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div className="bg-white p-4">
+                                            <pre className="bg-gray-900 text-green-400 p-4 rounded overflow-x-auto text-xs font-mono max-h-96">
+{selectedLog.request}
+                                            </pre>
+                                        </div>
                                     </div>
                                 )}
 
+                                {/* Resposta SOAP */}
                                 {selectedLog.response && (
-                                    <div className="mb-4">
-                                        <h4 className="font-medium text-sm text-gray-700 mb-2">📥 Response</h4>
-                                        <pre className="bg-gray-100 p-3 rounded text-xs overflow-x-auto max-h-64">
-                                            {selectedLog.response}
-                                        </pre>
+                                    <div className="border-2 border-gray-300 rounded-lg overflow-hidden">
+                                        <div className="bg-gray-100 p-4 flex items-center justify-between">
+                                            <h4 className="text-md font-bold text-gray-700">
+                                                📥 Resposta SOAP Recebida
+                                            </h4>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => copiarXML('response')}
+                                                    className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm transition-colors"
+                                                >
+                                                    📋 Copiar
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => baixarXML('response')}
+                                                    className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm transition-colors"
+                                                >
+                                                    💾 Baixar
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div className="bg-white p-4">
+                                            <pre className="bg-gray-900 text-green-400 p-4 rounded overflow-x-auto text-xs font-mono max-h-96">
+{selectedLog.response}
+                                            </pre>
+                                        </div>
                                     </div>
                                 )}
 
+                                {/* Detalhes do Erro */}
                                 {selectedLog.erro && (
-                                    <div className="bg-red-50 p-3 rounded">
-                                        <h4 className="font-medium text-sm text-red-700 mb-2">❌ Erro</h4>
-                                        <pre className="text-xs text-red-800">{selectedLog.erro}</pre>
+                                    <div className="border-2 border-red-300 rounded-lg overflow-hidden">
+                                        <div className="bg-red-100 p-4">
+                                            <h4 className="text-md font-bold text-red-700">
+                                                ❌ Detalhes do Erro
+                                            </h4>
+                                        </div>
+                                        <div className="bg-white p-4">
+                                            <pre className="bg-red-50 text-red-800 p-4 rounded overflow-x-auto text-xs font-mono">
+{selectedLog.erro}
+                                            </pre>
+                                        </div>
                                     </div>
                                 )}
                             </div>
                         ) : (
                             <div className="card empty-state">
-                                <div className="text-gray-500">Selecione um log para ver os detalhes</div>
+                                <div className="text-4xl mb-2">👈</div>
+                                <div className="text-gray-700 font-medium">Selecione um log para visualizar</div>
+                                <div className="text-gray-500 text-sm">Escolha uma operação da lista ao lado para ver os XMLs de requisição e resposta</div>
                             </div>
                         )}
                     </div>

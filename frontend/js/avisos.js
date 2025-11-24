@@ -24,16 +24,22 @@ const btnRefreshAvisos = document.getElementById('btn-refresh-avisos');
 // Adicionar listener ao botão
 btnRefreshAvisos.addEventListener('click', carregarTodosAvisos);
 
-// Carregar avisos ao abrir a página
-window.addEventListener('load', () => {
-    carregarTodosAvisos();
-});
+// DESABILITADO: Carregamento automático removido - usar apenas botão manual
+// window.addEventListener('load', () => {
+//     carregarTodosAvisos();
+// });
 
 /**
  * Carregar todos os avisos (aguardando + abertos) em paralelo
  */
 async function carregarTodosAvisos() {
     try {
+        // Esconder mensagem inicial
+        const mensagemInicial = document.getElementById('avisos-mensagem-inicial');
+        if (mensagemInicial) {
+            mensagemInicial.style.display = 'none';
+        }
+
         // Limpar containers
         avisosAguardandoContainer.innerHTML = '';
         prazosAbertosContainer.innerHTML = '';

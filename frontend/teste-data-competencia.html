@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste - Data e Competência</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-left: 4px solid #4CAF50;
+        }
+        .error {
+            border-left-color: #f44336;
+        }
+        button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Teste - Parser de Data e Competência</h1>
+
+    <div class="test-section">
+        <h2>1. Teste do Parser de Data</h2>
+        <p>Data de entrada: <code>2025-11-23T08:11:02-03:00</code></p>
+        <p>Formato esperado: <code>23/11/2025</code></p>
+        <button onclick="testarData()">Testar formatarDataMNI</button>
+        <div id="resultado-data"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Verificar se função buscarDescricaoCompetencia existe</h2>
+        <button onclick="testarFuncaoCompetencia()">Verificar função</button>
+        <div id="resultado-funcao"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Teste completo do fluxo</h2>
+        <p>Simular dados de processo completos</p>
+        <button onclick="testarFluxoCompleto()">Testar fluxo completo</button>
+        <div id="resultado-fluxo"></div>
+    </div>
+
+    <script>
+        // Copiar a função formatarDataMNI do processos.js
+        function formatarDataMNI(dataMNI) {
+            if (!dataMNI) return 'N/A';
+            const str = dataMNI.toString();
+
+            // MNI 3.0: formato ISO 8601 (2025-11-23T08:11:02-03:00) ou (2025-11-23)
+            if (str.includes('T') || (str.includes('-') && str.length >= 10)) {
+                try {
+                    // Parse manual da data ISO para evitar problemas com timezone
+                    // Formato: YYYY-MM-DDTHH:MM:SS ou YYYY-MM-DD
+                    let datePart = str;
+                    if (str.includes('T')) {
+                        datePart = str.split('T')[0];
+                    }
+
+                    const [ano, mes, dia] = datePart.split('-');
+
+                    if (ano && mes && dia) {
+                        return `${dia.padStart(2, '0')}/${mes.padStart(2, '0')}/${ano}`;
+                    }
+
+                    // Fallback: tentar usar Date()
+                    const date = new Date(str);
+                    if (!isNaN(date.getTime())) {
+                        const dia = String(date.getDate()).padStart(2, '0');
+                        const mes = String(date.getMonth() + 1).padStart(2, '0');
+                        const ano = date.getFullYear();
+                        return `${dia}/${mes}/${ano}`;
+                    }
+                } catch (e) {
+                    console.error('Erro ao formatar data ISO:', e);
+                }
+            }
+
+            // MNI 2.2: formato AAAAMMDDHHMMSS ou AAAAMMDD
+            if (str.length >= 8 && !str.includes('-')) {
+                return `${str.substr(6, 2)}/${str.substr(4, 2)}/${str.substr(0, 4)}`;
+            }
+
+            return dataMNI;
+        }
+
+        function testarData() {
+            const resultadoDiv = document.getElementById('resultado-data');
+
+            try {
+                const dataEntrada = '2025-11-23T08:11:02-03:00';
+                const resultado = formatarDataMNI(dataEntrada);
+
+                resultadoDiv.innerHTML = `
+                    <div class="result ${resultado === '23/11/2025' ? '' : 'error'}">
+                        <strong>Entrada:</strong> ${dataEntrada}<br>
+                        <strong>Saída:</strong> ${resultado}<br>
+                        <strong>Esperado:</strong> 23/11/2025<br>
+                        <strong>Status:</strong> ${resultado === '23/11/2025' ? '✅ PASSOU' : '❌ FALHOU'}
+                    </div>
+                `;
+
+                // Testar outros formatos
+                const testes = [
+                    { entrada: '2025-11-23', esperado: '23/11/2025' },
+                    { entrada: '20251123', esperado: '23/11/2025' },
+                    { entrada: '20251123081102', esperado: '23/11/2025' }
+                ];
+
+                testes.forEach(teste => {
+                    const res = formatarDataMNI(teste.entrada);
+                    resultadoDiv.innerHTML += `
+                        <div class="result ${res === teste.esperado ? '' : 'error'}">
+                            <strong>Entrada:</strong> ${teste.entrada}<br>
+                            <strong>Saída:</strong> ${res}<br>
+                            <strong>Esperado:</strong> ${teste.esperado}<br>
+                            <strong>Status:</strong> ${res === teste.esperado ? '✅ PASSOU' : '❌ FALHOU'}
+                        </div>
+                    `;
+                });
+
+            } catch (error) {
+                resultadoDiv.innerHTML = `<div class="result error">❌ ERRO: ${error.message}</div>`;
+            }
+        }
+
+        function testarFuncaoCompetencia() {
+            const resultadoDiv = document.getElementById('resultado-funcao');
+
+            // Verificar se a função existe no escopo global
+            if (typeof buscarDescricaoCompetencia === 'function') {
+                resultadoDiv.innerHTML = `<div class="result">✅ Função buscarDescricaoCompetencia EXISTE e está disponível globalmente</div>`;
+            } else {
+                resultadoDiv.innerHTML = `<div class="result error">❌ Função buscarDescricaoCompetencia NÃO ENCONTRADA no escopo global</div>`;
+            }
+        }
+
+        function testarFluxoCompleto() {
+            const resultadoDiv = document.getElementById('resultado-fluxo');
+
+            // Dados simulados de um processo
+            const processoSimulado = {
+                dadosBasicos: {
+                    competencia: "51",
+                    classeProcessual: "241",
+                    codigoLocalidade: "0000",
+                    nivelSigilo: "0",
+                    dataAjuizamento: "2025-11-23T08:11:02-03:00",
+                    valorCausa: "5000.00"
+                }
+            };
+
+            let html = '<div class="result"><strong>Dados simulados do processo:</strong><pre>' +
+                       JSON.stringify(processoSimulado, null, 2) + '</pre></div>';
+
+            // Testar extração da data
+            const dataFormatada = formatarDataMNI(processoSimulado.dadosBasicos.dataAjuizamento);
+            html += `<div class="result">
+                <strong>Data de Ajuizamento formatada:</strong> ${dataFormatada}<br>
+                <strong>Status:</strong> ${dataFormatada === '23/11/2025' ? '✅ CORRETO' : '❌ INCORRETO'}
+            </div>`;
+
+            // Verificar extração de competência
+            const codigoCompetencia = processoSimulado.dadosBasicos.competencia;
+            const codigoLocalidade = processoSimulado.dadosBasicos.codigoLocalidade;
+            html += `<div class="result">
+                <strong>Código da Competência extraído:</strong> ${codigoCompetencia}<br>
+                <strong>Código da Localidade extraído:</strong> ${codigoLocalidade}<br>
+                <strong>Status:</strong> ${codigoCompetencia && codigoLocalidade ? '✅ EXTRAÍDO' : '❌ FALHOU'}
+            </div>`;
+
+            resultadoDiv.innerHTML = html;
+        }
+    </script>
+</body>
+</html>

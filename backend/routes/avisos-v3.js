@@ -194,6 +194,9 @@ router.get('/', extractCredentials, async (req, res) => {
         console.log('[AVISOS V3] Status solicitado:', status);
         console.log('[AVISOS V3] Total após filtrar por status:', avisosFiltrados.length);
 
+        // Obter XMLs para debug
+        const xmls = mni3Client.getLastXMLs();
+
         // Responder ao cliente
         res.json({
             success: true,
@@ -201,15 +204,27 @@ router.get('/', extractCredentials, async (req, res) => {
             data: avisosFiltrados,
             version: 'MNI 3.0',
             status: status,
-            ...(idRepresentado && { filteredBy: idRepresentado })
+            ...(idRepresentado && { filteredBy: idRepresentado }),
+            debug: {
+                xmlRequest: xmls.request,
+                xmlResponse: xmls.response
+            }
         });
 
     } catch (error) {
         console.error('[AVISOS V3] Erro ao listar avisos:', error.message);
+
+        // Obter XMLs mesmo em caso de erro
+        const xmls = mni3Client.getLastXMLs();
+
         res.status(500).json({
             success: false,
             message: error.message || 'Erro ao consultar avisos pendentes (MNI 3.0)',
-            version: 'MNI 3.0'
+            version: 'MNI 3.0',
+            debug: {
+                xmlRequest: xmls.request,
+                xmlResponse: xmls.response
+            }
         });
     }
 });
@@ -244,18 +259,39 @@ router.get('/:numeroProcesso/:identificadorMovimento', extractCredentials, async
             identificadorMovimento
         );
 
+        // Obter XMLs para debug
+        const xmls = mni3Client.getLastXMLs();
+
+        console.log('[AVISOS V3 - Abrir Prazo] Consultado teor com sucesso');
+        console.log('[AVISOS V3 - Abrir Prazo] Tem XML Request?', !!xmls.request);
+        console.log('[AVISOS V3 - Abrir Prazo] Tem XML Response?', !!xmls.response);
+        console.log('[AVISOS V3 - Abrir Prazo] Tamanho XML Request:', xmls.request?.length || 0);
+        console.log('[AVISOS V3 - Abrir Prazo] Tamanho XML Response:', xmls.response?.length || 0);
+
         res.json({
             success: true,
             data: teor,
-            version: 'MNI 3.0'
+            version: 'MNI 3.0',
+            debug: {
+                xmlRequest: xmls.request,
+                xmlResponse: xmls.response
+            }
         });
 
     } catch (error) {
         console.error('[AVISOS V3] Erro ao consultar teor:', error.message);
+
+        // Obter XMLs mesmo em caso de erro
+        const xmls = mni3Client.getLastXMLs();
+
         res.status(500).json({
             success: false,
             message: error.message || 'Erro ao consultar teor da comunicação',
-            version: 'MNI 3.0'
+            version: 'MNI 3.0',
+            debug: {
+                xmlRequest: xmls.request,
+                xmlResponse: xmls.response
+            }
         });
     }
 });

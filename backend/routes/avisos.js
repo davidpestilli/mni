@@ -82,18 +82,33 @@ router.get('/', middlewareMNI2_2Validation, extractCredentials, async (req, res)
         }
         // Se status === 'todos', retorna todos
 
+        // Obter XMLs para debug
+        const xmls = mniClient.getLastXMLs();
+
         res.json({
             success: true,
             count: avisosFiltrados.length,
             data: avisosFiltrados,
-            ...(idRepresentado && { filteredBy: idRepresentado })
+            ...(idRepresentado && { filteredBy: idRepresentado }),
+            debug: {
+                xmlRequest: xmls.request,
+                xmlResponse: xmls.response
+            }
         });
 
     } catch (error) {
         console.error('[AVISOS] Erro ao listar avisos:', error.message);
+
+        // Obter XMLs mesmo em caso de erro
+        const xmls = mniClient.getLastXMLs();
+
         res.status(500).json({
             success: false,
-            message: error.message || 'Erro ao consultar avisos pendentes'
+            message: error.message || 'Erro ao consultar avisos pendentes',
+            debug: {
+                xmlRequest: xmls.request,
+                xmlResponse: xmls.response
+            }
         });
     }
 });
@@ -125,16 +140,37 @@ router.get('/:numeroProcesso/:identificadorMovimento', middlewareMNI2_2Validatio
             identificadorMovimento
         );
 
+        // Obter XMLs para debug
+        const xmls = mniClient.getLastXMLs();
+
+        console.log('[AVISOS - Abrir Prazo] Consultado teor com sucesso');
+        console.log('[AVISOS - Abrir Prazo] Tem XML Request?', !!xmls.request);
+        console.log('[AVISOS - Abrir Prazo] Tem XML Response?', !!xmls.response);
+        console.log('[AVISOS - Abrir Prazo] Tamanho XML Request:', xmls.request?.length || 0);
+        console.log('[AVISOS - Abrir Prazo] Tamanho XML Response:', xmls.response?.length || 0);
+
         res.json({
             success: true,
-            data: teor
+            data: teor,
+            debug: {
+                xmlRequest: xmls.request,
+                xmlResponse: xmls.response
+            }
         });
 
     } catch (error) {
         console.error('[AVISOS] Erro ao consultar teor:', error.message);
+
+        // Obter XMLs mesmo em caso de erro
+        const xmls = mniClient.getLastXMLs();
+
         res.status(500).json({
             success: false,
-            message: error.message || 'Erro ao consultar teor da comunicação'
+            message: error.message || 'Erro ao consultar teor da comunicação',
+            debug: {
+                xmlRequest: xmls.request,
+                xmlResponse: xmls.response
+            }
         });
     }
 });

@@ -77,16 +77,31 @@ router.get('/:numeroProcesso', middlewareMNI2_2Validation, extractCredentials, a
             dataReferencia || null
         );
 
+        // Obter XMLs para debug
+        const xmls = mniClient.getLastXMLs();
+
         res.json({
             success: true,
-            data: processo
+            data: processo,
+            debug: {
+                xmlRequest: xmls.request,
+                xmlResponse: xmls.response
+            }
         });
 
     } catch (error) {
         console.error('[PROCESSOS] Erro ao consultar processo:', error.message);
+
+        // Obter XMLs mesmo em caso de erro
+        const xmls = mniClient.getLastXMLs();
+
         res.status(500).json({
             success: false,
-            message: error.message || 'Erro ao consultar processo'
+            message: error.message || 'Erro ao consultar processo',
+            debug: {
+                xmlRequest: xmls.request,
+                xmlResponse: xmls.response
+            }
         });
     }
 });

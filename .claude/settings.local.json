@@ -19,7 +19,16 @@
       "Bash(taskkill /PID 32828 /F)",
       "Bash(taskkill:*)",
       "Bash(node test-tipoparte.js:*)",
-      "Bash(node test-modalidade-vinculacao.js:*)"
+      "Bash(node test-modalidade-vinculacao.js:*)",
+      "Bash(echo:*)",
+      "Bash(timeout /t 3)",
+      "Bash(nul)",
+      "Bash(ping:*)",
+      "Bash(npm run dev:*)",
+      "Bash(node server.js:*)",
+      "Bash(timeout:*)",
+      "Bash(npm run build:*)",
+      "Bash(rm backend/nul nul)"
     ],
     "deny": [],
     "ask": []

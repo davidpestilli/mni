@@ -733,13 +733,6 @@ function PeticionamentoInicial() {
             <div className="max-w-5xl mx-auto px-4">
                 {/* Header */}
                 <div className="mb-6">
-                    <button
-                        onClick={() => navigate('/dashboard')}
-                        className="btn btn-secondary mb-4"
-                    >
-                        ← Voltar ao Dashboard
-                    </button>
-
                     <div className="card bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
                         <h1 className="text-3xl font-bold mb-2">📝 Peticionamento Inicial</h1>
                         <p className="opacity-90">Criar novo processo judicial via MNI 3.0</p>

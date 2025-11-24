@@ -69,7 +69,7 @@ document.getElementById('btn-logout').addEventListener('click', () => {
     }
 });
 
-// Carregar avisos ao abrir a página
-window.addEventListener('load', () => {
-    carregarAvisos();
-});
+// DESABILITADO: Carregamento automático removido - usar apenas botão manual
+// window.addEventListener('load', () => {
+//     carregarAvisos();
+// });

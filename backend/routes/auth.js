@@ -53,15 +53,12 @@ router.post('/login', async (req, res) => {
         console.log('ID Representado:', idRepresentado || 'Não informado');
         console.log('═══════════════════════════════════════════════════════════');
 
-        // Tentar autenticar fazendo uma consulta simples de avisos
-        const avisos = await mniClient.consultarAvisosPendentes(
-            idConsultante,
-            senhaHash,
-            {},
-            idRepresentado  // Passar idRepresentado como 4º parâmetro
-        );
+        // AUTENTICAÇÃO SIMPLIFICADA - Não consultar avisos no login
+        // A validação de credenciais será feita apenas na primeira requisição real
+        // Isso evita chamadas desnecessárias ao MNI durante o login
+        console.log('[AUTH] ✅ Autenticação aceita (validação será feita na primeira requisição)');
 
-        // Se chegou aqui, autenticação foi bem-sucedida
+        // Se chegou aqui, credenciais foram aceitas
         const responseData = {
             success: true,
             message: 'Autenticação realizada com sucesso',
