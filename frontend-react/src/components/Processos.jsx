@@ -1,6 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
-import { apiRequest, formatarNumeroProcesso, limparNumeroProcesso, downloadBase64File, formatarDataHoraMNI, buscarDescricaoClasse, buscarDescricaoAssunto, buscarDescricaoCompetencia, converterDataBRParaISO, converterDataBRParaMNI, useDataInputMask } from '../utils/utils';
+import { apiRequest, formatarNumeroProcesso, limparNumeroProcesso, downloadBase64File, buscarDescricaoClasse, buscarDescricaoAssunto, buscarDescricaoCompetencia, converterDataBRParaISO, useDataInputMask } from '../utils/utils';
 
+/**
+ * Componente Consultar Processos
+ * 
+ * Utiliza exclusivamente MNI 3.0 para consulta de processos.
+ * Funciona em todos os ambientes (1G Civil, 1G Execução Fiscal, 2G Civil).
+ */
 function Processos() {
     const [numeroProcesso, setNumeroProcesso] = useState('');
     const [chaveConsulta, setChaveConsulta] = useState('');
@@ -20,9 +26,8 @@ function Processos() {
     useDataInputMask(dataInputRef, dataReferencia, setDataReferencia);
 
     /**
-     * Extrai atributos de um documento com suporte a MNI 2.2 e MNI 3.0
-     * MNI 2.2: doc.attributes contém id, descricao, mimetype, nivelSigilo
-     * MNI 3.0: campos diretos em doc (id, descricao, conteudo.mimetype, nivelSigilo)
+     * Extrai atributos de um documento (MNI 3.0)
+     * Campos diretos: idDocumento, descricao, conteudo.mimetype, nivelSigilo, tamanhoConteudo
      */
     const extrairAtributosDocumento = (doc) => {
         if (!doc) {
@@ -35,14 +40,12 @@ function Processos() {
             };
         }
 
-        const attrs = doc.attributes || {};
-
         return {
-            id: attrs.id || attrs.idDocumento || doc.idDocumento || '',
-            descricao: attrs.descricao || attrs.nome || doc.descricao || 'Documento',
-            mimetype: attrs.mimetype || doc.conteudo?.mimetype || doc.mimetype || 'application/octet-stream',
-            nivelSigilo: parseInt(attrs.nivelSigilo || doc.nivelSigilo || '0'),
-            tamanho: attrs.tamanho || doc.tamanho || doc.tamanhoConteudo || 0,
+            id: doc.idDocumento || '',
+            descricao: doc.descricao || 'Documento',
+            mimetype: doc.conteudo?.mimetype || 'application/octet-stream',
+            nivelSigilo: parseInt(doc.nivelSigilo || '0'),
+            tamanho: doc.tamanhoConteudo || 0,
         };
     };
 
@@ -76,77 +79,40 @@ function Processos() {
                 return;
             }
 
-            // Determinar qual versão MNI usar baseado no sistema atual
-            const sistema = localStorage.getItem('mni_sistema_atual') || '1G_CIVIL';
-            const usarMNI3 = (sistema === '1G_EXEC_FISCAL' || sistema === '2G_CIVIL');
-
-            console.log('[PROCESSOS] Sistema:', sistema);
-            console.log('[PROCESSOS] Usar MNI 3.0:', usarMNI3);
-
-            let url;
+            // MNI 3.0 - Rota unificada
+            const url = `/api/mni3/processo/${numeroLimpo}`;
             const params = new URLSearchParams();
 
-            if (usarMNI3) {
-                // MNI 3.0: /api/mni3/processo/:numeroProcesso
-                url = `/api/mni3/processo/${numeroLimpo}`;
-
-                if (chaveConsulta) {
-                    params.append('chave', chaveConsulta);
-                }
-
-                // MNI 3.0 usa dataInicial ao invés de dataReferencia
-                if (dataReferencia) {
-                    // Converter data do formato BR (DD/MM/YYYY HH:mm:ss) para ISO (YYYY-MM-DDTHH:mm:ss-03:00)
-                    const dataISO = converterDataBRParaISO(dataReferencia);
-                    params.append('dataInicial', dataISO);
-                }
-
-                // Sempre incluir documentos no MNI 3.0
-                params.append('incluirDocumentos', 'true');
-            } else {
-                // MNI 2.2: /api/processos/:numeroProcesso
-                url = `/api/processos/${numeroLimpo}`;
-
-                if (chaveConsulta) {
-                    params.append('chave', chaveConsulta);
-                }
-
-                if (dataReferencia) {
-                    // Converter data do formato BR (DD/MM/YYYY HH:mm:ss) para AAAAMMDDHHMMSS (14 dígitos)
-                    // MNI 2.2 espera este formato no backend
-                    const dataMNI = converterDataBRParaMNI(dataReferencia);
-                    params.append('dataReferencia', dataMNI);
-                }
+            // Chave de consulta
+            if (chaveConsulta) {
+                params.append('chave', chaveConsulta);
             }
 
-            if (params.toString()) {
-                url += `?${params.toString()}`;
+            // Data de referência (formato ISO)
+            if (dataReferencia) {
+                const dataISO = converterDataBRParaISO(dataReferencia);
+                params.append('dataInicial', dataISO);
             }
 
-            console.log('[PROCESSOS] URL final:', url);
+            // Sempre incluir documentos
+            params.append('incluirDocumentos', 'true');
 
-            const response = await apiRequest(url);
+            const urlFinal = params.toString() ? `${url}?${params.toString()}` : url;
+            console.log('[PROCESSOS MNI 3.0] URL:', urlFinal);
+
+            const response = await apiRequest(urlFinal);
             const data = await response.json();
 
             if (data.success && data.data) {
-                console.log('[PROCESSOS] Dados recebidos do backend:', data.data);
-                console.log('[PROCESSOS] processo.documento existe?', data.data.documento ? 'SIM' : 'NÃO');
-                console.log('[PROCESSOS] processo.documento:', data.data.documento);
-
                 setProcesso(data.data);
-                // Enriquecer dados do processo
                 await enriquecerProcesso(data.data);
 
-                // Carregar XMLs de debug se disponíveis
-                if (data.debug && data.debug.xmlRequest && data.debug.xmlResponse) {
-                    console.log('[PROCESSOS] XMLs disponíveis na resposta');
+                // Carregar XMLs de debug
+                if (data.debug?.xmlRequest && data.debug?.xmlResponse) {
                     setSoapDebug({
                         request: formatarXML(data.debug.xmlRequest),
                         response: formatarXML(data.debug.xmlResponse)
                     });
-                } else {
-                    console.log('[PROCESSOS] XMLs não disponíveis na resposta');
-                    setSoapDebug({ request: '', response: '' });
                 }
             } else {
                 setError(data.message || 'Erro ao consultar processo');
@@ -163,12 +129,7 @@ function Processos() {
     const handleDownloadDocumento = async (documentoId, descricao, mimetype) => {
         try {
             const numeroLimpo = limparNumeroProcesso(numeroProcesso);
-            const sistema = localStorage.getItem('mni_sistema_atual') || '1G_CIVIL';
-            const usarMNI3 = (sistema === '1G_EXEC_FISCAL' || sistema === '2G_CIVIL');
-
-            const url = usarMNI3
-                ? `/api/mni3/processo/${numeroLimpo}/documentos/${documentoId}`
-                : `/api/processos/${numeroLimpo}/documentos/${documentoId}`;
+            const url = `/api/mni3/processo/${numeroLimpo}/documentos/${documentoId}`;
 
             const response = await apiRequest(url);
             const data = await response.json();
@@ -201,15 +162,7 @@ function Processos() {
             setDocumentoModal({ loading: true, descricao });
 
             const numeroLimpo = limparNumeroProcesso(numeroProcesso);
-            const sistema = localStorage.getItem('mni_sistema_atual') || '1G_CIVIL';
-            const usarMNI3 = (sistema === '1G_EXEC_FISCAL' || sistema === '2G_CIVIL');
-
-            const url = usarMNI3
-                ? `/api/mni3/processo/${numeroLimpo}/documentos/${documentoId}`
-                : `/api/processos/${numeroLimpo}/documentos/${documentoId}`;
-
-            console.log('[VISUALIZAR DOCUMENTO] Sistema:', sistema);
-            console.log('[VISUALIZAR DOCUMENTO] URL:', url);
+            const url = `/api/mni3/processo/${numeroLimpo}/documentos/${documentoId}`;
 
             const response = await apiRequest(url);
             const data = await response.json();
@@ -217,9 +170,6 @@ function Processos() {
             if (data.success && data.data.conteudo) {
                 const conteudo = data.data.conteudo;
                 const mimetypeFinal = data.data.mimetype || mimetype;
-
-                // Validações de segurança
-                console.log('Conteúdo recebido - tipo:', typeof conteudo, 'tamanho:', conteudo ? conteudo.length : 0);
 
                 // Validar que conteudo é uma string
                 if (typeof conteudo !== 'string') {
@@ -372,35 +322,21 @@ function Processos() {
 
     const formatarDataMNI = (dataMNI) => {
         if (!dataMNI) return 'N/A';
-        const str = dataMNI.toString();
-
-        // MNI 3.0: formato ISO 8601 (2025-11-23T09:19:11-03:00) ou (2025-11-23)
-        if (str.includes('T') || (str.includes('-') && str.length >= 10)) {
-            try {
-                // Parse manual da data ISO para evitar problemas com timezone
-                let datePart = str;
-                if (str.includes('T')) {
-                    datePart = str.split('T')[0];
-                }
-
-                const [ano, mes, dia] = datePart.split('-');
-
-                if (ano && mes && dia) {
-                    return `${dia.padStart(2, '0')}/${mes.padStart(2, '0')}/${ano}`;
-                }
-            } catch (e) {
-                console.error('Erro ao formatar data ISO:', e);
+        
+        try {
+            const str = dataMNI.toString();
+            
+            // MNI 3.0: formato ISO 8601 (2025-11-23T09:19:11-03:00 ou 2025-11-23)
+            let datePart = str.includes('T') ? str.split('T')[0] : str;
+            const [ano, mes, dia] = datePart.split('-');
+            
+            if (ano && mes && dia) {
+                return `${dia.padStart(2, '0')}/${mes.padStart(2, '0')}/${ano}`;
             }
+        } catch (e) {
+            console.error('Erro ao formatar data:', e);
         }
-
-        // MNI 2.2: formato AAAAMMDD
-        if (str.length >= 8 && !str.includes('-')) {
-            const ano = str.substr(0, 4);
-            const mes = str.substr(4, 2);
-            const dia = str.substr(6, 2);
-            return `${dia}/${mes}/${ano}`;
-        }
-
+        
         return dataMNI;
     };
 
@@ -730,52 +666,26 @@ function Processos() {
                                         // Obter complementos se existirem
                                         const complementos = mov.complemento ? (Array.isArray(mov.complemento) ? mov.complemento : [mov.complemento]) : [];
 
-                                        // Formatar data/hora
+                                        // Formatar data/hora (MNI 3.0: formato ISO)
                                         let dataHoraFormatada = 'N/A';
                                         if (attrs.dataHora) {
                                             try {
-                                                // MNI 3.0: formato ISO 8601 (2025-11-23T09:19:12-03:00)
-                                                if (attrs.dataHora.includes('T') || attrs.dataHora.includes('-')) {
-                                                    const date = new Date(attrs.dataHora);
-                                                    dataHoraFormatada = date.toLocaleString('pt-BR');
-                                                } else {
-                                                    // MNI 2.2: formato AAAAMMDDHHMMSS
-                                                    const date = new Date(
-                                                        attrs.dataHora.substr(0,4),
-                                                        parseInt(attrs.dataHora.substr(4,2))-1,
-                                                        attrs.dataHora.substr(6,2),
-                                                        attrs.dataHora.substr(8,2),
-                                                        attrs.dataHora.substr(10,2),
-                                                        attrs.dataHora.substr(12,2)
-                                                    );
-                                                    dataHoraFormatada = date.toLocaleString('pt-BR');
-                                                }
+                                                const date = new Date(attrs.dataHora);
+                                                dataHoraFormatada = date.toLocaleString('pt-BR');
                                             } catch (e) {
                                                 console.error('Erro ao formatar data do movimento:', e);
                                                 dataHoraFormatada = attrs.dataHora;
                                             }
                                         }
 
-                                        // Buscar documentos vinculados a este movimento
+                                        // Buscar documentos vinculados a este movimento (MNI 3.0)
                                         const documentosVinculados = [];
-                                        
-                                        // MNI 2.2: documentos marcados com _movimentoIndex
-                                        const documentosMNI2 = processo.documento ? 
-                                            (Array.isArray(processo.documento) ? processo.documento : [processo.documento]) : [];
-                                        
-                                        documentosMNI2.forEach(doc => {
-                                            if (doc._movimentoIndex === index) {
-                                                documentosVinculados.push(doc);
-                                            }
-                                        });
-                                        
-                                        // MNI 3.0: usar campo documentosVinculados ou idDocumentoVinculado
                                         const idsVinculados = mov.documentosVinculados || 
-                                                            (mov.idDocumentoVinculado ? 
-                                                             (Array.isArray(mov.idDocumentoVinculado) ? 
-                                                              mov.idDocumentoVinculado : 
-                                                              [mov.idDocumentoVinculado]) : 
-                                                             []);
+                                            (mov.idDocumentoVinculado ? 
+                                                (Array.isArray(mov.idDocumentoVinculado) ? 
+                                                    mov.idDocumentoVinculado : 
+                                                    [mov.idDocumentoVinculado]) : 
+                                                []);
                                         
                                         if (idsVinculados.length > 0) {
                                             const todosDocs = processo.documento ? 
@@ -783,12 +693,11 @@ function Processos() {
                                             
                                             idsVinculados.forEach(idVinculado => {
                                                 const docEncontrado = todosDocs.find(d => {
-                                                    const docAttrs = d.attributes || d;
-                                                    const docId = docAttrs.id || docAttrs.idDocumento || d.idDocumento;
+                                                    const docId = d.idDocumento || d.attributes?.idDocumento || d.attributes?.id;
                                                     return docId === idVinculado;
                                                 });
                                                 
-                                                if (docEncontrado && !documentosVinculados.includes(docEncontrado)) {
+                                                if (docEncontrado) {
                                                     documentosVinculados.push(docEncontrado);
                                                 }
                                             });
