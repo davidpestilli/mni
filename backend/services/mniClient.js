@@ -23,6 +23,8 @@ class MNIClient {
         this.client = null;
         this.lastRequest = null;
         this.lastResponse = null;
+        this.lastRequestXML = null;
+        this.lastResponseXML = null;
         this.soapLogs = []; // Histórico de requisições/respostas
     }
 
@@ -86,6 +88,7 @@ class MNIClient {
             // Adicionar interceptor para capturar requisições e respostas SOAP
             this.client.on('request', (xml, eid) => {
                 this.lastRequest = xml;
+                this.lastRequestXML = xml;
                 if (this.config.debugMode) {
                     console.log('[MNI] ===== SOAP REQUEST =====');
                     console.log(xml);
@@ -95,6 +98,7 @@ class MNIClient {
 
             this.client.on('response', (body, response, eid) => {
                 this.lastResponse = body;
+                this.lastResponseXML = body;
 
                 // Adicionar ao histórico
                 this.soapLogs.push({
@@ -225,6 +229,16 @@ class MNIClient {
             console.error('[MNI] Erro ao consultar teor:', error.message);
             throw this.handleError(error);
         }
+    }
+
+    /**
+     * Obter últimos XMLs SOAP enviados e recebidos
+     */
+    getLastXMLs() {
+        return {
+            request: this.lastRequestXML,
+            response: this.lastResponseXML
+        };
     }
 
     /**
@@ -926,23 +940,61 @@ class MNIClient {
 
     parseProcesso(result) {
         try {
-            if (this.config.debugMode) {
-                console.log('[MNI] Estrutura de processo recebida:', JSON.stringify(result, null, 2));
-            }
-
             // O SOAP retorna: { sucesso, mensagem, processo: { dadosBasicos, documento, ... } }
-            // Retornamos apenas a parte "processo"
+            let processo = null;
+
+            // Extrair processo da resposta
             if (result && result.processo) {
-                return result.processo;
+                processo = result.processo;
+            } else if (result && result.dadosBasicos) {
+                processo = result;
+            } else {
+                processo = result;
             }
 
-            // Se result já for o processo direto
-            if (result && result.dadosBasicos) {
-                return result;
+            // Debug simplificado
+            const temDocumentos = processo && processo.documento;
+            const numDocumentos = temDocumentos ?
+                (Array.isArray(processo.documento) ? processo.documento.length : 1) : 0;
+
+            console.log('[MNI] Documentos no nível do processo:', numDocumentos);
+
+            // Extrair documentos dos movimentos e consolidar
+            // Em MNI 2.2, documentos podem estar em: processo.movimento[].documento
+            if (processo && processo.movimento) {
+                const movimentos = Array.isArray(processo.movimento) ? processo.movimento : [processo.movimento];
+                const documentosDoMovimento = [];
+
+                movimentos.forEach((movimento, movIndex) => {
+                    if (movimento.documento) {
+                        const docs = Array.isArray(movimento.documento) ? movimento.documento : [movimento.documento];
+                        docs.forEach(doc => {
+                            documentosDoMovimento.push({
+                                ...doc,
+                                _movimentoIndex: movIndex
+                            });
+                        });
+                    }
+                });
+
+                if (documentosDoMovimento.length > 0) {
+                    console.log('[MNI] Documentos extraídos dos movimentos:', documentosDoMovimento.length);
+
+                    // Combinar com documentos existentes
+                    if (processo.documento) {
+                        const docsExistentes = Array.isArray(processo.documento) ? processo.documento : [processo.documento];
+                        processo.documento = [...docsExistentes, ...documentosDoMovimento];
+                    } else {
+                        processo.documento = documentosDoMovimento;
+                    }
+                }
             }
 
-            // Fallback: retorna o que vier
-            return result;
+            const totalFinal = processo && processo.documento ?
+                (Array.isArray(processo.documento) ? processo.documento.length : 1) : 0;
+            console.log('[MNI] Total de documentos no processo (final):', totalFinal);
+
+            return processo;
         } catch (error) {
             console.error('[MNI] Erro ao parsear processo:', error);
             return result;

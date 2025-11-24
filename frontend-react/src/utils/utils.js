@@ -327,6 +327,44 @@ export async function buscarDescricaoAssunto(codigo) {
 }
 
 /**
+ * Buscar descrição de competência
+ * Retorna o código se não encontrar descrição
+ * Requer codigoLocalidade pois competências variam por localidade
+ */
+export async function buscarDescricaoCompetencia(codigo, codigoLocalidade) {
+    if (!codigo || !codigoLocalidade) return codigo || '';
+
+    const codigoStr = String(codigo);
+    const cacheKey = `${codigoLocalidade}_${codigoStr}`;
+
+    // Retornar do cache se já carregado
+    if (mapeamentoCache.competencias && mapeamentoCache.competencias.has(cacheKey)) {
+        return mapeamentoCache.competencias.get(cacheKey);
+    }
+
+    // Criar mapa de competências se não existir
+    if (!mapeamentoCache.competencias) {
+        mapeamentoCache.competencias = new Map();
+    }
+
+    // Buscar do backend
+    try {
+        const response = await fetch(`/api/mni3/descricao-competencia/${codigoLocalidade}/${codigoStr}`);
+        const data = await response.json();
+
+        if (data.success && data.descricao) {
+            // Adicionar ao cache
+            mapeamentoCache.competencias.set(cacheKey, data.descricao);
+            return data.descricao;
+        }
+    } catch (error) {
+        console.error('[CACHE] Erro ao buscar descrição de competência:', error);
+    }
+
+    return codigoStr;
+}
+
+/**
  * Carregar classes de uma localidade para o cache
  * Isso permite que as descrições fiquem disponíveis
  */
@@ -372,5 +410,61 @@ export async function carregarAssuntosNoCache(codigoLocalidade, codigoClasse) {
         }
     } catch (error) {
         console.error('[CACHE] Erro ao carregar assuntos:', error);
+    }
+}
+
+/**
+ * Converter data do formato brasileiro para ISO 8601 com timezone
+ *
+ * @param {string} dataBR - Data no formato "DD/MM/YYYY HH:mm:ss"
+ * @returns {string} Data no formato ISO "YYYY-MM-DDTHH:mm:ss-03:00"
+ *
+ * @example
+ * converterDataBRParaISO("18/11/2025 12:39:15") // "2025-11-18T12:39:15-03:00"
+ */
+export function converterDataBRParaISO(dataBR) {
+    if (!dataBR || dataBR.trim() === '') {
+        return '';
+    }
+
+    try {
+        // Remover espaços extras
+        dataBR = dataBR.trim();
+
+        // Regex para capturar data no formato DD/MM/YYYY HH:mm:ss
+        // Suporta também: DD/MM/YYYY HH:mm ou DD/MM/YYYY
+        const regex = /^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$/;
+        const match = dataBR.match(regex);
+
+        if (!match) {
+            console.warn('[CONVERSÃO DATA] Formato inválido:', dataBR);
+            return dataBR; // Retornar original se não conseguir converter
+        }
+
+        const [_, dia, mes, ano, hora = '00', minuto = '00', segundo = '00'] = match;
+
+        // Validar valores
+        const diaNum = parseInt(dia);
+        const mesNum = parseInt(mes);
+        const horaNum = parseInt(hora);
+        const minutoNum = parseInt(minuto);
+        const segundoNum = parseInt(segundo);
+
+        if (diaNum < 1 || diaNum > 31 || mesNum < 1 || mesNum > 12 ||
+            horaNum < 0 || horaNum > 23 || minutoNum < 0 || minutoNum > 59 ||
+            segundoNum < 0 || segundoNum > 59) {
+            console.warn('[CONVERSÃO DATA] Valores inválidos:', dataBR);
+            return dataBR;
+        }
+
+        // Montar data ISO com timezone de Brasília (-03:00)
+        const dataISO = `${ano}-${mes}-${dia}T${hora}:${minuto}:${segundo}-03:00`;
+
+        console.log('[CONVERSÃO DATA] Convertido:', dataBR, '->', dataISO);
+        return dataISO;
+
+    } catch (error) {
+        console.error('[CONVERSÃO DATA] Erro ao converter:', error);
+        return dataBR; // Retornar original em caso de erro
     }
 }

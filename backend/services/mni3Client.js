@@ -62,7 +62,8 @@ class MNI3Client {
         // Armazenar último request/response para debug
         this.lastRequestXML = null;
         this.lastResponseXML = null;
-        
+        this.soapLogs = []; // Histórico de requisições/respostas
+
         console.log('🔧 MNI 3.0 Client inicializado');
         console.log('   Sistema:', this.sistema);
         console.log('   Ambiente:', this.ambiente);
@@ -390,6 +391,7 @@ class MNI3Client {
             // Armazenar XMLs para debug
             this.lastRequestXML = this.client.lastRequest;
             this.lastResponseXML = this.client.lastResponse;
+            this.addSoapLog('Consultar Avisos Pendentes (MNI 3.0)', this.lastRequestXML, this.lastResponseXML);
 
             // Log do XML enviado
             console.log('[MNI 3.0] ========================================');
@@ -474,6 +476,7 @@ class MNI3Client {
             // Armazenar XMLs para debug
             this.lastRequestXML = this.lastRequestXMLModified || this.client.lastRequest;
             this.lastResponseXML = this.client.lastResponse;
+            this.addSoapLog('Consultar Processo (MNI 3.0)', this.lastRequestXML, this.lastResponseXML);
 
             // Log do XML enviado (usar o modificado se disponível)
             console.log('[MNI 3.0] ========================================');
@@ -723,34 +726,48 @@ class MNI3Client {
      * CONSULTAR TEOR DA COMUNICAÇÃO
      *
      * Consulta o teor (conteúdo) de uma comunicação específica de um processo.
-     * IMPORTANTE: MNI 3.0 requer apenas numeroProcesso (sem identificadorMovimento)
+     * IMPORTANTE: MNI 3.0 aceita EITHER numeroProcesso OR identificadorAviso
+     * Prioriza identificadorAviso quando disponível para maior precisão
      *
      * @param {string} usuario - CPF/Sigla do usuário
      * @param {string} senha - Senha do usuário (será hasheada)
      * @param {string} numeroProcesso - Número do processo (20 dígitos)
-     * @param {string} identificadorMovimento - Identificador do movimento (IGNORADO no MNI 3.0)
+     * @param {string} identificadorMovimento - Identificador do aviso (idAviso)
      * @returns {Object} Teor da comunicação
      */
     async consultarTeorComunicacao(usuario, senha, numeroProcesso, identificadorMovimento) {
         try {
             await this.initialize();
 
-            // MNI 3.0 não usa identificadorMovimento na requisição consultarTeorComunicacao
-            // Apenas consultante e numeroProcesso são necessários
+            // MNI 3.0 aceita EITHER numeroProcesso OR identificadorAviso
+            // Priorizar identificadorAviso quando disponível para consultas específicas
             const args = {
-                consultante: this.criarAutenticacao(usuario, senha),
-                numeroProcesso: numeroProcesso
+                consultante: this.criarAutenticacao(usuario, senha)
             };
+
+            if (identificadorMovimento) {
+                // Usar identificadorAviso para consultar uma comunicação específica
+                args.identificadorAviso = identificadorMovimento;
+            } else {
+                // Fallback para numeroProcesso
+                args.numeroProcesso = numeroProcesso;
+            }
 
             if (this.debugMode) {
                 console.log('[MNI 3.0] ========================================');
                 console.log('[MNI 3.0] Consultando teor da comunicação');
                 console.log('[MNI 3.0] Número do processo:', numeroProcesso);
+                console.log('[MNI 3.0] Identificador do aviso:', identificadorMovimento);
                 console.log('[MNI 3.0] Args:', JSON.stringify(args, null, 2));
                 console.log('[MNI 3.0] ========================================');
             }
 
             const [result] = await this.client.consultarTeorComunicacaoAsync(args);
+
+            // Armazenar XMLs para debug
+            this.lastRequestXML = this.client.lastRequest;
+            this.lastResponseXML = this.client.lastResponse;
+            this.addSoapLog('Consultar Teor Comunicação (MNI 3.0)', this.lastRequestXML, this.lastResponseXML);
 
             if (this.debugMode) {
                 console.log('[MNI 3.0] ========================================');
@@ -761,6 +778,12 @@ class MNI3Client {
             return this.parseTeorComunicacao(result);
 
         } catch (error) {
+            // Armazenar XMLs mesmo em caso de erro
+            if (this.client) {
+                this.lastRequestXML = this.client.lastRequest;
+                this.lastResponseXML = this.client.lastResponse;
+            }
+
             console.error('[MNI 3.0] Erro ao consultar teor:', error.message);
             throw new Error(`Erro ao consultar teor da comunicação: ${error.message}`);
         }
@@ -1259,6 +1282,7 @@ class MNI3Client {
             // Armazenar XMLs para debug
             this.lastRequestXML = soapXML;
             this.lastResponseXML = responseXML;
+            this.addSoapLog('Consultar Conteúdo Documento (MNI 3.0)', soapXML, responseXML);
 
             console.log('[MNI 3.0] Resposta parseada:', JSON.stringify(parsedResponse, null, 2));
 
@@ -1733,6 +1757,7 @@ class MNI3Client {
             // Armazenar XMLs para debug
             this.lastRequestXML = soapXML;
             this.lastResponseXML = responseXML;
+            this.addSoapLog('Entregar Petição (MNI 3.0)', soapXML, responseXML);
 
             console.log('[MNI 3.0] Resposta parseada (entregarPeticao):', JSON.stringify(parsedResponse, null, 2));
 
@@ -2279,6 +2304,44 @@ class MNI3Client {
                         </int:pessoa>
                     </int:parte>
                 </int:polo>`;
+    }
+
+    /**
+     * Adicionar log de transação SOAP ao histórico
+     * @param {string} operacao - Nome da operação executada
+     * @param {string} request - XML de requisição
+     * @param {string} response - XML de resposta
+     * @param {boolean} erro - Se houve erro
+     */
+    addSoapLog(operacao, request, response, erro = false) {
+        this.soapLogs.push({
+            timestamp: new Date().toISOString(),
+            operacao: operacao,
+            request: request,
+            response: response,
+            erro: erro
+        });
+
+        // Manter apenas últimos 50 logs
+        if (this.soapLogs.length > 50) {
+            this.soapLogs.shift();
+        }
+    }
+
+    /**
+     * Obter histórico de transações SOAP
+     */
+    getSoapLogs() {
+        return this.soapLogs;
+    }
+
+    /**
+     * Limpar logs
+     */
+    clearSoapLogs() {
+        this.soapLogs = [];
+        this.lastRequestXML = null;
+        this.lastResponseXML = null;
     }
 }
 

@@ -57,15 +57,26 @@ router.get('/soap/last', (req, res) => {
 
 /**
  * GET /api/debug/soap/logs
- * Obter histórico de transações SOAP
+ * Obter histórico de transações SOAP (MNI 2.2 e MNI 3.0 combinados)
  */
 router.get('/soap/logs', (req, res) => {
     try {
-        const logs = mniClient.getSoapLogs();
+        const logs22 = mniClient.getSoapLogs();
+        const logs30 = mni3Client.getSoapLogs();
+
+        // Combinar logs de ambas as versões e ordenar por timestamp
+        const logsCompletos = [...logs22, ...logs30].sort((a, b) => {
+            return new Date(b.timestamp) - new Date(a.timestamp);
+        });
+
         res.json({
             success: true,
-            count: logs.length,
-            data: logs
+            count: logsCompletos.length,
+            data: logsCompletos,
+            sources: {
+                mni22: logs22.length,
+                mni30: logs30.length
+            }
         });
     } catch (error) {
         res.status(500).json({
@@ -77,14 +88,15 @@ router.get('/soap/logs', (req, res) => {
 
 /**
  * DELETE /api/debug/soap/logs
- * Limpar logs SOAP
+ * Limpar logs SOAP (MNI 2.2 e MNI 3.0)
  */
 router.delete('/soap/logs', (req, res) => {
     try {
         mniClient.clearSoapLogs();
+        mni3Client.clearSoapLogs();
         res.json({
             success: true,
-            message: 'Logs limpos com sucesso'
+            message: 'Logs limpos com sucesso (MNI 2.2 e MNI 3.0)'
         });
     } catch (error) {
         res.status(500).json({
