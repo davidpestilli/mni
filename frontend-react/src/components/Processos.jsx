@@ -19,6 +19,23 @@ function Processos() {
     // Ativar input mask para data de referência
     useDataInputMask(dataInputRef, dataReferencia, setDataReferencia);
 
+    /**
+     * Extrai atributos de um documento com suporte a MNI 2.2 e MNI 3.0
+     * MNI 2.2: doc.attributes contém id, descricao, mimetype, nivelSigilo
+     * MNI 3.0: campos diretos em doc (id, descricao, conteudo.mimetype, nivelSigilo)
+     */
+    const extrairAtributosDocumento = (doc) => {
+        const attrs = doc.attributes || {};
+
+        return {
+            id: attrs.id || attrs.idDocumento || doc.idDocumento || '',
+            descricao: attrs.descricao || attrs.nome || doc.descricao || 'Documento',
+            mimetype: attrs.mimetype || doc.conteudo?.mimetype || doc.mimetype || 'application/octet-stream',
+            nivelSigilo: parseInt(attrs.nivelSigilo || doc.nivelSigilo || '0'),
+            tamanho: attrs.tamanho || doc.tamanho || doc.tamanhoConteudo || 0,
+        };
+    };
+
     // Fechar modal com ESC
     useEffect(() => {
         const handleKeyDown = (event) => {
@@ -181,23 +198,48 @@ function Processos() {
                 ? `/api/mni3/processo/${numeroLimpo}/documentos/${documentoId}`
                 : `/api/processos/${numeroLimpo}/documentos/${documentoId}`;
 
+            console.log('[VISUALIZAR DOCUMENTO] Sistema:', sistema);
+            console.log('[VISUALIZAR DOCUMENTO] URL:', url);
+
             const response = await apiRequest(url);
             const data = await response.json();
 
             if (data.success && data.data.conteudo) {
+                const conteudo = data.data.conteudo;
+                const mimetypeFinal = data.data.mimetype || mimetype;
+
+                // Validações de segurança
+                console.log('Conteúdo recebido - tipo:', typeof conteudo, 'tamanho:', conteudo ? conteudo.length : 0);
+
+                // Validar que conteudo é uma string
+                if (typeof conteudo !== 'string') {
+                    throw new Error('Formato inválido: conteúdo do documento não é uma string');
+                }
+
+                // Validar que não está vazio
+                if (!conteudo || conteudo.length === 0) {
+                    throw new Error('Conteúdo do documento está vazio');
+                }
+
+                // Validar que parece ser Base64 (caracteres válidos)
+                const base64Regex = /^[A-Za-z0-9+/=]+$/;
+                if (!base64Regex.test(conteudo.substring(0, Math.min(100, conteudo.length)))) {
+                    throw new Error('Formato inválido: conteúdo não está em Base64');
+                }
+
                 setDocumentoModal({
                     loading: false,
                     descricao,
-                    conteudo: data.data.conteudo,
-                    mimetype: data.data.mimetype || mimetype
+                    conteudo: conteudo,
+                    mimetype: mimetypeFinal
                 });
             } else {
                 throw new Error(data.message || 'Erro ao carregar documento');
             }
         } catch (error) {
             console.error('Erro ao visualizar documento:', error);
-            alert('Erro ao carregar documento: ' + error.message);
             setDocumentoModal(null);
+            alert('Erro ao carregar documento: ' + error.message);
         }
     };
 
@@ -754,29 +796,47 @@ function Processos() {
                                 </h4>
                                 <div className="space-y-2">
                                     {documentos.map((doc, index) => {
-                                        const attrs = doc.attributes || doc;
-                                        const mime = attrs.mimetype || doc.conteudo?.mimetype || 'N/A';
-                                        const descricao = attrs.descricao || attrs.nome || doc.descricao || `Documento ${index + 1}`;
-                                        const idDocumento = attrs.id || attrs.idDocumento || doc.idDocumento;
+                                        const docAttrs = extrairAtributosDocumento(doc);
+                                        const temSigilo = docAttrs.nivelSigilo > 0;
 
-                                        console.log(`[DOC ${index}] ID:`, idDocumento, 'Descrição:', descricao, 'Mime:', mime);
+                                        // Determinar ícone baseado no tipo
+                                        let icone = '📝';
+                                        if (docAttrs.mimetype === 'application/pdf') icone = '📄';
+                                        else if (docAttrs.mimetype && docAttrs.mimetype.startsWith('video/')) icone = '🎥';
+                                        else if (docAttrs.mimetype && docAttrs.mimetype.startsWith('image/')) icone = '🖼️';
+                                        else if (docAttrs.mimetype === 'text/html') icone = '📃';
+
+                                        console.log(`[DOC ${index}] ID:`, docAttrs.id, 'Descrição:', docAttrs.descricao, 'Mime:', docAttrs.mimetype);
 
                                         return (
-                                            <div key={index} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg">
-                                                <div className="flex-1">
-                                                    <div className="font-medium">{descricao}</div>
-                                                    <div className="text-xs text-gray-500">{mime}</div>
+                                            <div key={index} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg hover:bg-gray-100 transition-colors">
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="font-medium flex items-center gap-2">
+                                                        <span>{icone}</span>
+                                                        <span className="truncate">{docAttrs.descricao}</span>
+                                                        {temSigilo && (
+                                                            <span className="bg-yellow-400 text-gray-900 px-2 py-1 rounded text-xs font-semibold whitespace-nowrap">
+                                                                🔒 Sigilo {docAttrs.nivelSigilo}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="text-xs text-gray-500 mt-1">
+                                                        {docAttrs.mimetype}
+                                                        {docAttrs.tamanho > 0 && ` • ${(docAttrs.tamanho / 1024).toFixed(2)} KB`}
+                                                    </div>
                                                 </div>
-                                                <div className="flex gap-2">
+                                                <div className="flex gap-2 ml-2">
                                                     <button
-                                                        onClick={() => handleVisualizarDocumento(idDocumento, descricao, mime)}
+                                                        onClick={() => handleVisualizarDocumento(docAttrs.id, docAttrs.descricao, docAttrs.mimetype)}
                                                         className="btn btn-primary btn-sm"
+                                                        title="Visualizar documento"
                                                     >
                                                         👁️ Ver
                                                     </button>
                                                     <button
-                                                        onClick={() => handleDownloadDocumento(idDocumento, descricao, mime)}
+                                                        onClick={() => handleDownloadDocumento(docAttrs.id, docAttrs.descricao, docAttrs.mimetype)}
                                                         className="btn btn-primary btn-sm"
+                                                        title="Baixar documento"
                                                     >
                                                         📥 Baixar
                                                     </button>
