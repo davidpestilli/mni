@@ -50,59 +50,15 @@ dataReferenciaInput.addEventListener('input', (e) => {
     let numeros = valor.replace(/\D/g, '');
 
     // Aplica formatação progressiva
-    let formatado = '';
 
-    // DD
-    if (numeros.length > 0) {
-        formatado = numeros.substring(0, 2);
-    }
+// Configurar formatação automática da data de referência com DataFormatter
+if (typeof DataFormatter \!== "undefined" && dataReferenciaInput) {
+    DataFormatter.setup(dataReferenciaInput, {
+        maxLength: 19,
+        placeholder: "DD/MM/AAAA HH:MM:SS"
+    });
+}
 
-    // DD/MM
-    if (numeros.length >= 3) {
-        formatado += '/' + numeros.substring(2, 4);
-    }
-
-    // DD/MM/AAAA
-    if (numeros.length >= 5) {
-        formatado += '/' + numeros.substring(4, 8);
-    }
-
-    // DD/MM/AAAA HH
-    if (numeros.length >= 9) {
-        formatado += ' ' + numeros.substring(8, 10);
-    }
-
-    // DD/MM/AAAA HH:MM
-    if (numeros.length >= 11) {
-        formatado += ':' + numeros.substring(10, 12);
-    }
-
-    // DD/MM/AAAA HH:MM:SS
-    if (numeros.length >= 13) {
-        formatado += ':' + numeros.substring(12, 14);
-    }
-
-    e.target.value = formatado;
-
-    // Ajustar posição do cursor
-    if (valor !== formatado) {
-        // Contar quantos caracteres especiais foram adicionados antes do cursor
-        const caracteresEspeciaisAntes = formatado.substring(0, cursorPosition).replace(/\d/g, '').length;
-        const caracteresEspeciaisAntesOriginal = valor.substring(0, cursorPosition).replace(/\d/g, '').length;
-        const diff = caracteresEspeciaisAntes - caracteresEspeciaisAntesOriginal;
-
-        e.target.setSelectionRange(cursorPosition + diff, cursorPosition + diff);
-    }
-});
-
-async function consultarProcesso() {
-    const numeroProcesso = numeroProcessoInput.value.trim();
-    const chaveConsulta = chaveConsultaInput.value.trim();
-    const dataReferenciaFormatada = dataReferenciaInput.value.trim();
-
-    // Validação
-    if (!validarNumeroProcesso(numeroProcesso)) {
-        showError(processoContainer, 'Número do processo inválido. Deve conter exatamente 20 dígitos.');
         return;
     }
 
@@ -110,7 +66,12 @@ async function consultarProcesso() {
     let dataReferenciaMNI = null;
     if (dataReferenciaFormatada) {
         try {
-            dataReferenciaMNI = converterDataParaMNI(dataReferenciaFormatada);
+            // Usar DataFormatter se disponível, caso contrário usar função local
+            if (typeof DataFormatter !== 'undefined') {
+                dataReferenciaMNI = DataFormatter.converterParaMNI(dataReferenciaFormatada);
+            } else {
+                dataReferenciaMNI = converterDataParaMNI(dataReferenciaFormatada);
+            }
         } catch (error) {
             showError(processoContainer, 'Data de referência inválida. Use o formato DD/MM/AAAA ou DD/MM/AAAA HH:MM:SS');
             return;
