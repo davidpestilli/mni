@@ -1,4 +1,5 @@
 // Utilitários gerais adaptados para React
+import { useEffect } from 'react';
 
 /**
  * Obter token de autenticação
@@ -467,4 +468,115 @@ export function converterDataBRParaISO(dataBR) {
         console.error('[CONVERSÃO DATA] Erro ao converter:', error);
         return dataBR; // Retornar original em caso de erro
     }
+}
+
+/**
+ * Formatar número com mask DD/MM/AAAA HH:MM:SS
+ * Usado internamente pelo hook useDataInputMask
+ *
+ * @param {string} numeros - Apenas números (até 14 dígitos)
+ * @returns {string} - Data formatada
+ */
+function formatarComMask(numeros) {
+    if (!numeros) return '';
+
+    let formatado = '';
+
+    // DD
+    if (numeros.length > 0) {
+        formatado = numeros.substring(0, 2);
+    }
+
+    // DD/MM
+    if (numeros.length >= 3) {
+        formatado += '/' + numeros.substring(2, 4);
+    }
+
+    // DD/MM/AAAA
+    if (numeros.length >= 5) {
+        formatado += '/' + numeros.substring(4, 8);
+    }
+
+    // DD/MM/AAAA HH
+    if (numeros.length >= 9) {
+        formatado += ' ' + numeros.substring(8, 10);
+    }
+
+    // DD/MM/AAAA HH:MM
+    if (numeros.length >= 11) {
+        formatado += ':' + numeros.substring(10, 12);
+    }
+
+    // DD/MM/AAAA HH:MM:SS
+    if (numeros.length >= 13) {
+        formatado += ':' + numeros.substring(12, 14);
+    }
+
+    return formatado;
+}
+
+/**
+ * Calcular nova posição do cursor após formatação
+ * Usado internamente pelo hook useDataInputMask
+ */
+function calcularPosicaoCursor(valorAnterior, valorFormatado, posicaoAnterior) {
+    const especiaisAntes = valorFormatado
+        .substring(0, posicaoAnterior)
+        .replace(/\d/g, '').length;
+
+    const especiaisAntesOriginal = valorAnterior
+        .substring(0, posicaoAnterior)
+        .replace(/\d/g, '').length;
+
+    return posicaoAnterior + (especiaisAntes - especiaisAntesOriginal);
+}
+
+/**
+ * Custom React Hook para input mask automático de datas
+ * Formata automaticamente: DD/MM/AAAA HH:MM:SS enquanto o usuário digita
+ *
+ * Uso:
+ * const [dataReferencia, setDataReferencia] = useState('');
+ * const dataInputRef = useRef(null);
+ * useDataInputMask(dataInputRef, dataReferencia, setDataReferencia);
+ *
+ * <input ref={dataInputRef} value={dataReferencia} onChange={(e) => setDataReferencia(e.target.value)} />
+ */
+export function useDataInputMask(inputRef, value, setValue) {
+    useEffect(() => {
+        if (!inputRef.current) return;
+
+        const handleInput = () => {
+            const input = inputRef.current;
+            let valor = input.value;
+            const cursorPos = input.selectionStart;
+
+            // Extrair apenas números
+            let numeros = valor.replace(/\D/g, '');
+
+            // Limitar a 14 dígitos (DDMMAAAAHHMSS)
+            numeros = numeros.substring(0, 14);
+
+            // Aplicar formatação
+            const formatado = formatarComMask(numeros);
+
+            // Atualizar valor via setState (mantém sync com React)
+            if (valor !== formatado) {
+                setValue(formatado);
+
+                // Ajustar posição do cursor no próximo render
+                setTimeout(() => {
+                    const novoPos = calcularPosicaoCursor(valor, formatado, cursorPos);
+                    input.setSelectionRange(novoPos, novoPos);
+                }, 0);
+            }
+        };
+
+        const input = inputRef.current;
+        input.addEventListener('input', handleInput);
+
+        return () => {
+            input.removeEventListener('input', handleInput);
+        };
+    }, [inputRef, setValue]);
 }

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { apiRequest, formatarNumeroProcesso, limparNumeroProcesso, downloadBase64File, formatarDataHoraMNI, buscarDescricaoClasse, buscarDescricaoAssunto, buscarDescricaoCompetencia, converterDataBRParaISO } from '../utils/utils';
+import { useState, useEffect, useRef } from 'react';
+import { apiRequest, formatarNumeroProcesso, limparNumeroProcesso, downloadBase64File, formatarDataHoraMNI, buscarDescricaoClasse, buscarDescricaoAssunto, buscarDescricaoCompetencia, converterDataBRParaISO, useDataInputMask } from '../utils/utils';
 
 function Processos() {
     const [numeroProcesso, setNumeroProcesso] = useState('');
@@ -12,6 +12,12 @@ function Processos() {
     const [documentoModal, setDocumentoModal] = useState(null);
     const [soapDebug, setSoapDebug] = useState({ request: '', response: '' });
     const [soapExpanded, setSoapExpanded] = useState(false);
+
+    // Ref para o input de data com formatação automática
+    const dataInputRef = useRef(null);
+
+    // Ativar input mask para data de referência
+    useDataInputMask(dataInputRef, dataReferencia, setDataReferencia);
 
     // Fechar modal com ESC
     useEffect(() => {
@@ -398,15 +404,16 @@ function Processos() {
                     <div>
                         <label className="label">Data de Referência (opcional)</label>
                         <input
+                            ref={dataInputRef}
                             type="text"
                             value={dataReferencia}
                             onChange={(e) => setDataReferencia(e.target.value)}
                             className="input"
-                            placeholder="Ex: 12/03/2025 ou 12/03/2025 17:45:10"
+                            placeholder="Ex: 12031985 ou 12031985 144045"
                             maxLength="19"
                         />
                         <p className="text-xs text-gray-500 mt-1">
-                            Retorna apenas movimentos a partir desta data
+                            Digite apenas números (DD/MM/AAAA ou DD/MM/AAAA HH:MM:SS). Formatação automática aplicada.
                         </p>
                     </div>
 
