@@ -22,23 +22,64 @@ const prazosAbertosLoading = document.getElementById('prazos-abertos-loading');
 const btnRefreshAvisos = document.getElementById('btn-refresh-avisos');
 
 // Adicionar listener ao botão
-btnRefreshAvisos.addEventListener('click', carregarTodosAvisos);
+// forcarRecarga = true quando usuário clica manualmente no botão atualizar
+btnRefreshAvisos.addEventListener('click', () => carregarTodosAvisos(true));
 
-// DESABILITADO: Carregamento automático removido - usar apenas botão manual
-// window.addEventListener('load', () => {
-//     carregarTodosAvisos();
-// });
+// Carregar avisos ao entrar na página sem forçar (usa cache se disponível)
+window.addEventListener('pageshow', () => {
+    console.log('📄 Página de avisos em foco');
+    carregarTodosAvisos(false);
+});
+
+// DESABILITADO: Carregamento automático no load foi removido
+// Usar pageshow para quando o usuário volta de outra aba/página
 
 /**
  * Carregar todos os avisos (aguardando + abertos) em paralelo
+ * Com suporte a cache de sessão para melhorar performance
+ *
+ * @param {boolean} forcarRecarga - Se true, ignora cache e refaz requisição
  */
-async function carregarTodosAvisos() {
+async function carregarTodosAvisos(forcarRecarga = false) {
     try {
         // Esconder mensagem inicial
         const mensagemInicial = document.getElementById('avisos-mensagem-inicial');
         if (mensagemInicial) {
             mensagemInicial.style.display = 'none';
         }
+
+        // Verificar se há idRepresentado armazenado
+        let idRepresentado = localStorage.getItem('mni_representado_id');
+
+        // Garantir que idRepresentado seja null se vazio
+        idRepresentado = idRepresentado && idRepresentado.trim() ? idRepresentado.trim() : null;
+
+        // ========================================
+        // LÓGICA DE CACHE
+        // ========================================
+        if (!forcarRecarga && typeof CACHE_AVISOS !== 'undefined') {
+            // Verificar se há cache válido
+            if (CACHE_AVISOS.ehValido(idRepresentado)) {
+                console.log('⚡ Usando avisos em cache de sessão');
+                const cache = CACHE_AVISOS.obterDoCache();
+
+                // Renderizar do cache sem mostrar loaders
+                await renderizarAvisosAguardando(cache.aguardando);
+                await renderizarPrazosAbertos(cache.abertos);
+
+                // Mostrar indicador de filtro se ativo
+                if (idRepresentado) {
+                    exibirIndicadorFiltroRepresentado(idRepresentado);
+                }
+
+                return; // Sair da função aqui, cache foi usado com sucesso
+            }
+        }
+
+        // ========================================
+        // REQUISIÇÃO AO SERVIDOR (Cache miss ou forçada recarga)
+        // ========================================
+        console.log(`🔄 Carregando avisos do servidor (forçar recarga: ${forcarRecarga})`);
 
         // Limpar containers
         avisosAguardandoContainer.innerHTML = '';
@@ -47,12 +88,6 @@ async function carregarTodosAvisos() {
         // Mostrar loaders
         showLoading(avisosAguardandoLoading);
         showLoading(prazosAbertosLoading);
-
-        // Verificar se há idRepresentado armazenado
-        let idRepresentado = localStorage.getItem('mni_representado_id');
-
-        // Garantir que idRepresentado seja null se vazio
-        idRepresentado = idRepresentado && idRepresentado.trim() ? idRepresentado.trim() : null;
 
         // Determinar qual versão MNI usar baseado no sistema atual
         const sistema = localStorage.getItem('mni_sistema_atual') || '1G_CIVIL';
@@ -91,6 +126,15 @@ async function carregarTodosAvisos() {
         // Renderizar avisos aguardando
         if (dataAguardando.success) {
             renderizarAvisosAguardando(dataAguardando.data);
+
+            // Salvar no cache de sessão para próximas requisições
+            if (typeof CACHE_AVISOS !== 'undefined') {
+                CACHE_AVISOS.salvarNoCache(
+                    dataAguardando.data,
+                    dataAbertos.data || [],
+                    idRepresentado
+                );
+            }
 
             // Mostrar indicador de filtro se ativo
             if (idRepresentado) {
@@ -330,8 +374,15 @@ async function abrirPrazo(numeroProcesso, identificadorMovimento) {
             // Mostrar notificação de sucesso
             mostrarNotificacao('✅ Prazo Aberto com Sucesso!', 'success');
 
-            // Recarregar avisos para atualizar (moveré o aviso da seção aguardando para abertos)
-            await carregarTodosAvisos();
+            // Limpar cache pois os avisos foram alterados (um prazo foi aberto)
+            if (typeof CACHE_AVISOS !== 'undefined') {
+                CACHE_AVISOS.limpar();
+                console.log('🔄 Cache invalidado - avisos foram atualizados');
+            }
+
+            // Recarregar avisos para atualizar (mover o aviso da seção aguardando para abertos)
+            // forcarRecarga = true para garantir que busca do servidor
+            await carregarTodosAvisos(true);
         } else {
             mostrarNotificacao('❌ Erro: ' + (data.message || 'Erro ao abrir prazo'), 'error');
         }
@@ -414,8 +465,15 @@ function exibirIndicadorFiltroRepresentado(idRepresentado) {
     btnLimpar.onclick = function() {
         // Limpar idRepresentado do localStorage
         localStorage.removeItem('mni_representado_id');
-        // Recarregar avisos
-        carregarTodosAvisos();
+
+        // Limpar cache pois o filtro foi alterado
+        if (typeof CACHE_AVISOS !== 'undefined') {
+            CACHE_AVISOS.limpar();
+            console.log('🔄 Cache invalidado - filtro foi removido');
+        }
+
+        // Recarregar avisos (forçar recarga pois filtro mudou)
+        carregarTodosAvisos(true);
     };
 
     indicador.appendChild(textoFiltro);
