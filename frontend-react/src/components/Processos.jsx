@@ -10,7 +10,8 @@ import { apiRequest, formatarNumeroProcesso, limparNumeroProcesso, downloadBase6
 function Processos() {
     const [numeroProcesso, setNumeroProcesso] = useState('');
     const [chaveConsulta, setChaveConsulta] = useState('');
-    const [dataReferencia, setDataReferencia] = useState('');
+    const [dataInicial, setDataInicial] = useState('');
+    const [dataFinal, setDataFinal] = useState('');
     const [loading, setLoading] = useState(false);
     const [processo, setProcesso] = useState(null);
     const [error, setError] = useState(null);
@@ -19,11 +20,13 @@ function Processos() {
     const [soapDebug, setSoapDebug] = useState({ request: '', response: '' });
     const [soapExpanded, setSoapExpanded] = useState(false);
 
-    // Ref para o input de data com formatação automática
-    const dataInputRef = useRef(null);
+    // Refs para os inputs de data com formatação automática
+    const dataInicialInputRef = useRef(null);
+    const dataFinalInputRef = useRef(null);
 
-    // Ativar input mask para data de referência
-    useDataInputMask(dataInputRef, dataReferencia, setDataReferencia);
+    // Ativar input masks para as datas
+    useDataInputMask(dataInicialInputRef, dataInicial, setDataInicial);
+    useDataInputMask(dataFinalInputRef, dataFinal, setDataFinal);
 
     /**
      * Extrai atributos de um documento (MNI 3.0)
@@ -88,10 +91,16 @@ function Processos() {
                 params.append('chave', chaveConsulta);
             }
 
-            // Data de referência (formato ISO)
-            if (dataReferencia) {
-                const dataISO = converterDataBRParaISO(dataReferencia);
-                params.append('dataInicial', dataISO);
+            // Data inicial (formato ISO)
+            if (dataInicial) {
+                const dataInicialISO = converterDataBRParaISO(dataInicial);
+                params.append('dataInicial', dataInicialISO);
+            }
+
+            // Data final (formato ISO) - só envia se houver data inicial também
+            if (dataFinal) {
+                const dataFinalISO = converterDataBRParaISO(dataFinal);
+                params.append('dataFinal', dataFinalISO);
             }
 
             // Sempre incluir documentos
@@ -390,19 +399,44 @@ function Processos() {
                         </p>
                     </div>
 
-                    <div>
-                        <label className="label">Data de Referência (opcional)</label>
-                        <input
-                            ref={dataInputRef}
-                            type="text"
-                            value={dataReferencia}
-                            onChange={(e) => setDataReferencia(e.target.value)}
-                            className="input"
-                            placeholder="Ex: 12031985 ou 12031985 144045"
-                            maxLength="19"
-                        />
-                        <p className="text-xs text-gray-500 mt-1">
-                            Digite apenas números (DD/MM/AAAA ou DD/MM/AAAA HH:MM:SS). Formatação automática aplicada.
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="label">Data Inicial (opcional)</label>
+                            <input
+                                ref={dataInicialInputRef}
+                                type="text"
+                                value={dataInicial}
+                                onChange={(e) => setDataInicial(e.target.value)}
+                                className="input"
+                                placeholder="Ex: 12031985 ou 12031985 144045"
+                                maxLength="19"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                                Retorna dados desta data em diante
+                            </p>
+                        </div>
+
+                        <div>
+                            <label className="label">Data Final (opcional)</label>
+                            <input
+                                ref={dataFinalInputRef}
+                                type="text"
+                                value={dataFinal}
+                                onChange={(e) => setDataFinal(e.target.value)}
+                                className="input"
+                                placeholder="Ex: 15031985 ou 15031985 144045"
+                                maxLength="19"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                                Delimita o período com a data inicial
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="bg-blue-50 border-l-4 border-blue-500 p-3 rounded">
+                        <p className="text-xs text-blue-800">
+                            <strong>💡 Dica:</strong> Digite apenas números (ex: <code>24112025</code> vira <code>24/11/2025</code>). 
+                            Se preencher ambas as datas, retorna apenas o período entre elas (inclusive).
                         </p>
                     </div>
 
