@@ -260,7 +260,19 @@ class MNIClient {
             // Formato esperado: <tip:dataReferencia>AAAAMMDDHHMMSS</tip:dataReferencia>
             // Só inclui a tag se dataReferencia for fornecida
             if (dataReferencia) {
-                args.dataReferencia = dataReferencia;
+                // Converter formato numérico (AAAAMMDDHHMMSS) para ISO 8601 com timezone
+                // Esperado pela API CNJ: 2025-11-18T12:39:15-03:00
+                if (/^\d{14}$/.test(dataReferencia)) {
+                    const ano = dataReferencia.substring(0, 4);
+                    const mes = dataReferencia.substring(4, 6);
+                    const dia = dataReferencia.substring(6, 8);
+                    const hora = dataReferencia.substring(8, 10);
+                    const minuto = dataReferencia.substring(10, 12);
+                    const segundo = dataReferencia.substring(12, 14);
+                    args.dataReferencia = `${ano}-${mes}-${dia}T${hora}:${minuto}:${segundo}-03:00`;
+                } else {
+                    args.dataReferencia = dataReferencia;
+                }
             }
 
             // Adicionar chave de consulta se fornecida
