@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { apiRequest, formatarNumeroProcesso, limparNumeroProcesso, downloadBase64File, formatarDataHoraMNI, buscarDescricaoClasse, buscarDescricaoAssunto, buscarDescricaoCompetencia, converterDataBRParaISO, useDataInputMask } from '../utils/utils';
+import { apiRequest, formatarNumeroProcesso, limparNumeroProcesso, downloadBase64File, formatarDataHoraMNI, buscarDescricaoClasse, buscarDescricaoAssunto, buscarDescricaoCompetencia, converterDataBRParaISO, converterDataBRParaMNI, useDataInputMask } from '../utils/utils';
 
 function Processos() {
     const [numeroProcesso, setNumeroProcesso] = useState('');
@@ -85,9 +85,10 @@ function Processos() {
                 }
 
                 if (dataReferencia) {
-                    // Converter data do formato BR (DD/MM/YYYY HH:mm:ss) para ISO (YYYY-MM-DDTHH:mm:ss-03:00)
-                    const dataISO = converterDataBRParaISO(dataReferencia);
-                    params.append('dataReferencia', dataISO);
+                    // Converter data do formato BR (DD/MM/YYYY HH:mm:ss) para AAAAMMDDHHMMSS (14 dígitos)
+                    // MNI 2.2 espera este formato no backend
+                    const dataMNI = converterDataBRParaMNI(dataReferencia);
+                    params.append('dataReferencia', dataMNI);
                 }
             }
 

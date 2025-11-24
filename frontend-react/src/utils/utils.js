@@ -471,6 +471,63 @@ export function converterDataBRParaISO(dataBR) {
 }
 
 /**
+ * Converter DD/MM/AAAA HH:MM:SS para AAAAMMDDHHMMSS
+ * Usado para enviar ao backend MNI 2.2 que espera 14 dígitos
+ *
+ * @param {string} dataBR - Data no formato DD/MM/AAAA ou DD/MM/AAAA HH:MM:SS
+ * @returns {string} - Data em formato AAAAMMDDHHMMSS
+ *
+ * @example
+ * converterDataBRParaMNI("20/11/2025 11:04:45") // "20251120110445"
+ * converterDataBRParaMNI("20/11/2025") // "20251120000000"
+ */
+export function converterDataBRParaMNI(dataBR) {
+    if (!dataBR || dataBR.trim() === '') {
+        return '';
+    }
+
+    try {
+        dataBR = dataBR.trim();
+
+        // Regex para capturar data no formato DD/MM/YYYY HH:mm:ss
+        // Suporta também: DD/MM/YYYY HH:mm ou DD/MM/YYYY
+        const regex = /^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2})(?::(\d{2}))?)?$/;
+        const match = dataBR.match(regex);
+
+        if (!match) {
+            console.warn('[CONVERSÃO DATA BR PARA MNI] Formato inválido:', dataBR);
+            return dataBR;
+        }
+
+        const [_, dia, mes, ano, hora = '00', minuto = '00', segundo = '00'] = match;
+
+        // Validar valores
+        const diaNum = parseInt(dia);
+        const mesNum = parseInt(mes);
+        const horaNum = parseInt(hora);
+        const minutoNum = parseInt(minuto);
+        const segundoNum = parseInt(segundo);
+
+        if (diaNum < 1 || diaNum > 31 || mesNum < 1 || mesNum > 12 ||
+            horaNum < 0 || horaNum > 23 || minutoNum < 0 || minutoNum > 59 ||
+            segundoNum < 0 || segundoNum > 59) {
+            console.warn('[CONVERSÃO DATA BR PARA MNI] Valores inválidos:', dataBR);
+            return dataBR;
+        }
+
+        // Retornar formato AAAAMMDDHHMMSS
+        const dataMNI = `${ano}${mes}${dia}${hora}${minuto}${segundo}`;
+
+        console.log('[CONVERSÃO DATA BR PARA MNI] Convertido:', dataBR, '->', dataMNI);
+        return dataMNI;
+
+    } catch (error) {
+        console.error('[CONVERSÃO DATA BR PARA MNI] Erro ao converter:', error);
+        return dataBR;
+    }
+}
+
+/**
  * Formatar número com mask DD/MM/AAAA HH:MM:SS
  * Usado internamente pelo hook useDataInputMask
  *
