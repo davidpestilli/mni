@@ -25,6 +25,16 @@ function Processos() {
      * MNI 3.0: campos diretos em doc (id, descricao, conteudo.mimetype, nivelSigilo)
      */
     const extrairAtributosDocumento = (doc) => {
+        if (!doc) {
+            return {
+                id: '',
+                descricao: 'Documento',
+                mimetype: 'application/octet-stream',
+                nivelSigilo: 0,
+                tamanho: 0,
+            };
+        }
+
         const attrs = doc.attributes || {};
 
         return {
@@ -746,6 +756,44 @@ function Processos() {
                                             }
                                         }
 
+                                        // Buscar documentos vinculados a este movimento
+                                        const documentosVinculados = [];
+                                        
+                                        // MNI 2.2: documentos marcados com _movimentoIndex
+                                        const documentosMNI2 = processo.documento ? 
+                                            (Array.isArray(processo.documento) ? processo.documento : [processo.documento]) : [];
+                                        
+                                        documentosMNI2.forEach(doc => {
+                                            if (doc._movimentoIndex === index) {
+                                                documentosVinculados.push(doc);
+                                            }
+                                        });
+                                        
+                                        // MNI 3.0: usar campo documentosVinculados ou idDocumentoVinculado
+                                        const idsVinculados = mov.documentosVinculados || 
+                                                            (mov.idDocumentoVinculado ? 
+                                                             (Array.isArray(mov.idDocumentoVinculado) ? 
+                                                              mov.idDocumentoVinculado : 
+                                                              [mov.idDocumentoVinculado]) : 
+                                                             []);
+                                        
+                                        if (idsVinculados.length > 0) {
+                                            const todosDocs = processo.documento ? 
+                                                (Array.isArray(processo.documento) ? processo.documento : [processo.documento]) : [];
+                                            
+                                            idsVinculados.forEach(idVinculado => {
+                                                const docEncontrado = todosDocs.find(d => {
+                                                    const docAttrs = d.attributes || d;
+                                                    const docId = docAttrs.id || docAttrs.idDocumento || d.idDocumento;
+                                                    return docId === idVinculado;
+                                                });
+                                                
+                                                if (docEncontrado && !documentosVinculados.includes(docEncontrado)) {
+                                                    documentosVinculados.push(docEncontrado);
+                                                }
+                                            });
+                                        }
+
                                         return (
                                             <div key={index} className="bg-gray-50 p-4 rounded-lg border-l-4 border-indigo-500">
                                                 <div className="font-medium text-gray-900">{descricao}</div>
@@ -763,6 +811,64 @@ function Processos() {
                                                         })}
                                                     </div>
                                                 )}
+                                                
+                                                {/* Documentos vinculados ao movimento */}
+                                                {documentosVinculados.length > 0 && (
+                                                    <div className="mt-3 pt-3 border-t border-gray-300">
+                                                        <div className="text-xs font-semibold text-gray-700 mb-2">
+                                                            📎 Documentos vinculados ({documentosVinculados.length}):
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            {documentosVinculados.map((doc, docIndex) => {
+                                                                if (!doc) return null;
+                                                                const docAttrs = extrairAtributosDocumento(doc);
+                                                                const temSigilo = docAttrs.nivelSigilo > 0;
+                                                                
+                                                                // Determinar ícone baseado no tipo
+                                                                let icone = '📝';
+                                                                if (docAttrs.mimetype === 'application/pdf') icone = '📄';
+                                                                else if (docAttrs.mimetype && docAttrs.mimetype.startsWith('video/')) icone = '🎥';
+                                                                else if (docAttrs.mimetype && docAttrs.mimetype.startsWith('image/')) icone = '🖼️';
+                                                                else if (docAttrs.mimetype === 'text/html') icone = '📃';
+                                                                
+                                                                return (
+                                                                    <div key={docIndex} className="flex justify-between items-center bg-white p-2 rounded border border-gray-200">
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <div className="text-xs font-medium flex items-center gap-1">
+                                                                                <span>{icone}</span>
+                                                                                <span className="truncate">{docAttrs.descricao}</span>
+                                                                                {temSigilo && (
+                                                                                    <span className="bg-yellow-400 text-gray-900 px-1 py-0.5 rounded text-xs font-semibold whitespace-nowrap">
+                                                                                        🔒 Sigilo {docAttrs.nivelSigilo}
+                                                                                    </span>
+                                                                                )}
+                                                                            </div>
+                                                                            <div className="text-xs text-gray-500 mt-0.5">
+                                                                                {docAttrs.mimetype}
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="flex gap-1 ml-2">
+                                                                            <button
+                                                                                onClick={() => handleVisualizarDocumento(docAttrs.id, docAttrs.descricao, docAttrs.mimetype)}
+                                                                                className="px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600"
+                                                                                title="Visualizar documento"
+                                                                            >
+                                                                                👁️
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => handleDownloadDocumento(docAttrs.id, docAttrs.descricao, docAttrs.mimetype)}
+                                                                                className="px-2 py-1 bg-green-500 text-white rounded text-xs hover:bg-green-600"
+                                                                                title="Baixar documento"
+                                                                            >
+                                                                                📥
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
                                         );
                                     })}
@@ -773,18 +879,9 @@ function Processos() {
 
                     {/* Documentos */}
                     {(() => {
-                        console.log('[DOCUMENTOS DEBUG] processo.documento RAW:', processo.documento);
-                        console.log('[DOCUMENTOS DEBUG] É array?', Array.isArray(processo.documento));
-
                         const documentos = processo.documento ? (Array.isArray(processo.documento) ? processo.documento : [processo.documento]) : [];
 
-                        console.log('[DOCUMENTOS DEBUG] Total de documentos:', documentos.length);
-                        console.log('[DOCUMENTOS DEBUG] Primeiro documento:', documentos[0]);
-                        console.log('[DOCUMENTOS DEBUG] Array de documentos:', documentos);
-
                         if (documentos.length === 0) {
-                            console.log('[DOCUMENTOS DEBUG] Nenhum documento encontrado');
-                            console.log('[DOCUMENTOS DEBUG] Estrutura processo.documento:', processo.documento);
                             return null;
                         }
 
@@ -796,6 +893,7 @@ function Processos() {
                                 </h4>
                                 <div className="space-y-2">
                                     {documentos.map((doc, index) => {
+                                        if (!doc) return null;
                                         const docAttrs = extrairAtributosDocumento(doc);
                                         const temSigilo = docAttrs.nivelSigilo > 0;
 
@@ -805,8 +903,6 @@ function Processos() {
                                         else if (docAttrs.mimetype && docAttrs.mimetype.startsWith('video/')) icone = '🎥';
                                         else if (docAttrs.mimetype && docAttrs.mimetype.startsWith('image/')) icone = '🖼️';
                                         else if (docAttrs.mimetype === 'text/html') icone = '📃';
-
-                                        console.log(`[DOC ${index}] ID:`, docAttrs.id, 'Descrição:', docAttrs.descricao, 'Mime:', docAttrs.mimetype);
 
                                         return (
                                             <div key={index} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg hover:bg-gray-100 transition-colors">
