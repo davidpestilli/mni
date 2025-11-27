@@ -28,7 +28,9 @@
       "Bash(node server.js:*)",
       "Bash(timeout:*)",
       "Bash(npm run build:*)",
-      "Bash(rm backend/nul nul)"
+      "Bash(rm backend/nul nul)",
+      "Bash(node -c:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

@@ -45,6 +45,7 @@ async function carregarLocalidades() {
         const select = document.getElementById('localidade');
         select.innerHTML = '<option value="">🔄 Carregando localidades de SP...</option>';
         select.disabled = true;
+        atualizarContador('localidade', 0);
 
         const response = await fetch(`${API_MNI3}/localidades?estado=SP`);
         const data = await response.json();
@@ -67,11 +68,13 @@ async function carregarLocalidades() {
             });
 
             select.disabled = false;
+            atualizarContador('localidade', data.count);
             console.log(`✅ [MNI 3.0] ${data.count} localidades carregadas`);
             mostrarNotificacao(`✅ ${data.count} comarcas carregadas!`, 'success');
         } else {
             select.innerHTML = '<option value="">❌ Erro ao carregar localidades</option>';
             select.disabled = false;
+            atualizarContador('localidade', 0);
             showError('Erro ao carregar localidades: ' + data.message);
         }
     } catch (error) {
@@ -79,6 +82,7 @@ async function carregarLocalidades() {
         const select = document.getElementById('localidade');
         select.innerHTML = '<option value="">❌ Erro de conexão</option>';
         select.disabled = false;
+        atualizarContador('localidade', 0);
         showError('Erro ao carregar localidades: ' + error.message);
     }
 }
@@ -91,6 +95,7 @@ async function carregarCompetencias(codigoLocalidade) {
         const select = document.getElementById('competencia');
         select.innerHTML = '<option value="">🔄 Carregando competências...</option>';
         select.disabled = true;
+        atualizarContador('competencia', 0);
 
         const response = await fetch(`${API_MNI3}/competencias/${codigoLocalidade}`);
         const data = await response.json();
@@ -106,11 +111,13 @@ async function carregarCompetencias(codigoLocalidade) {
             });
 
             select.disabled = false;
+            atualizarContador('competencia', data.count);
             console.log(`✅ [MNI 3.0] ${data.count} competências carregadas`);
         } else {
             // Se não houver competências ou erro, deixar como opcional
             select.innerHTML = '<option value="">⚖️ Nenhuma competência disponível (opcional)</option>';
             select.disabled = false;
+            atualizarContador('competencia', 0);
             console.warn('[MNI 3.0] Nenhuma competência retornada para esta localidade');
         }
     } catch (error) {
@@ -118,6 +125,7 @@ async function carregarCompetencias(codigoLocalidade) {
         const select = document.getElementById('competencia');
         select.innerHTML = '<option value="">❌ Erro ao carregar</option>';
         select.disabled = false;
+        atualizarContador('competencia', 0);
     }
 }
 
@@ -129,6 +137,7 @@ async function carregarClasses(codigoLocalidade, codigoCompetencia = null) {
         const select = document.getElementById('classe');
         select.innerHTML = '<option value="">🔄 Carregando classes...</option>';
         select.disabled = true;
+        atualizarContador('classe', 0);
 
         let url = `${API_MNI3}/classes/${codigoLocalidade}`;
         if (codigoCompetencia) {
@@ -154,11 +163,13 @@ async function carregarClasses(codigoLocalidade, codigoCompetencia = null) {
             });
 
             select.disabled = false;
+            atualizarContador('classe', data.count);
             console.log(`✅ [MNI 3.0] ${data.count} classes válidas carregadas`);
             mostrarNotificacao(`✅ ${data.count} classes disponíveis`, 'info');
         } else {
             select.innerHTML = '<option value="">⚠️ Nenhuma classe disponível para este contexto</option>';
             select.disabled = true;
+            atualizarContador('classe', 0);
             console.warn('[MNI 3.0] Nenhuma classe retornada');
         }
     } catch (error) {
@@ -166,6 +177,7 @@ async function carregarClasses(codigoLocalidade, codigoCompetencia = null) {
         const select = document.getElementById('classe');
         select.innerHTML = '<option value="">❌ Erro ao carregar classes</option>';
         select.disabled = false;
+        atualizarContador('classe', 0);
         showError('Erro ao carregar classes: ' + error.message);
     }
 }
@@ -178,9 +190,10 @@ async function carregarAssuntos(codigoLocalidade, codigoClasse, codigoCompetenci
     try {
         const selectPrincipal = document.getElementById('assunto');
         const btnAdicionarSecundario = document.getElementById('btnAdicionarAssuntoSecundario');
-        
+
         selectPrincipal.innerHTML = '<option value="">🔄 Carregando assuntos...</option>';
         selectPrincipal.disabled = true;
+        atualizarContador('assunto', 0);
         btnAdicionarSecundario.disabled = true;
         btnAdicionarSecundario.style.opacity = '0.5';
 
@@ -210,10 +223,12 @@ async function carregarAssuntos(codigoLocalidade, codigoClasse, codigoCompetenci
                     selectPrincipal.appendChild(option);
                 });
                 selectPrincipal.disabled = false;
+                atualizarContador('assunto', assuntosPrincipais.length);
                 console.log(`✅ [MNI 3.0] ${assuntosPrincipais.length} assuntos principais carregados`);
             } else {
                 selectPrincipal.innerHTML = '<option value="">⚠️ Nenhum assunto principal disponível</option>';
                 selectPrincipal.disabled = true;
+                atualizarContador('assunto', 0);
             }
 
             // Habilitar botão de adicionar assunto secundário se houver assuntos disponíveis
@@ -230,6 +245,7 @@ async function carregarAssuntos(codigoLocalidade, codigoClasse, codigoCompetenci
         } else {
             selectPrincipal.innerHTML = '<option value="">📑 Nenhum assunto disponível</option>';
             selectPrincipal.disabled = false;
+            atualizarContador('assunto', 0);
             btnAdicionarSecundario.disabled = true;
             btnAdicionarSecundario.style.opacity = '0.5';
             console.warn('[MNI 3.0] Nenhum assunto retornado');
@@ -240,8 +256,68 @@ async function carregarAssuntos(codigoLocalidade, codigoClasse, codigoCompetenci
         const btnAdicionarSecundario = document.getElementById('btnAdicionarAssuntoSecundario');
         selectPrincipal.innerHTML = '<option value="">❌ Erro ao carregar assuntos</option>';
         selectPrincipal.disabled = false;
+        atualizarContador('assunto', 0);
         btnAdicionarSecundario.disabled = true;
         btnAdicionarSecundario.style.opacity = '0.5';
+    }
+}
+
+/**
+ * ========================================
+ * FUNÇÕES DE CONTADOR DE ELEMENTOS
+ * ========================================
+ */
+
+/**
+ * Criar ou atualizar o contador ao lado do select
+ */
+function criarOuAtualizarContador(idSelect) {
+    const select = document.getElementById(idSelect);
+    let contador = document.getElementById(`contador-${idSelect}`);
+
+    // Se o contador não existe, criar
+    if (!contador) {
+        // Encontrar o label associado ao select
+        const label = document.querySelector(`label[for="${idSelect}"]`);
+
+        if (label) {
+            contador = document.createElement('span');
+            contador.id = `contador-${idSelect}`;
+            contador.style.cssText = `
+                display: inline-block;
+                background: #667eea;
+                color: white;
+                padding: 4px 12px;
+                border-radius: 12px;
+                font-size: 12px;
+                font-weight: bold;
+                margin-left: 10px;
+                white-space: nowrap;
+            `;
+
+            // Inserir o contador dentro do label (ao final)
+            label.appendChild(contador);
+        }
+    }
+
+    return contador;
+}
+
+/**
+ * Atualizar o texto do contador com a quantidade de elementos
+ */
+function atualizarContador(idSelect, quantidade) {
+    const contador = criarOuAtualizarContador(idSelect);
+
+    if (!contador) {
+        return;
+    }
+
+    if (quantidade === 0) {
+        contador.style.display = 'none';
+    } else {
+        contador.style.display = 'inline-block';
+        contador.textContent = `${quantidade} opção${quantidade !== 1 ? 's' : ''}`;
     }
 }
 

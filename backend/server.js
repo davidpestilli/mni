@@ -1,3 +1,20 @@
+/**
+ * ========================================
+ * MNI Web App - Backend Server
+ * ========================================
+ *
+ * ⚠️ IMPORTANTE: Sistema vanilla (JavaScript puro) foi DESATIVADO
+ *
+ * APENAS React (Vite build) é servido. Isso evita confusão entre:
+ * - /frontend (vanilla - DESATIVADO)
+ * - /frontend-react (React - ATIVO)
+ *
+ * Se o build React não for encontrado, o servidor NÃO inicia.
+ * Sempre execute "npm run build" em frontend-react antes de iniciar.
+ *
+ * ========================================
+ */
+
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -24,18 +41,20 @@ app.use(bodyParser.json({ limit: '50mb' })); // Aumentar limite para upload de P
 app.use(bodyParser.urlencoded({ extended: true, limit: '50mb' }));
 
 // Servir arquivos estáticos do frontend
-// Prioridade: frontend-react/dist (build Vite) > frontend (vanilla)
+// APENAS React (Vite build) - Sistema vanilla desativado
 const fs = require('fs');
 const reactBuildPath = path.join(__dirname, '../frontend-react/dist');
-const vanillaFrontendPath = path.join(__dirname, '../frontend');
 
-if (fs.existsSync(reactBuildPath)) {
-    console.log('📦 Servindo frontend React (Vite build)');
-    app.use(express.static(reactBuildPath));
-} else {
-    console.log('📦 Servindo frontend vanilla (legado)');
-    app.use(express.static(vanillaFrontendPath));
+// ⚠️ VALIDAÇÃO: React build é OBRIGATÓRIO
+if (!fs.existsSync(reactBuildPath)) {
+    console.error('❌ ERRO FATAL: Frontend React não encontrado!');
+    console.error(`   Caminho esperado: ${reactBuildPath}`);
+    console.error('   Execute: npm run build (dentro de frontend-react)');
+    process.exit(1);
 }
+
+console.log('📦 Servindo frontend React (Vite build) - Sistema vanilla DESATIVADO');
+app.use(express.static(reactBuildPath));
 
 // Rotas da API
 app.use('/api/auth', authRoutes);
@@ -54,23 +73,23 @@ app.get('/api/health', (req, res) => {
         success: true,
         message: 'MNI Web App Backend está rodando',
         version: '1.0.0',
-        frontend: fs.existsSync(reactBuildPath) ? 'React (Vite)' : 'Vanilla'
+        frontend: 'React (Vite) - Sistema vanilla DESATIVADO'
     });
 });
 
-// Rota raiz - redirecionar para o frontend (SPA support)
-app.get('*', (req, res, next) => {
-    // Ignorar rotas da API
+// Rota catch-all - SPA React (todas as rotas vão para index.html)
+app.get('*', (req, res) => {
+    // Ignorar rotas da API (já tratadas acima)
     if (req.path.startsWith('/api')) {
-        return next();
+        return res.status(404).json({
+            success: false,
+            message: 'Rota da API não encontrada'
+        });
     }
 
-    // Servir index.html do React build ou vanilla
-    if (fs.existsSync(reactBuildPath)) {
-        res.sendFile(path.join(reactBuildPath, 'index.html'));
-    } else {
-        res.sendFile(path.join(vanillaFrontendPath, 'index.html'));
-    }
+    // Servir index.html do React
+    // Isso permite que React Router lide com as rotas
+    res.sendFile(path.join(reactBuildPath, 'index.html'));
 });
 
 // Tratamento de erro 404

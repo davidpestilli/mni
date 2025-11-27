@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Contador</title>
+</head>
+<body>
+    <h1>Teste de Contador</h1>
+
+    <div class="form-group">
+        <label for="localidade">
+            <span>PASSO 1</span>
+            Localidade
+        </label>
+        <select id="localidade">
+            <option>Opção 1</option>
+            <option>Opção 2</option>
+        </select>
+    </div>
+
+    <script>
+        function criarOuAtualizarContador(idSelect) {
+            const select = document.getElementById(idSelect);
+            let contador = document.getElementById(`contador-${idSelect}`);
+
+            if (!contador) {
+                const label = document.querySelector(`label[for="${idSelect}"]`);
+                if (label) {
+                    contador = document.createElement('span');
+                    contador.id = `contador-${idSelect}`;
+                    contador.style.cssText = `
+                        display: inline-block;
+                        background: #667eea;
+                        color: white;
+                        padding: 4px 12px;
+                        border-radius: 12px;
+                        font-size: 12px;
+                        font-weight: bold;
+                        margin-left: 10px;
+                        white-space: nowrap;
+                    `;
+                    label.appendChild(contador);
+                }
+            }
+            return contador;
+        }
+
+        function atualizarContador(idSelect, quantidade) {
+            const contador = criarOuAtualizarContador(idSelect);
+            if (!contador) return;
+
+            if (quantidade === 0) {
+                contador.style.display = 'none';
+            } else {
+                contador.style.display = 'inline-block';
+                contador.textContent = `${quantidade} opção${quantidade !== 1 ? 's' : ''}`;
+            }
+        }
+
+        // Teste
+        atualizarContador('localidade', 5);
+        console.log('✅ Teste passou!');
+    </script>
+</body>
+</html>

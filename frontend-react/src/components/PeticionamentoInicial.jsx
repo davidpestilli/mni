@@ -779,6 +779,11 @@ function PeticionamentoInicial() {
                                 <label className="label">
                                     <span className="badge bg-indigo-600 text-white mr-2">PASSO 1</span>
                                     Comarca/Localidade *
+                                    {localidades.length > 0 && (
+                                        <span className="badge bg-indigo-600 text-white ml-3 px-3 py-1 text-sm font-bold">
+                                            {localidades.length} opção{localidades.length !== 1 ? 's' : ''}
+                                        </span>
+                                    )}
                                 </label>
                                 <select
                                     name="localidade"
@@ -804,6 +809,11 @@ function PeticionamentoInicial() {
                                 <label className="label">
                                     <span className="badge bg-purple-600 text-white mr-2">PASSO 2</span>
                                     Competência (Opcional)
+                                    {competencias.length > 0 && (
+                                        <span className="badge bg-purple-600 text-white ml-3 px-3 py-1 text-sm font-bold">
+                                            {competencias.length} opção{competencias.length !== 1 ? 's' : ''}
+                                        </span>
+                                    )}
                                 </label>
                                 <select
                                     name="competencia"
@@ -830,6 +840,11 @@ function PeticionamentoInicial() {
                                 <label className="label">
                                     <span className="badge bg-indigo-600 text-white mr-2">PASSO 3</span>
                                     Classe Processual *
+                                    {classes.length > 0 && (
+                                        <span className="badge bg-indigo-600 text-white ml-3 px-3 py-1 text-sm font-bold">
+                                            {classes.length} opção{classes.length !== 1 ? 's' : ''}
+                                        </span>
+                                    )}
                                 </label>
                                 <select
                                     name="classe"
@@ -905,6 +920,11 @@ function PeticionamentoInicial() {
                                 <label className="label">
                                     <span className="badge bg-purple-600 text-white mr-2">PASSO 4</span>
                                     Assunto Principal (Opcional)
+                                    {assuntosPrincipais.length > 0 && (
+                                        <span className="badge bg-purple-600 text-white ml-3 px-3 py-1 text-sm font-bold">
+                                            {assuntosPrincipais.length} opção{assuntosPrincipais.length !== 1 ? 's' : ''}
+                                        </span>
+                                    )}
                                 </label>
                                 <select
                                     name="assuntoPrincipal"
